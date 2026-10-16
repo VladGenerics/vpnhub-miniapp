@@ -1,0 +1,207 @@
+/*
+ * Варианты цветовой палитры для согласования с заказчиком.
+ * Базовые токены — в global.css, здесь переопределения. По умолчанию «Графит».
+ * Переключение: <html data-palette="..."> (см. src/lib/palette.ts).
+ * Эмодзи: в «Графите» и «Telegram» — перекрашенные в голубой, в «Неоне» — оригинальные из пака.
+ */
+
+/* ---------- Telegram: фирменный #2AABEE на графитово-синем ---------- */
+[data-theme='dark'][data-palette='telegram'] {
+  --bg: #17212b;
+  --card: #202b36;
+  --card-hover: #26333f;
+  --card-in-sheet: #253140;
+  --sheet-bg: #1b2530;
+  --chip: #2b3846;
+  --thumb: #34485c;
+  --seg-bg: #202b36;
+  --sep: rgba(255, 255, 255, 0.07);
+  --hint: #7d8b99;
+  --accent: #2aabee;
+  --accent-hover: #4ab9f2;
+  --accent-2: #6cc9f7;
+  --accent-deep: #1d8ccc;
+  --accent-soft: rgba(42, 171, 238, 0.15);
+  --accent-glow: rgba(42, 171, 238, 0.26);
+  --accent-ring: rgba(42, 171, 238, 0.22);
+  --accent-glow-soft: rgba(42, 171, 238, 0.14);
+  --nav-bg: rgba(32, 43, 54, 0.9);
+  --nav-bg-solid: #202b36;
+  --toast-bg: rgba(38, 50, 64, 0.97);
+}
+[data-theme='light'][data-palette='telegram'] {
+  --bg: #eff1f5;
+  --sheet-bg: #f1f3f6;
+  --chip: #e9edf2;
+  --seg-bg: #e1e6ec;
+  --accent: #2481cc;
+  --accent-hover: #1b73ba;
+  --accent-2: #4fa8e6;
+  --accent-deep: #1c6fb3;
+  --accent-soft: rgba(36, 129, 204, 0.1);
+  --accent-glow: rgba(36, 129, 204, 0.2);
+  --accent-ring: rgba(36, 129, 204, 0.18);
+  --accent-glow-soft: rgba(36, 129, 204, 0.1);
+}
+
+/* ---------- Неон: фирменный лайм пака VHub (#55fe09), эмодзи — оригинальные ---------- */
+[data-theme='dark'][data-palette='neon'] {
+  --bg: #0b100a;
+  --card: #141b12;
+  --card-hover: #1a2318;
+  --card-in-sheet: #192217;
+  --sheet-bg: #10160e;
+  --chip: #1f2a1c;
+  --thumb: #2b3b27;
+  --seg-bg: #141b12;
+  --sep: rgba(140, 255, 90, 0.08);
+  --hint: #889884;
+  --accent: #55fe09;
+  --accent-hover: #74ff36;
+  --accent-2: #a8ff7c;
+  --accent-deep: #2fb800;
+  --accent-soft: rgba(85, 254, 9, 0.12);
+  --accent-glow: rgba(85, 254, 9, 0.22);
+  --accent-ring: rgba(85, 254, 9, 0.24);
+  --accent-glow-soft: rgba(85, 254, 9, 0.12);
+  /* неон очень светлый — текст на нём тёмный */
+  --on-accent: #0a1404;
+  --success: #55fe09;
+  --success-soft: rgba(85, 254, 9, 0.13);
+  --nav-bg: rgba(20, 27, 18, 0.9);
+  --nav-bg-solid: #141b12;
+  --toast-bg: rgba(26, 35, 24, 0.97);
+}
+[data-theme='light'][data-palette='neon'] {
+  --bg: #eef5ea;
+  --sheet-bg: #f1f7ee;
+  --chip: #e2eedc;
+  --seg-bg: #d9e8d2;
+  /* на светлом фоне чистый неон не читается — берём тот же тон темнее */
+  --accent: #33b000;
+  --accent-hover: #2b9900;
+  --accent-2: #7ee04a;
+  --accent-deep: #248a00;
+  --accent-soft: rgba(51, 176, 0, 0.11);
+  --accent-glow: rgba(51, 176, 0, 0.2);
+  --accent-ring: rgba(51, 176, 0, 0.2);
+  --accent-glow-soft: rgba(51, 176, 0, 0.1);
+  --success: #2b9900;
+  --success-soft: rgba(43, 153, 0, 0.12);
+}
+
+/* ---------- Графит: нейтральный тёмный, как у Major, голубой только акцент ---------- */
+[data-theme='dark'][data-palette='graphite'] {
+  --bg: #0e0f11;
+  --card: #18191c;
+  --card-hover: #1f2024;
+  --card-in-sheet: #1e1f23;
+  --sheet-bg: #141517;
+  --chip: #242529;
+  --thumb: #303237;
+  --seg-bg: #18191c;
+  --sep: rgba(255, 255, 255, 0.06);
+  --hint: #8a8d93;
+  --accent: #3d9bff;
+  --accent-hover: #5babff;
+  --accent-2: #7cbcff;
+  --accent-deep: #2479e0;
+  --accent-soft: rgba(61, 155, 255, 0.13);
+  --accent-glow: rgba(61, 155, 255, 0.22);
+  --accent-ring: rgba(61, 155, 255, 0.2);
+  --accent-glow-soft: rgba(61, 155, 255, 0.12);
+  --nav-bg: rgba(24, 25, 28, 0.9);
+  --nav-bg-solid: #18191c;
+  --toast-bg: rgba(36, 37, 42, 0.97);
+  --shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+}
+[data-theme='light'][data-palette='graphite'] {
+  --bg: #f2f3f5;
+  --sheet-bg: #f4f5f7;
+  --chip: #eceef1;
+  --seg-bg: #e4e6ea;
+  --accent: #2f8cf0;
+  --accent-hover: #237cdc;
+  --accent-2: #6db0f7;
+  --accent-deep: #1f6fcc;
+  --accent-soft: rgba(47, 140, 240, 0.1);
+  --accent-glow: rgba(47, 140, 240, 0.18);
+  --accent-ring: rgba(47, 140, 240, 0.16);
+  --accent-glow-soft: rgba(47, 140, 240, 0.1);
+  --shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+}
+
+/* выбор палитры */
+.palette-picker {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.palette-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 2px;
+  border-radius: 14px;
+  transition:
+    background 0.2s,
+    transform 0.3s var(--spring);
+}
+
+.palette-option:active {
+  transform: scale(0.92);
+}
+
+.palette-option.is-active {
+  background: var(--accent-soft);
+}
+
+.palette-swatch {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+  transition: box-shadow 0.25s;
+}
+
+.palette-swatch i {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  transition: transform 0.4s var(--spring-bouncy);
+}
+
+.palette-option.is-active .palette-swatch {
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.12),
+    0 0 0 2px var(--accent);
+}
+
+.palette-option.is-active .palette-swatch i {
+  transform: scale(1.35);
+}
+
+.palette-name {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--hint);
+}
+
+.palette-option.is-active .palette-name {
+  color: var(--accent);
+}
+
+/* плавная смена палитры */
+.palette-transition,
+.palette-transition * {
+  transition:
+    background-color 0.45s ease,
+    color 0.45s ease,
+    border-color 0.45s ease,
+    fill 0.45s ease !important;
+}
