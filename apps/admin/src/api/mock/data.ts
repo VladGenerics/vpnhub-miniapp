@@ -44,8 +44,6 @@ export interface MUser {
   has_used_trial_subscription: boolean
   is_bot: boolean
   is_blocked_bot: boolean
-  /** Когда заблокировал бота. В настоящей схеме этого поля нет — см. вопросы в README */
-  blocked_at: number | null
   is_premium: boolean
   role: UserRole
   birthday_day: number | null
@@ -226,7 +224,6 @@ function generate() {
         has_used_trial_subscription: !is_bot && rnd() < 0.6,
         is_bot,
         is_blocked_bot: blocked,
-        blocked_at: blocked ? registered_at + Math.floor(rnd() * (NOW - registered_at)) : null,
         is_premium: rnd() < 0.14,
         role: id === 1 ? 'OWNER' : id <= 3 ? 'ADMIN' : id === 4 ? 'SUPPORT_AGENT' : 'USER',
         birthday_day: rnd() < 0.3 ? 1 + Math.floor(rnd() * 28) : null,

@@ -21,7 +21,7 @@ import type {
   StatsRange,
   TelegramAuthData,
   UsersParams,
-  UsersStatsPoint,
+  UsersStats,
 } from '@vpnhub/shared'
 import { http } from './http'
 
@@ -42,7 +42,7 @@ export interface AdminApi {
   getSettings(): Promise<AdminSettings>
   updateSettings(patch: AdminSettingsPatch): Promise<AdminSettings>
   getStatsRange(): Promise<StatsRange>
-  getUsersStats(q: StatsQuery): Promise<UsersStatsPoint[]>
+  getUsersStats(q: StatsQuery): Promise<UsersStats>
   getDepositsStats(q: StatsQuery): Promise<DepositsStats>
   getPurchasesStats(q: StatsQuery): Promise<PurchasesStatsPoint[]>
 }

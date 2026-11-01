@@ -176,12 +176,6 @@ function fill<T, P>(starts: number[], g: Granularity, items: T[], time: (i: T) =
 }
 
 const usersByReg = [...users].sort((a, b) => a.registered_at - b.registered_at)
-// «заблокировали» — только люди: боты считаются отдельной категорией
-const blockedTimes = users
-  .filter((u) => !u.is_bot)
-  .map((u) => u.blocked_at)
-  .filter((t): t is number => t !== null)
-  .sort((a, b) => a - b)
 const paidByTime = invoices.filter((i) => i.paid_at).sort((a, b) => a.paid_at! - b.paid_at!)
 
 const countBefore = (sorted: number[], t: number) => {
@@ -195,7 +189,6 @@ const countBefore = (sorted: number[], t: number) => {
   return lo
 }
 const regTimes = usersByReg.map((u) => u.registered_at)
-const botTimes = usersByReg.filter((u) => u.is_bot).map((u) => u.registered_at)
 
 function demoRole(): UserRole {
   try {
@@ -439,7 +432,7 @@ export const mockApi: AdminApi = {
       q.granularity,
       usersByReg,
       (u) => u.registered_at,
-      (t) => ({ t: iso(t), total: 0, blocked: 0, bots: 0, new_total: 0, new_blocked: 0, new_bots: 0 }),
+      (t) => ({ t: iso(t), total: 0, new_total: 0, new_blocked: 0, new_bots: 0 }),
       (p, u) => {
         p.new_total++
         if (u.is_bot) p.new_bots++
@@ -447,12 +440,14 @@ export const mockApi: AdminApi = {
       },
     )
     pts.forEach((p, i) => {
-      const end = next(starts[i], q.granularity)
-      p.total = countBefore(regTimes, end)
-      p.bots = countBefore(botTimes, end)
-      p.blocked = countBefore(blockedTimes, end)
+      p.total = countBefore(regTimes, next(starts[i], q.granularity))
     })
-    return delay(pts, 300)
+    const now = {
+      total: users.length,
+      blocked: users.filter((u) => u.is_blocked_bot && !u.is_bot).length,
+      bots: users.filter((u) => u.is_bot).length,
+    }
+    return delay({ now, points: pts }, 300)
   },
 
   async getDepositsStats(q) {

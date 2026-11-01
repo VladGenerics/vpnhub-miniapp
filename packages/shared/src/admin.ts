@@ -250,24 +250,33 @@ export interface StatsRange {
 }
 
 /**
- * GET /admin/stats/users. Категории не пересекаются, чтобы их можно было складывать
- * в столбцы и круговую диаграмму: боты — все is_bot; «заблокировали» — люди (не боты)
- * с is_blocked_bot; активные = total − blocked − bots.
+ * GET /admin/stats/users. Даты блокировки бота и пометки «бот» в базе нет, поэтому по
+ * времени считаются только регистрации, а доли категорий — по текущим флагам.
+ * Категории не пересекаются: боты — все is_bot; «заблокировали» — люди (не боты)
+ * с is_blocked_bot; активные = всего − заблокировали − боты.
  */
 export interface UsersStatsPoint {
   t: ISODate
   /** Всего пользователей на конец интервала */
   total: number
-  /** Из них люди, заблокировавшие бота */
-  blocked: number
-  /** Из них боты */
-  bots: number
   /** Новых за интервал */
   new_total: number
-  /** Из новых — люди, заблокировавшие бота */
+  /** Из новых — люди, которые сейчас заблокировали бота */
   new_blocked: number
-  /** Из новых — боты */
+  /** Из новых — те, кто сейчас помечен ботом */
   new_bots: number
+}
+
+/** Аудитория на момент запроса */
+export interface UsersNow {
+  total: number
+  blocked: number
+  bots: number
+}
+
+export interface UsersStats {
+  now: UsersNow
+  points: UsersStatsPoint[]
 }
 
 /** GET /admin/stats/deposits — оплаченные счета (по paid_at) */
