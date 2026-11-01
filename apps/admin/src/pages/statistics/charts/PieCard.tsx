@@ -1,9 +1,9 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, type ReactNode } from 'react'
 import { Card } from '../../../components/ui'
 import { percent } from '../../../lib/format'
-import { useResolvedTheme } from '../../../lib/theme'
+import { useResolvedTheme, useSkin } from '../../../lib/theme'
 import { echarts, type ECharts } from './echarts'
-import { CHROME, seriesColor, type Slot } from './palette'
+import { chrome, seriesColor, type Slot } from './palette'
 import { useHidden } from './TimeSeriesCard'
 
 export interface PieItem {
@@ -37,6 +37,8 @@ export function PieCard({
   className?: string
 }) {
   const theme = useResolvedTheme()
+  // смена палитры меняет фон и сетку — график перечитывает цвета
+  const skin = useSkin()
   const ref = useRef<HTMLDivElement>(null)
   const chart = useRef<ECharts | null>(null)
   const { hidden, toggle } = useHidden()
@@ -57,7 +59,7 @@ export function PieCard({
   }, [])
 
   useEffect(() => {
-    const ch = CHROME[theme]
+    const ch = chrome()
     chart.current?.setOption(
       {
         animationDurationUpdate: 300,
@@ -66,7 +68,11 @@ export function PieCard({
           confine: true,
           backgroundColor: ch.surface,
           borderColor: ch.axis,
-          textStyle: { color: ch.text, fontFamily: 'Inter, system-ui, sans-serif', fontSize: 13 },
+          textStyle: {
+            color: ch.text,
+            fontFamily: 'Inter, system-ui, sans-serif',
+            fontSize: 13,
+          },
           extraCssText: 'border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.14);',
           formatter: (p: { name: string; value: number; color: string }) =>
             `<b>${format(p.value)}</b> <span style="color:${ch.hint}">· ${percent(p.value, sum)}</span><div style="color:${ch.hint}">${p.name.replace(/[<>&]/g, '')}</div>`,
@@ -79,15 +85,23 @@ export function PieCard({
             label: { show: false },
             labelLine: { show: false },
             // 2 px цвета фона между долями — вместо обводки
-            itemStyle: { borderColor: ch.surface, borderWidth: 2, borderRadius: 4 },
+            itemStyle: {
+              borderColor: ch.surface,
+              borderWidth: 2,
+              borderRadius: 4,
+            },
             emphasis: { scale: true, scaleSize: 4 },
-            data: visible.map((i) => ({ name: i.name, value: i.value, itemStyle: { color: seriesColor(i.slot, theme) } })),
+            data: visible.map((i) => ({
+              name: i.name,
+              value: i.value,
+              itemStyle: { color: seriesColor(i.slot, theme) },
+            })),
           },
         ],
       },
       { notMerge: true },
     )
-  }, [visible, theme, format, sum])
+  }, [visible, theme, skin, format, sum])
 
   return (
     <Card className={`chart-card ${className ?? ''}`} title={title} sub={sub}>

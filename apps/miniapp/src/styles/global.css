@@ -2361,3 +2361,14 @@ body:has(.app.is-sidebar-collapsed) .toast {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Логотип VPNHub (public/favicon.svg) — в шапке боковой панели и на входе */
+.brand-logo {
+  display: block;
+  flex: none;
+  border-radius: 22%;
+}
+.hero-emoji:has(.hero-logo) {
+  display: grid;
+  place-items: center;
+}

@@ -44,7 +44,7 @@ export function useApplyTheme() {
     const apply = () => {
       const theme = m === 'auto' ? (systemDark() ? 'dark' : 'light') : m
       document.documentElement.dataset.theme = theme
-      document.querySelector('meta[name=theme-color]')?.setAttribute('content', theme === 'dark' ? '#0e0f11' : '#f3f4f7')
+      syncThemeColor()
     }
     apply()
     if (m !== 'auto') return
@@ -54,14 +54,27 @@ export function useApplyTheme() {
   }, [m])
 }
 
+/** Цвет строки состояния браузера — фон текущей темы и палитры */
+export function syncThemeColor() {
+  const bg = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim()
+  if (bg) document.querySelector('meta[name=theme-color]')?.setAttribute('content', bg)
+}
+
+const observeRoot = (cb: () => void) => {
+  const obs = new MutationObserver(cb)
+  obs.observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ['data-theme', 'data-palette'],
+  })
+  return () => obs.disconnect()
+}
+
 /** Текущая применённая тема — для графиков, которые рисуются на canvas */
 export function useResolvedTheme(): 'light' | 'dark' {
-  return useSyncExternalStore(
-    (cb) => {
-      const obs = new MutationObserver(cb)
-      obs.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] })
-      return () => obs.disconnect()
-    },
-    () => (document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light'),
-  )
+  return useSyncExternalStore(observeRoot, () => (document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light'))
+}
+
+/** Тема и палитра одной строкой («dark/neon») — графикам, чтобы перечитать цвета фона и сетки */
+export function useSkin(): string {
+  return useSyncExternalStore(observeRoot, () => `${document.documentElement.dataset.theme}/${document.documentElement.dataset.palette}`)
 }

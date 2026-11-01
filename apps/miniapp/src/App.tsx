@@ -76,7 +76,7 @@ export default function App() {
   }, [pathname])
 
   useEffect(() => {
-    preloadEmoji(emojiFolder(palette), E.vTile, E.renewTile, E.walletTile, E.dollarTile, E.link, E.mail, E.bulbTile, E.questionTile)
+    preloadEmoji(emojiFolder(palette), E.renewTile, E.walletTile, E.dollarTile, E.link, E.mail, E.bulbTile, E.questionTile)
   }, [palette])
 
   if (pathname === '/login') {

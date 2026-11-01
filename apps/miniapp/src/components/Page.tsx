@@ -27,11 +27,16 @@ export function Page({ back, children, className }: { back?: boolean; children: 
   )
 }
 
-export function Hero({ emoji, title, subtitle, size = 120 }: { emoji: string; title: ReactNode; subtitle?: ReactNode; size?: number }) {
+/** Шапка страницы: анимированный эмодзи или логотип VPNHub (emoji="logo") */
+export function Hero({ emoji, title, subtitle, size = 120 }: { emoji: string | 'logo'; title: ReactNode; subtitle?: ReactNode; size?: number }) {
   return (
     <header className="hero">
       <div className="hero-emoji" style={{ width: size, height: size }}>
-        <Lottie name={emoji} size={size} />
+        {emoji === 'logo' ? (
+          <img className="brand-logo hero-logo" src={`${import.meta.env.BASE_URL}favicon.svg`} width={size * 0.78} height={size * 0.78} alt="" />
+        ) : (
+          <Lottie name={emoji} size={size} />
+        )}
       </div>
       <h1 className="hero-title">{title}</h1>
       {subtitle && <p className="hero-subtitle">{subtitle}</p>}

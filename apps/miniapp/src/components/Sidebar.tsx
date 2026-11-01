@@ -46,7 +46,7 @@ export function Sidebar() {
           <PanelIcon />
         </button>
         <div className="sidebar-brand">
-          <Lottie name={E.vLogo} size={28} />
+          <img className="brand-logo" src={`${import.meta.env.BASE_URL}favicon.svg`} width={28} height={28} alt="" />
           <span>VPNHub</span>
         </div>
       </div>

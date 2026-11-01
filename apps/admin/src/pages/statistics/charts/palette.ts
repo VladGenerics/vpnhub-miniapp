@@ -17,10 +17,21 @@ export type Slot = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 'neutral'
 
 export const seriesColor = (slot: Slot, theme: Theme) => (slot === 'neutral' ? (theme === 'dark' ? '#9aa0aa' : '#5b616c') : SERIES[theme][slot - 1])
 
-export const CHROME = {
-  light: { surface: '#ffffff', grid: '#eef0f3', axis: '#dfe2e7', label: '#69707c', text: '#15171b', hint: '#69707c', zoomFill: 'rgba(30,136,229,0.12)', zoomBg: '#f6f7f9' },
-  dark: { surface: '#16171a', grid: '#222429', axis: '#2c2e34', label: '#8b919c', text: '#f1f2f4', hint: '#8b919c', zoomFill: 'rgba(43,156,242,0.16)', zoomBg: '#1c1d21' },
-} as const
+/** Цвета обвязки графика (фон, сетка, оси, подписи) — из CSS-токенов текущей темы и палитры */
+export function chrome() {
+  const cs = getComputedStyle(document.documentElement)
+  const v = (name: string) => cs.getPropertyValue(name).trim()
+  return {
+    surface: v('--surface'),
+    grid: v('--hover'),
+    axis: v('--border'),
+    label: v('--hint'),
+    text: v('--text'),
+    hint: v('--hint'),
+    zoomFill: v('--accent-soft'),
+    zoomBg: v('--surface-2'),
+  }
+}
 
 const lum = (hex: string) => {
   const c = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255).map((v) => (v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4))

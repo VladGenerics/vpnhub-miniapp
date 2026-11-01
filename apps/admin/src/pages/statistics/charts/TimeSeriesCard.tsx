@@ -2,11 +2,11 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode }
 import type { Granularity } from '@vpnhub/shared'
 import { Icon } from '../../../components/Icon'
 import { Button, Card } from '../../../components/ui'
-import { useResolvedTheme } from '../../../lib/theme'
+import { useResolvedTheme, useSkin } from '../../../lib/theme'
 import { axisNum } from '../../../lib/format'
 import { bucketLabel, periodLabel, step, tickLabel, truncate, type Period } from '../period'
 import { echarts, type ECharts } from './echarts'
-import { CHROME, inkOn, seriesColor, type Slot } from './palette'
+import { chrome, inkOn, seriesColor, type Slot } from './palette'
 
 export interface Series {
   key: string
@@ -116,6 +116,8 @@ export function TimeSeriesCard({
   right?: ReactNode
 }) {
   const theme = useResolvedTheme()
+  // смена палитры меняет фон и сетку — график перечитывает цвета
+  const skin = useSkin()
   const ref = useRef<HTMLDivElement>(null)
   const chart = useRef<ECharts | null>(null)
   const { hidden, toggle } = useHidden()
@@ -177,7 +179,7 @@ export function TimeSeriesCard({
   useEffect(() => {
     const c = chart.current
     if (!c) return
-    const ch = CHROME[theme]
+    const ch = chrome()
     const p = live.current.period
     const bar = type === 'bar'
     const lastVisible = visible.length - 1
@@ -304,7 +306,7 @@ export function TimeSeriesCard({
       { notMerge: true },
     )
     shown.current = p
-  }, [visible, theme, type, stacked, cumulative, g, bounds, partial, format, axisFormat, total, asTable])
+  }, [visible, theme, skin, type, stacked, cumulative, g, bounds, partial, format, axisFormat, total, asTable])
 
   /* период поменяли снаружи (пресет, даты, соседний график) — сдвигаем окно */
   useEffect(() => {

@@ -2,9 +2,12 @@ import { useEffect, useState, type FormEvent } from 'react'
 import type { AdminSettings } from '@vpnhub/shared'
 import { useSettings, useUpdateSettings } from '../api/queries'
 import { useAuth } from '../auth/AuthProvider'
+import { Segmented } from '../components/Segmented'
 import { useToast } from '../components/Toast'
 import { Button, Card, ErrorView, Field, PageHead, Skeleton, useMoneyInput } from '../components/ui'
 import { dateTime, rub } from '../lib/format'
+import { PALETTES, setPalette, usePalette } from '../lib/palette'
+import { setThemeMode, useThemeMode, type ThemeMode } from '../lib/theme'
 
 const MAX_BONUS = 100_000
 
@@ -42,7 +45,11 @@ function SettingsForm({ s }: { s: AdminSettings }) {
   // после сохранения в форме — то, что вернул сервер
   useEffect(() => setLink(s.support_link), [s.support_link])
 
-  const errors = { link: linkError(link), invited: bonusError(invited.value), referral: bonusError(referral.value) }
+  const errors = {
+    link: linkError(link),
+    invited: bonusError(invited.value),
+    referral: bonusError(referral.value),
+  }
   const hasErrors = Object.values(errors).some(Boolean)
   const dirty = normalizeLink(link) !== s.support_link || invited.value !== s.invited_bonus || referral.value !== s.referral_bonus
 
@@ -58,7 +65,11 @@ function SettingsForm({ s }: { s: AdminSettings }) {
     setTouched(true)
     if (hasErrors || !dirty) return
     update.mutate(
-      { support_link: normalizeLink(link), invited_bonus: invited.value, referral_bonus: referral.value },
+      {
+        support_link: normalizeLink(link),
+        invited_bonus: invited.value,
+        referral_bonus: referral.value,
+      },
       {
         onSuccess: (r) => {
           setLink(r.support_link)
@@ -146,23 +157,66 @@ function SettingsForm({ s }: { s: AdminSettings }) {
   )
 }
 
+const THEME_OPTIONS: { value: ThemeMode; label: string }[] = [
+  { value: 'auto', label: 'Как в системе' },
+  { value: 'light', label: 'Светлая' },
+  { value: 'dark', label: 'Тёмная' },
+]
+
+/** Тема и палитра панели — те же варианты, что в кабинете. Запоминаются в этом браузере. */
+function AppearanceCard() {
+  const theme = useThemeMode()
+  const palette = usePalette()
+  return (
+    <Card title="Оформление" sub="Только для вас и только в этом браузере">
+      <div className="form">
+        <Field label="Тема">{() => <Segmented<ThemeMode> options={THEME_OPTIONS} value={theme} onChange={setThemeMode} label="Тема" />}</Field>
+        <Field label="Палитра" hint="Как в кабинете пользователя">
+          {() => (
+            <div className="palette-picker" role="radiogroup" aria-label="Палитра">
+              {PALETTES.map((p) => (
+                <button
+                  key={p.id}
+                  type="button"
+                  role="radio"
+                  aria-checked={palette === p.id}
+                  className={`palette-option ${palette === p.id ? 'is-active' : ''}`}
+                  onClick={() => setPalette(p.id)}
+                >
+                  <span className="palette-swatch" style={{ background: p.swatch[0] }}>
+                    <i style={{ background: p.swatch[1] }} />
+                  </span>
+                  <span className="palette-name">{p.title}</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </Field>
+      </div>
+    </Card>
+  )
+}
+
 export function SettingsPage() {
   const { data, error, refetch } = useSettings()
   return (
     <>
       <PageHead title="Настройки проекта" />
-      <Card title="Поддержка и реферальная программа">
-        {error && !data ? (
-          <ErrorView error={error} onRetry={refetch} />
-        ) : data ? (
-          <SettingsForm s={data} />
-        ) : (
-          <div className="stack" style={{ maxWidth: 560 }}>
-            <Skeleton height={60} />
-            <Skeleton height={60} />
-          </div>
-        )}
-      </Card>
+      <div className="stack">
+        <Card title="Поддержка и реферальная программа">
+          {error && !data ? (
+            <ErrorView error={error} onRetry={refetch} />
+          ) : data ? (
+            <SettingsForm s={data} />
+          ) : (
+            <div className="stack" style={{ maxWidth: 560 }}>
+              <Skeleton height={60} />
+              <Skeleton height={60} />
+            </div>
+          )}
+        </Card>
+        <AppearanceCard />
+      </div>
     </>
   )
 }

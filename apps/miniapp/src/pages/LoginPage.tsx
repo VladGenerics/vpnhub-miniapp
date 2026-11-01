@@ -91,7 +91,7 @@ export function LoginPage() {
       <div className="login-glow" aria-hidden />
       <div className="login-card">
         <div className="login-logo">
-          <Lottie name={E.vLogo} size={88} />
+          <img className="brand-logo" src={`${import.meta.env.BASE_URL}favicon.svg`} width={88} height={88} alt="" />
         </div>
         <h1 className="login-title">{mode === 'login' ? 'Вход в VPNHub' : 'Регистрация в VPNHub'}</h1>
         <p className="login-subtitle">
