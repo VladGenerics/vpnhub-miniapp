@@ -6,7 +6,6 @@ import { Segmented } from '../components/Segmented'
 import { useToast } from '../components/Toast'
 import { Button, Card, ErrorView, Field, PageHead, Skeleton, useMoneyInput } from '../components/ui'
 import { dateTime, rub } from '../lib/format'
-import { PALETTES, setPalette, usePalette } from '../lib/palette'
 import { setThemeMode, useThemeMode, type ThemeMode } from '../lib/theme'
 
 const MAX_BONUS = 100_000
@@ -163,35 +162,13 @@ const THEME_OPTIONS: { value: ThemeMode; label: string }[] = [
   { value: 'dark', label: 'Тёмная' },
 ]
 
-/** Тема и палитра панели — те же варианты, что в кабинете. Запоминаются в этом браузере. */
+/** Тема панели. Запоминается в этом браузере. */
 function AppearanceCard() {
   const theme = useThemeMode()
-  const palette = usePalette()
   return (
     <Card title="Оформление" sub="Только для вас и только в этом браузере">
       <div className="form">
         <Field label="Тема">{() => <Segmented<ThemeMode> options={THEME_OPTIONS} value={theme} onChange={setThemeMode} label="Тема" />}</Field>
-        <Field label="Палитра" hint="Как в кабинете пользователя">
-          {() => (
-            <div className="palette-picker" role="radiogroup" aria-label="Палитра">
-              {PALETTES.map((p) => (
-                <button
-                  key={p.id}
-                  type="button"
-                  role="radio"
-                  aria-checked={palette === p.id}
-                  className={`palette-option ${palette === p.id ? 'is-active' : ''}`}
-                  onClick={() => setPalette(p.id)}
-                >
-                  <span className="palette-swatch" style={{ background: p.swatch[0] }}>
-                    <i style={{ background: p.swatch[1] }} />
-                  </span>
-                  <span className="palette-name">{p.title}</span>
-                </button>
-              ))}
-            </div>
-          )}
-        </Field>
       </div>
     </Card>
   )

@@ -64,7 +64,7 @@ const observeRoot = (cb: () => void) => {
   const obs = new MutationObserver(cb)
   obs.observe(document.documentElement, {
     attributes: true,
-    attributeFilter: ['data-theme', 'data-palette'],
+    attributeFilter: ['data-theme'],
   })
   return () => obs.disconnect()
 }
@@ -74,7 +74,7 @@ export function useResolvedTheme(): 'light' | 'dark' {
   return useSyncExternalStore(observeRoot, () => (document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light'))
 }
 
-/** Тема и палитра одной строкой («dark/neon») — графикам, чтобы перечитать цвета фона и сетки */
+/** Текущая тема — графикам, чтобы перечитать цвета фона и сетки */
 export function useSkin(): string {
-  return useSyncExternalStore(observeRoot, () => `${document.documentElement.dataset.theme}/${document.documentElement.dataset.palette}`)
+  return useSyncExternalStore(observeRoot, () => document.documentElement.dataset.theme ?? '')
 }

@@ -12,19 +12,9 @@ export type PaletteId = (typeof PALETTES)[number]['id']
 export const emojiFolder = (id: PaletteId) => PALETTES.find((p) => p.id === id)!.emoji
 
 const KEY = 'vpnhub.palette'
-const ALIASES: Record<string, PaletteId> = { aqua: 'neon' } // старые ссылки ?palette=aqua
-const isPalette = (v: unknown): v is PaletteId => PALETTES.some((p) => p.id === v)
 
+/** Палитра зафиксирована: всегда «Графит» (выбор убран по решению заказчика) */
 export function initialPalette(): PaletteId {
-  const raw = new URLSearchParams(location.search).get('palette')
-  const fromUrl = raw ? (ALIASES[raw] ?? raw) : null
-  if (isPalette(fromUrl)) return fromUrl
-  try {
-    const saved = localStorage.getItem(KEY)
-    if (isPalette(saved)) return saved
-  } catch {
-    /* хранилище недоступно */
-  }
   return 'graphite'
 }
 

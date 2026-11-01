@@ -4,7 +4,6 @@ import { RequireAdmin } from './auth/AuthProvider'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { Layout } from './components/Layout'
 import { StateView } from './components/ui'
-import { useApplyPalette } from './lib/palette'
 import { useApplyTheme } from './lib/theme'
 import { DashboardPage } from './pages/DashboardPage'
 import { InvoicesPage } from './pages/InvoicesPage'
@@ -68,7 +67,6 @@ function Page() {
 
 export default function App() {
   useApplyTheme()
-  useApplyPalette()
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />

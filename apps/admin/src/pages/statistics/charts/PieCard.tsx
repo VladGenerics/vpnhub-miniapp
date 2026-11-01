@@ -37,7 +37,7 @@ export function PieCard({
   className?: string
 }) {
   const theme = useResolvedTheme()
-  // смена палитры меняет фон и сетку — график перечитывает цвета
+  // смена темы меняет фон и сетку — график перечитывает цвета
   const skin = useSkin()
   const ref = useRef<HTMLDivElement>(null)
   const chart = useRef<ECharts | null>(null)

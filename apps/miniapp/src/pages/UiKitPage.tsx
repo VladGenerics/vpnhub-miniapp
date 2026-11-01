@@ -9,7 +9,6 @@ import { DeviceIcon } from '../components/DeviceIcon'
 import { Cell, Section } from '../components/List'
 import { Lottie } from '../components/Lottie'
 import { Page } from '../components/Page'
-import { PalettePicker } from '../components/PalettePicker'
 import { Segmented } from '../components/Segmented'
 import { Sheet } from '../components/Sheet'
 import { useToast } from '../components/Toast'
@@ -39,10 +38,6 @@ function ColorProfile() {
             { value: 'light', label: 'Светлая' },
           ]}
         />
-      </div>
-      <div className="plan-row is-column">
-        <div className="cell-title">Палитра</div>
-        <PalettePicker />
       </div>
     </Section>
   )
