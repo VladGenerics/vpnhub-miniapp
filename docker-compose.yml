@@ -1,0 +1,27 @@
+# Оба приложения: кабинет на :8080, админка на :8081.
+# Значения VITE_* берутся из файла .env рядом (образец — .env.example).
+#   docker compose up -d --build
+services:
+  miniapp:
+    build:
+      context: .
+      args:
+        APP: miniapp
+        VITE_API_URL: ${VITE_API_URL:-}
+        VITE_TG_BOT_ID: ${VITE_TG_BOT_ID:-}
+        VITE_TG_BOT_USERNAME: ${VITE_TG_BOT_USERNAME:-}
+    ports:
+      - "${MINIAPP_PORT:-8080}:80"
+    restart: unless-stopped
+
+  admin:
+    build:
+      context: .
+      args:
+        APP: admin
+        VITE_API_URL: ${VITE_API_URL:-}
+        VITE_TG_BOT_ID: ${VITE_TG_BOT_ID:-}
+        VITE_BASE_PATH: ${ADMIN_BASE_PATH:-/}
+    ports:
+      - "${ADMIN_PORT:-8081}:80"
+    restart: unless-stopped

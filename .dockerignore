@@ -1,0 +1,13 @@
+**/node_modules
+**/dist
+.git
+.claude
+.env
+.env.*
+!.env.example
+*.log
+# исходники эмодзи нужны только скрипту перекраски; в сборку идёт лишь список для витрины /emoji
+apps/miniapp/emoji-src/*
+!apps/miniapp/emoji-src/manifest.json
+Reference
+*.pdf
