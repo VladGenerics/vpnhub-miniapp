@@ -1,12 +1,12 @@
 import { useMemo } from 'react'
 import { PURCHASE_KIND_LABEL, plural, type PurchaseKind } from '@vpnhub/shared'
 import { usePurchasesStats } from '../../api/queries'
-import { Kpi } from '../../components/ui'
+import { change, CountUp, Kpi, Trend } from '../../components/ui'
 import { num, rub, rubCompact } from '../../lib/format'
 import type { Slot } from './charts/palette'
 import { PieCard } from './charts/PieCard'
 import { TimeSeriesCard, type Series } from './charts/TimeSeriesCard'
-import { inPeriod, useStatsPeriod } from './period'
+import { inPeriod, prevPeriod, PREV_HINT, useStatsPeriod } from './period'
 import { PER, StatsFrame } from './StatsFrame'
 
 /** Виды покупок в фиксированном порядке — у каждого свой цвет во всех графиках */
@@ -46,16 +46,23 @@ export default function PurchasesStats() {
         const count = totals.reduce((a, t) => a + t.count, 0)
         const amount = totals.reduce((a, t) => a + t.amount, 0)
         const slots = win.reduce((a, p) => a + p.slots, 0)
+        const prev = prevPeriod(period, s.g, s.bounds!)
+        const prevAmount = prev ? inPeriod(q.data, prev).reduce((a, p) => a + KINDS.reduce((b, k) => b + (p.by_kind[k]?.amount ?? 0), 0), 0) : 0
         const slotsAmount = totals.find((t) => t.k === 'DEVICE_SLOTS')!.amount
         const props = { g: s.g, bounds: s.bounds!, period, onPeriod: s.setPeriod, fetching: q.isFetching }
 
         return (
           <div className="stack">
             <div className="kpi-grid">
-              <Kpi icon="receipt" label="Покупок за период" value={num(count)} />
-              <Kpi icon="wallet" label="Сумма покупок" value={rub(Math.round(amount))} />
+              <Kpi icon="receipt" label="Покупок за период" value={<CountUp value={count} format={num} />} />
+              <Kpi
+                icon="wallet"
+                label="Сумма покупок"
+                value={<CountUp value={Math.round(amount)} format={rub} />}
+                trend={prev && <Trend value={change(amount, prevAmount)} hint={PREV_HINT} />}
+              />
               <Kpi icon="card" label="Средний чек" value={count ? rub(Math.round(amount / count)) : '—'} />
-              <Kpi icon="monitor" label="Куплено слотов" value={num(slots)} note={`на ${rubCompact(Math.round(slotsAmount))}`} />
+              <Kpi icon="monitor" label="Куплено слотов" value={<CountUp value={slots} format={num} />} note={`на ${rubCompact(Math.round(slotsAmount))}`} />
             </div>
 
             <div className="stats-grid">

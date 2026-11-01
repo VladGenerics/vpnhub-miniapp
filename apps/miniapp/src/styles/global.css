@@ -940,6 +940,42 @@ p {
   border-radius: 12px;
   background: var(--accent-soft);
   color: var(--accent);
+  transition:
+    background 0.2s,
+    color 0.2s;
+}
+
+.copy-btn.is-done {
+  background: var(--success-soft);
+  color: var(--success);
+}
+
+.copy-check {
+  stroke-dasharray: 24;
+  animation: copy-check 0.35s var(--spring) both;
+}
+
+@keyframes copy-check {
+  from {
+    stroke-dashoffset: 24;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.qr-wrap {
+  display: grid;
+  place-items: center;
+}
+
+.qr {
+  display: block;
+  width: min(240px, 70vw);
+  height: auto;
+  border-radius: 20px;
+  box-shadow: 0 8px 30px rgb(0 0 0 / 0.18);
+  animation: pop-in 0.5s var(--spring-bouncy) 0.05s backwards;
 }
 
 /* ============ Автопродление ============ */

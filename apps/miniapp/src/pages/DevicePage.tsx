@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { Navigate, useNavigate, useParams } from 'react-router-dom'
-import { Page } from '../components/Page'
+import { Navigate, useParams } from 'react-router-dom'
+import { Page, useGoBack } from '../components/Page'
 import { Section, Cell } from '../components/List'
 import { DeviceIcon } from '../components/DeviceIcon'
 import { Sheet } from '../components/Sheet'
@@ -19,7 +19,7 @@ export function DevicePage() {
   const { active, isPending } = useActiveSubscription()
   const release = useReleaseSlot()
   const remove = useDeleteSlot()
-  const navigate = useNavigate()
+  const goBack = useGoBack()
   const toast = useToast()
   const [confirm, setConfirm] = useState(false)
 
@@ -51,7 +51,7 @@ export function DevicePage() {
       onSuccess: () => {
         haptic.notify('success')
         toast('Слот освобождён', E.sponge)
-        navigate(-1)
+        goBack()
       },
       onError,
     })
@@ -62,7 +62,7 @@ export function DevicePage() {
         haptic.notify('warning')
         setConfirm(false)
         toast('Слот удалён', E.check)
-        navigate(-1)
+        goBack()
       },
       onError,
     })

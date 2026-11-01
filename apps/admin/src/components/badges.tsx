@@ -6,6 +6,7 @@ import {
   type SubscriptionStatus,
   type UserRole,
 } from '@vpnhub/shared'
+import { isStale, waited } from '../lib/invoices'
 import { dateNum } from '../lib/format'
 import { Badge, type Tone } from './ui'
 
@@ -19,11 +20,22 @@ export function SubBadge({ status, expires }: { status: SubscriptionStatus; expi
 
 const INVOICE_TONE: Record<InvoiceStatus, Tone> = { PAID: 'success', UNPAID: 'warn', EXPIRED: 'neutral', FAILED: 'danger' }
 
-export const InvoiceBadge = ({ status }: { status: InvoiceStatus }) => (
-  <Badge tone={INVOICE_TONE[status]} dot>
-    {INVOICE_STATUS_LABEL[status]}
-  </Badge>
-)
+/** created — дата создания: неоплаченный дольше часа подсвечивается как зависший */
+export function InvoiceBadge({ status, created }: { status: InvoiceStatus; created?: string }) {
+  if (created && isStale({ status, created_at: created }))
+    return (
+      <span title="Ждёт оплаты дольше часа — стоит проверить платёжную систему">
+        <Badge tone="warn" dot>
+          {INVOICE_STATUS_LABEL[status]} · {waited(created)}
+        </Badge>
+      </span>
+    )
+  return (
+    <Badge tone={INVOICE_TONE[status]} dot>
+      {INVOICE_STATUS_LABEL[status]}
+    </Badge>
+  )
+}
 
 export function RoleBadge({ role }: { role: UserRole }) {
   if (role === 'USER') return null

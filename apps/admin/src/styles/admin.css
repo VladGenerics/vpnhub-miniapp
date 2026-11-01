@@ -137,6 +137,14 @@ p {
 .link:hover {
   text-decoration: underline;
 }
+.link-warn {
+  color: var(--warn);
+}
+.link-more {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
 .pos {
   color: var(--success);
 }
@@ -265,7 +273,9 @@ p {
   margin-left: auto;
 }
 
-.menu-btn {
+/* Кнопка меню и подложка — только для телефона. .btn задаёт display позже по файлу, поэтому селектор с двумя классами */
+.btn.menu-btn,
+.side-backdrop {
   display: none;
 }
 
@@ -292,7 +302,6 @@ p {
 }
 
 .content {
-  max-width: 1440px;
   padding: 24px 28px 48px;
 }
 
@@ -417,8 +426,93 @@ p {
   font-variant-numeric: tabular-nums;
 }
 .kpi-note {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
   font-size: 12px;
   color: var(--hint);
+}
+.kpi {
+  position: relative;
+  container-type: inline-size;
+}
+.kpi-trend {
+  padding: 1px 6px;
+  border-radius: 6px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.kpi-trend.is-up {
+  background: var(--success-soft);
+  color: var(--success);
+}
+.kpi-trend.is-down {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+.kpi-trend.is-flat {
+  background: var(--hover);
+}
+.kpi-spark {
+  position: absolute;
+  right: 18px;
+  bottom: 18px;
+  color: var(--accent);
+  pointer-events: none;
+}
+/* В узкой карточке мини-график налезал бы на число — прячем */
+@container (max-width: 300px) {
+  .kpi-spark {
+    display: none;
+  }
+}
+.kpi-spark-line {
+  stroke-dasharray: 1;
+  animation: spark-draw 1.1s cubic-bezier(0.22, 1, 0.36, 1) 0.15s both;
+}
+@keyframes spark-draw {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* Появление страницы: блоки по очереди мягко поднимаются. Только при монтировании —
+   обновления данных и движение ползунка не анимируются. */
+.content > .stack > *,
+.kpi-grid > *,
+.stats-grid > * {
+  animation: rise-in 0.45s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+.content > .stack > :nth-child(2),
+.kpi-grid > :nth-child(2),
+.stats-grid > :nth-child(2) {
+  animation-delay: 0.05s;
+}
+.content > .stack > :nth-child(3),
+.kpi-grid > :nth-child(3),
+.stats-grid > :nth-child(3) {
+  animation-delay: 0.1s;
+}
+.content > .stack > :nth-child(4),
+.kpi-grid > :nth-child(4),
+.stats-grid > :nth-child(4) {
+  animation-delay: 0.15s;
+}
+.content > .stack > :nth-child(n + 5),
+.kpi-grid > :nth-child(n + 5),
+.stats-grid > :nth-child(n + 5) {
+  animation-delay: 0.2s;
+}
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
 }
 
 /* список «название — значение» */
@@ -757,6 +851,18 @@ p {
   align-items: center;
   gap: 10px;
   padding: 16px 20px;
+}
+/* период в «Счетах»: по какой дате + с — по */
+.date-range {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.date-range .input {
+  width: 148px;
+}
+.date-range .input-clear {
+  position: static;
 }
 .toolbar .search {
   flex: 1 1 260px;
@@ -1342,8 +1448,10 @@ p {
   margin: 0 auto;
 }
 @container (min-width: 620px) {
+  /* На широкой карточке легенда не растягивается: числа остаются рядом с подписями */
   .pie {
-    grid-template-columns: 220px minmax(0, 1fr);
+    grid-template-columns: 220px minmax(0, 520px);
+    justify-content: center;
   }
   .pie-chart {
     width: auto;
@@ -1435,7 +1543,66 @@ p {
   }
 }
 
-@media (max-width: 900px) {
+/* Узкое окно и планшет: меню — колонка иконок, всегда на месте; название раздела — подсказкой при наведении */
+@media (min-width: 641px) and (max-width: 900px) {
+  .layout {
+    grid-template-columns: 68px minmax(0, 1fr);
+  }
+  .side {
+    padding: 14px 10px;
+  }
+  .side-brand {
+    justify-content: center;
+    padding: 0;
+  }
+  .side-brand-name,
+  .side-brand small,
+  .side-foot {
+    display: none;
+  }
+  .side-link {
+    position: relative;
+    justify-content: center;
+    padding: 0;
+  }
+  .side-link-text {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+  .side-link::after {
+    content: attr(data-label);
+    position: absolute;
+    top: 50%;
+    left: calc(100% + 12px);
+    padding: 6px 10px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-s);
+    background: var(--surface);
+    box-shadow: var(--shadow-l);
+    color: var(--text);
+    font-size: 13px;
+    font-weight: 500;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transform: translate(-4px, -50%);
+    transition:
+      opacity 0.15s,
+      transform 0.15s;
+  }
+  .side-link:hover::after,
+  .side-link:focus-visible::after {
+    opacity: 1;
+    transform: translate(0, -50%);
+  }
+}
+
+/* Телефон: меню выезжает по кнопке */
+@media (max-width: 640px) {
   .layout {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -1451,16 +1618,20 @@ p {
     transform: none;
   }
   .side-backdrop {
+    display: block;
     position: fixed;
     inset: 0;
     z-index: 25;
     background: var(--backdrop);
     animation: fade-in 0.2s ease;
   }
-  .menu-btn {
+  .btn.menu-btn {
     display: inline-flex;
     margin-left: -8px;
   }
+}
+
+@media (max-width: 900px) {
   .topbar {
     padding: 0 16px;
   }
@@ -1522,6 +1693,14 @@ p {
   }
   .period-dates {
     flex: 1 1 100%;
+  }
+  .date-range {
+    flex: 1 1 100%;
+  }
+  .date-range .input {
+    flex: 1;
+    width: auto;
+    min-width: 0;
   }
 }
 
@@ -1671,7 +1850,7 @@ p {
 .kpi-grid.is-6 {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
-@media (min-width: 1640px) {
+@media (min-width: 2300px) {
   .kpi-grid.is-6 {
     grid-template-columns: repeat(6, minmax(0, 1fr));
   }
@@ -1690,3 +1869,34 @@ p {
   }
 }
 
+/* столбцы, по которым можно кликнуть */
+.minibars.is-pickable .minibars-bar {
+  cursor: pointer;
+}
+.minibars-hint {
+  color: var(--hint);
+}
+
+/* подсказка горячей клавиши в поиске: прячется при вводе и на сенсорных экранах */
+.search-kbd {
+  position: absolute;
+  right: 10px;
+  display: grid;
+  place-items: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  font: 500 11px/1 Inter, system-ui, sans-serif;
+  color: var(--hint);
+  pointer-events: none;
+}
+.search .input:focus ~ .search-kbd {
+  display: none;
+}
+@media (hover: none) {
+  .search-kbd {
+    display: none;
+  }
+}

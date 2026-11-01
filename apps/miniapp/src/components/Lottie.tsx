@@ -15,7 +15,12 @@ const loadPlayer = () => (player ??= import('lottie-web/build/player/lottie_ligh
 function load(path: string) {
   let p = cache.get(path)
   if (!p) {
-    p = fetch(`/${path}.json`).then((r) => r.json())
+    p = fetch(`/${path}.json`).then((r) => {
+      if (!r.ok) throw new Error(`HTTP ${r.status}`)
+      return r.json()
+    })
+    // Неудачную загрузку не кэшируем — следующий показ попробует ещё раз
+    p.catch(() => cache.delete(path))
     cache.set(path, p)
   }
   return p
@@ -34,7 +39,14 @@ let pumping = false
 
 function pump() {
   const t0 = performance.now()
-  while (queue.length && performance.now() - t0 < 6) queue.shift()!()
+  while (queue.length && performance.now() - t0 < 6) {
+    // Битый файл анимации не должен останавливать очередь для остальных эмодзи
+    try {
+      queue.shift()!()
+    } catch (e) {
+      console.warn('Lottie:', e)
+    }
+  }
   if (queue.length) requestAnimationFrame(() => setTimeout(pump, 0))
   else pumping = false
 }
@@ -86,20 +98,28 @@ export function Lottie({ name, size = 28, className }: Props) {
   useEffect(() => {
     let disposed = false
     setReady(false)
-    Promise.all([load(`${folder}/${name}`), loadPlayer()]).then(([data, lottie]) =>
-      schedule(() => {
-        if (disposed || !box.current) return
-        anim.current = lottie.loadAnimation({
-          container: box.current,
-          renderer: 'svg',
-          loop: true,
-          autoplay: inView.current,
-          animationData: structuredClone(data),
-          rendererSettings: { preserveAspectRatio: 'xMidYMid meet', progressiveLoad: true },
-        })
-        anim.current.addEventListener('DOMLoaded', () => !disposed && setReady(true))
-      }),
-    )
+    Promise.all([load(`${folder}/${name}`), loadPlayer()])
+      .then(([data, lottie]) =>
+        schedule(() => {
+          if (disposed || !box.current) return
+          try {
+            anim.current = lottie.loadAnimation({
+              container: box.current,
+              renderer: 'svg',
+              loop: true,
+              autoplay: inView.current,
+              animationData: structuredClone(data),
+              rendererSettings: { preserveAspectRatio: 'xMidYMid meet', progressiveLoad: true },
+            })
+          } catch (e) {
+            console.warn(`Lottie: не удалось показать ${folder}/${name}`, e)
+            box.current.replaceChildren()
+            return
+          }
+          anim.current.addEventListener('DOMLoaded', () => !disposed && setReady(true))
+        }),
+      )
+      .catch((e) => console.warn(`Lottie: не загрузился ${folder}/${name}`, e))
     return () => {
       disposed = true
       anim.current?.destroy()

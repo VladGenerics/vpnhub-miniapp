@@ -16,6 +16,7 @@ import { useAuth } from '../auth/AuthProvider'
 import { InvoiceBadge, SubBadge, UserFlags } from '../components/badges'
 import { DataTable, Pagination, type Column } from '../components/DataTable'
 import { Icon } from '../components/Icon'
+import { sectionListPath } from '../components/Layout'
 import { Segmented } from '../components/Segmented'
 import { useToast } from '../components/Toast'
 import { Badge, Button, Card, CopyButton, ErrorView, Field, Modal, Skeleton, useMoneyInput } from '../components/ui'
@@ -61,7 +62,7 @@ const invoiceCols: Column<AdminInvoiceRow>[] = [
   { key: 'id', title: 'Счёт', render: (i) => <span className="mono">#{i.id}</span> },
   { key: 'created', title: 'Создан', render: (i) => dateTime(i.created_at) },
   { key: 'provider', title: 'Способ', render: (i) => PROVIDER_LABEL[i.provider] },
-  { key: 'status', title: 'Статус', render: (i) => <InvoiceBadge status={i.status} /> },
+  { key: 'status', title: 'Статус', render: (i) => <InvoiceBadge status={i.status} created={i.created_at} /> },
   { key: 'amount', title: 'Сумма', num: true, render: (i) => rub(i.amount) },
 ]
 
@@ -110,6 +111,14 @@ function InvoicesTable({ id }: { id: number }) {
     <>
       <DataTable columns={invoiceCols} rows={data?.items} rowKey={(i) => i.id} loading={!data} skeletonRows={5} empty="Счетов нет" />
       {!!data?.total && <Pagination page={page} pageSize={PAGE_SIZE} total={data.total} onPage={setPage} />}
+      {!!data?.total && (
+        // там фильтры по статусу и способу, сортировка — без ручного ввода ID в поиск
+        <div className="pagination">
+          <Link className="link link-more" to={`/invoices?user_id=${id}`}>
+            Все счета пользователя в разделе «Счета» <Icon name="chevronRight" size={14} />
+          </Link>
+        </div>
+      )}
     </>
   )
 }
@@ -229,8 +238,10 @@ export function UserPage() {
   const [modal, setModal] = useState<LedgerDirection | null>(null)
   const tab = (['referrals', 'ledger', 'invoices'].includes(sp.get('tab') ?? '') ? sp.get('tab') : 'referrals') as Tab
 
-  // «Назад» возвращает к списку с теми же фильтрами, если пришли из него
-  const back = () => (location.key !== 'default' ? navigate(-1) : navigate('/users'))
+  // «Назад» — туда, откуда пришли (список, рефералы другого пользователя…). Если карточку открыли
+  // из меню или по прямой ссылке — к списку с теми же фильтрами, иначе шаг назад увёл бы в «Счета»
+  const fromNav = (location.state as { fromNav?: boolean } | null)?.fromNav
+  const back = () => (location.key !== 'default' && !fromNav ? navigate(-1) : navigate(sectionListPath('/users')))
 
   if (!Number.isInteger(id) || id <= 0) return <ErrorView error={{ status: 404 }} />
   if (error && !u) return <ErrorView error={error} onRetry={refetch} />

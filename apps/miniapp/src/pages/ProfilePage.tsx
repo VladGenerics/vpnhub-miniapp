@@ -140,7 +140,7 @@ export function ProfilePage() {
       <Section>
         <Cell icon={<Lottie name={E.bulbTile} size={32} />} title="Информация" subtitle="Ответы на частые вопросы" to="/info" />
         <Cell icon={<Lottie name={E.questionTile} size={32} />} title="Помощь" subtitle="Если что-то не работает" to="/help" />
-        <Cell icon={<Lottie name={E.gearTile} size={32} />} title="Оформление" subtitle="Тема, палитра и компоненты" to="/ui" />
+        <Cell icon={<Lottie name={E.gearTile} size={32} />} title="Оформление" subtitle="Тема и компоненты" to="/ui" />
       </Section>
 
       {!isTelegram && (

@@ -182,6 +182,11 @@ export interface InvoicesParams extends ListParams {
   status?: InvoiceStatus
   provider?: PaymentProvider
   user_id?: number
+  /** Период, ISO 8601, полуинтервал [from, to). Любую из границ можно не передавать */
+  from?: string
+  to?: string
+  /** По какой дате период: created_at (по умолчанию) или paid_at — неоплаченные тогда не попадают */
+  date_by?: 'created' | 'paid'
 }
 
 /* ---------- Платёжные системы и настройки ---------- */

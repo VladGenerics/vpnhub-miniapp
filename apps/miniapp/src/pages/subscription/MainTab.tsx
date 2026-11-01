@@ -1,9 +1,12 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import { quote, type Subscription } from '@vpnhub/shared'
 import { Lottie } from '../../components/Lottie'
+import { Button } from '../../components/Controls'
 import { Section, Cell } from '../../components/List'
+import { QrCode } from '../../components/QrCode'
+import { Sheet } from '../../components/Sheet'
 import { useToast } from '../../components/Toast'
 import { E } from '../../data/emoji'
 import { keys, useMe, useTariffs } from '../../api/queries'
@@ -77,11 +80,20 @@ export function MainTab({ sub }: { sub: Subscription }) {
   const { data: tariffs } = useTariffs()
   const toast = useToast()
   const [renewOpen, setRenewOpen] = useState(false)
+  const [qrOpen, setQrOpen] = useState(false)
+  const [copied, setCopied] = useState(false)
+
+  useEffect(() => {
+    if (!copied) return
+    const t = setTimeout(() => setCopied(false), 1600)
+    return () => clearTimeout(t)
+  }, [copied])
 
   const copy = async () => {
     if (!sub.url) return
     await copyText(sub.url)
     haptic.notify('success')
+    setCopied(true)
     toast('Ссылка скопирована', E.link)
   }
 
@@ -94,13 +106,20 @@ export function MainTab({ sub }: { sub: Subscription }) {
           <button className="url-row" onClick={copy}>
             <Lottie name={E.link} size={30} />
             <span className="url-text">{sub.url.replace('https://', '')}</span>
-            <span className="copy-btn" aria-label="Скопировать">
-              <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden>
-                <rect x="8" y="8" width="12" height="12" rx="3" fill="none" stroke="currentColor" strokeWidth="2" />
-                <path d="M16 8V6a2 2 0 00-2-2H6a2 2 0 00-2 2v8a2 2 0 002 2h2" fill="none" stroke="currentColor" strokeWidth="2" />
-              </svg>
+            <span className={`copy-btn ${copied ? 'is-done' : ''}`} aria-label={copied ? 'Скопировано' : 'Скопировать'}>
+              {copied ? (
+                <svg key="done" width="18" height="18" viewBox="0 0 24 24" aria-hidden>
+                  <path className="copy-check" d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              ) : (
+                <svg key="copy" width="18" height="18" viewBox="0 0 24 24" aria-hidden>
+                  <rect x="8" y="8" width="12" height="12" rx="3" fill="none" stroke="currentColor" strokeWidth="2" />
+                  <path d="M16 8V6a2 2 0 00-2-2H6a2 2 0 00-2 2v8a2 2 0 002 2h2" fill="none" stroke="currentColor" strokeWidth="2" />
+                </svg>
+              )}
             </span>
           </button>
+          <Cell icon={<Lottie name={E.phone} size={30} />} title="QR-код" subtitle="Отсканируйте камерой другого устройства" onClick={() => setQrOpen(true)} chevron />
         </Section>
       )}
 
@@ -128,6 +147,22 @@ export function MainTab({ sub }: { sub: Subscription }) {
       </Section>
 
       <AutoRenewSheet sub={sub} open={renewOpen} onClose={() => setRenewOpen(false)} />
+      {sub.url && (
+        <Sheet open={qrOpen} onClose={() => setQrOpen(false)} expandable={false}>
+          <div className="sheet-head">
+            <h2>Ссылка подписки</h2>
+            <p>Откройте камеру или приложение-клиент на другом устройстве и наведите на код</p>
+          </div>
+          <div className="qr-wrap">
+            <QrCode value={sub.url} />
+          </div>
+          <div className="sheet-actions">
+            <Button stretched onClick={copy}>
+              {copied ? 'Скопировано' : 'Скопировать ссылку'}
+            </Button>
+          </div>
+        </Sheet>
+      )}
     </div>
   )
 }

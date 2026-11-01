@@ -39,6 +39,11 @@ export function SearchInput({ value, onChange, placeholder, label }: { value: st
         onChange={(e) => setText(e.target.value)}
         onKeyDown={(e) => e.key === 'Escape' && setText('')}
       />
+      {!text && (
+        <kbd className="search-kbd" title="Нажмите /, чтобы перейти к поиску" aria-hidden>
+          /
+        </kbd>
+      )}
       {text && (
         <button type="button" className="input-clear" aria-label="Очистить поиск" onClick={() => setText('')}>
           <Icon name="close" size={14} />

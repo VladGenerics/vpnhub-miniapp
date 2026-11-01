@@ -213,22 +213,22 @@ export const mockApi: AdminApi = {
   async getDashboard() {
     const now = Date.now()
     const today = truncate(now, 'day')
-    const monthAgo = today - 29 * DAY
+    // календарно, не 29 × 24 ч: в месяце с переводом часов граница уехала бы на час,
+    // а пополнения легли бы в соседний день
+    const days = buckets(iso(new Date(today).setDate(new Date(today).getDate() - 29)), iso(now), 'day')
+    const monthAgo = days[0]
     const paid = paidByTime
     const recent = purchases.filter((p) => p.created_at >= monthAgo)
     const daily = fill(
-      buckets(iso(monthAgo), iso(now), 'day'),
+      days,
       'day',
       usersByReg,
       (u) => u.registered_at,
       (t) => ({ t: iso(t), new_users: 0, deposits: 0 }),
       (p) => p.new_users++,
     )
-    for (const i of paid) {
-      if (i.paid_at! < monthAgo) continue
-      const idx = Math.floor((truncate(i.paid_at!, 'day') - monthAgo) / DAY)
-      if (daily[idx]) daily[idx].deposits = round2(daily[idx].deposits + i.amount)
-    }
+    const deposits = fill(days, 'day', paid, (i) => i.paid_at!, () => ({ v: 0 }), (p, i) => (p.v = round2(p.v + i.amount)))
+    daily.forEach((p, k) => (p.deposits = deposits[k].v))
     return delay({
       users_total: users.length,
       users_today: users.filter((u) => u.registered_at >= today).length,
@@ -258,7 +258,7 @@ export const mockApi: AdminApi = {
     const q = p.q?.trim().toLowerCase()
     if (q) {
       list = isNumeric(q)
-        ? list.filter((u) => String(u.id).startsWith(q) || String(u.tg_user_id).startsWith(q))
+        ? list.filter((u) => String(u.id) === q || String(u.tg_user_id) === q)
         : list.filter((u) => u.language_code?.startsWith(q))
     }
     const rows = list.map(userRow)
@@ -382,10 +382,19 @@ export const mockApi: AdminApi = {
     if (p.status) list = list.filter((i) => i.status === p.status)
     if (p.provider) list = list.filter((i) => i.provider === p.provider)
     if (p.user_id) list = list.filter((i) => i.user_id === Number(p.user_id))
+    if (p.from || p.to) {
+      const from = p.from ? Date.parse(p.from) : -Infinity
+      const to = p.to ? Date.parse(p.to) : Infinity
+      const at = (i: (typeof invoices)[number]) => (p.date_by === 'paid' ? i.paid_at : i.created_at)
+      list = list.filter((i) => {
+        const t = at(i)
+        return t !== null && t >= from && t < to
+      })
+    }
     const q = p.q?.trim().toLowerCase()
     if (q) {
       list = isNumeric(q)
-        ? list.filter((i) => String(i.id).startsWith(q) || String(i.user_id) === q || String(users[i.user_id - 1].tg_user_id).startsWith(q))
+        ? list.filter((i) => String(i.id) === q || String(i.user_id) === q || String(users[i.user_id - 1].tg_user_id) === q)
         : list.filter((i) => i.external_invoice_id.includes(q))
     }
     const sorted = sortList(

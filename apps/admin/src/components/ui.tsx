@@ -67,7 +67,88 @@ export function Card({
   )
 }
 
-export function Kpi({ icon, label, value, note }: { icon?: IconName; label: ReactNode; value: ReactNode; note?: ReactNode }) {
+const easeOut = (t: number) => 1 - Math.pow(1 - t, 4)
+
+/**
+ * Число, которое при первом показе набегает от нуля. Дальше значение меняется сразу —
+ * чтобы итоги не «плыли» при движении ползунка периода.
+ */
+export function CountUp({ value, format, duration = 900 }: { value: number; format(n: number): string; duration?: number }) {
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  const [shown, setShown] = useState(reduced ? value : 0)
+  const start = useRef(0)
+
+  useEffect(() => {
+    start.current ||= performance.now()
+    if (reduced || performance.now() - start.current >= duration) return setShown(value)
+    let raf = 0
+    const tick = (t: number) => {
+      const p = Math.min(1, (t - start.current) / duration)
+      setShown(p < 1 ? value * easeOut(p) : value)
+      if (p < 1) raf = requestAnimationFrame(tick)
+    }
+    raf = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(raf)
+  }, [value])
+
+  return <>{format(shown === value ? value : Math.round(shown))}</>
+}
+
+/** Мини-график тренда в углу карточки: линия и мягкая заливка под ней */
+function Spark({ data, color }: { data: number[]; color?: string }) {
+  const id = useId()
+  if (data.length < 2) return null
+  const w = 96
+  const h = 32
+  const max = Math.max(...data) || 1
+  const pts = data.map((v, i) => [(i / (data.length - 1)) * w, h - 2 - (v / max) * (h - 4)] as const)
+  const line = pts.map(([x, y], i) => `${i ? 'L' : 'M'}${x.toFixed(1)},${y.toFixed(1)}`).join('')
+  return (
+    <svg className="kpi-spark" viewBox={`0 0 ${w} ${h}`} width={w} height={h} style={{ color }} aria-hidden>
+      <defs>
+        <linearGradient id={id} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="currentColor" stopOpacity="0.22" />
+          <stop offset="1" stopColor="currentColor" stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <path d={`${line}L${w},${h}L0,${h}Z`} fill={`url(#${id})`} />
+      <path className="kpi-spark-line" d={line} fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round" pathLength={1} />
+    </svg>
+  )
+}
+
+/** Изменение к прошлому периоду: ▲ 12 % зелёным, ▼ 8 % красным */
+export function Trend({ value, hint }: { value: number | null | undefined; hint?: string }) {
+  if (value == null || !isFinite(value)) return null
+  const pct = Math.round(value * 100)
+  const tone = pct > 0 ? 'is-up' : pct < 0 ? 'is-down' : 'is-flat'
+  return (
+    <span className={`kpi-trend ${tone}`} title={hint}>
+      {pct > 0 ? '▲' : pct < 0 ? '▼' : '•'} {Math.abs(pct)} %
+    </span>
+  )
+}
+
+/** Относительное изменение cur к prev; null, если сравнивать не с чем */
+export const change = (cur: number, prev: number) => (prev > 0 ? cur / prev - 1 : null)
+
+export function Kpi({
+  icon,
+  label,
+  value,
+  note,
+  spark,
+  sparkColor,
+  trend,
+}: {
+  icon?: IconName
+  label: ReactNode
+  value: ReactNode
+  note?: ReactNode
+  spark?: number[]
+  sparkColor?: string
+  trend?: ReactNode
+}) {
   return (
     <div className="card kpi">
       <div className="kpi-label">
@@ -79,7 +160,13 @@ export function Kpi({ icon, label, value, note }: { icon?: IconName; label: Reac
         {label}
       </div>
       <div className="kpi-value">{value ?? <span className="skeleton" style={{ width: '60%', height: 28 }} />}</div>
-      {note && <div className="kpi-note">{note}</div>}
+      {(note || trend) && (
+        <div className="kpi-note">
+          {trend}
+          {note}
+        </div>
+      )}
+      {spark && <Spark data={spark} color={sparkColor} />}
     </div>
   )
 }

@@ -1,15 +1,24 @@
-import type { ReactNode } from 'react'
+import { useCallback, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { isTelegram, useTelegramBackButton } from '../lib/telegram'
 import { Lottie } from './Lottie'
+
+/**
+ * Назад по истории приложения. Если страницу открыли напрямую (ссылкой, закладкой, после входа),
+ * шагать назад некуда — тогда на главную, а не прочь с сайта. history.length для этого не годится:
+ * он считает и чужие страницы вкладки. idx — номер записи, который ведёт React Router.
+ */
+export function useGoBack() {
+  const navigate = useNavigate()
+  return useCallback(() => ((window.history.state?.idx ?? 0) > 0 ? navigate(-1) : navigate('/', { replace: true })), [navigate])
+}
 
 /**
  * Обёртка страницы. Для вложенных страниц (back) в Telegram показывается
  * нативная кнопка «Назад», в браузере — своя в шапке.
  */
 export function Page({ back, children, className }: { back?: boolean; children: ReactNode; className?: string }) {
-  const navigate = useNavigate()
-  const goBack = () => (history.length > 1 ? navigate(-1) : navigate('/'))
+  const goBack = useGoBack()
   useTelegramBackButton(back ? goBack : null)
 
   return (

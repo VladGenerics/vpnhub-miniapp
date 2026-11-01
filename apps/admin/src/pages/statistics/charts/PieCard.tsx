@@ -73,7 +73,7 @@ export function PieCard({
             fontFamily: 'Inter, system-ui, sans-serif',
             fontSize: 13,
           },
-          extraCssText: 'border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.14);',
+          extraCssText: 'border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.14);z-index:15;',
           formatter: (p: { name: string; value: number; color: string }) =>
             `<b>${format(p.value)}</b> <span style="color:${ch.hint}">· ${percent(p.value, sum)}</span><div style="color:${ch.hint}">${p.name.replace(/[<>&]/g, '')}</div>`,
         },

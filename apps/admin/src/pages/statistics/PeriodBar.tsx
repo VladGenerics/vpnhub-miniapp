@@ -1,7 +1,7 @@
 import type { Granularity } from '@vpnhub/shared'
 import { Segmented } from '../../components/Segmented'
 import { fromDateInput, toDateInput } from '../../lib/format'
-import { DAY, GRANULARITIES, PRESETS, presetPeriod, step, type Period } from './period'
+import { GRANULARITIES, PRESETS, presetPeriod, step, type Period } from './period'
 
 /**
  * Одна строка фильтров над всеми графиками вкладки: шаг, быстрые периоды и даты вручную.
@@ -34,8 +34,9 @@ export function PeriodBar({
   }
   const setTo = (v: string) => {
     if (!v) return
-    const to = fromDateInput(v) + DAY
-    onPeriod({ from: Math.min(period.from, to - DAY), to }, true)
+    // календарным шагом, не + 24 ч: в день перевода часов сутки длятся 23 или 25 ч
+    const day = fromDateInput(v)
+    onPeriod({ from: Math.min(period.from, day), to: step(day, 'day') }, true)
   }
 
   return (

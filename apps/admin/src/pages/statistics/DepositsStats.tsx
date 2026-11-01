@@ -1,17 +1,21 @@
 import { useMemo } from 'react'
-import { PROVIDER_LABEL, type PaymentProvider } from '@vpnhub/shared'
+import { useNavigate } from 'react-router-dom'
+import { PROVIDER_LABEL, type Granularity, type PaymentProvider } from '@vpnhub/shared'
 import { useDepositsStats } from '../../api/queries'
-import { Kpi } from '../../components/ui'
-import { num, rub, rubCompact } from '../../lib/format'
+import { change, CountUp, Kpi, Trend } from '../../components/ui'
+import { num, rub, rubCompact, toDateInput } from '../../lib/format'
 import type { Slot } from './charts/palette'
 import { PieCard } from './charts/PieCard'
 import { TimeSeriesCard, type Series } from './charts/TimeSeriesCard'
-import { inPeriod, useStatsPeriod } from './period'
+import { inPeriod, prevPeriod, PREV_HINT, useStatsPeriod } from './period'
 import { AVG, PER, StatsFrame } from './StatsFrame'
 
 /** Порядок и цвета способов оплаты фиксированы — цвет не меняется при скрытии других */
 const PROVIDERS: PaymentProvider[] = ['yookassa', 'tg_stars', 'cryptobot', 'WATA', 'heleket', 'lolz', 'rollypay']
 const slotOf = (i: number) => (i + 1) as Slot
+
+/** Подпись к клику по столбцу: за какой отрезок откроются счета */
+const PICK: Record<Granularity, string> = { hour: 'этот день', day: 'день', month: 'месяц', year: 'год' }
 
 /*
  * Пополнения — оплаченные счета по времени оплаты. Накопительная сумма за всё время
@@ -19,6 +23,7 @@ const slotOf = (i: number) => (i + 1) as Slot
  */
 export default function DepositsStats() {
   const s = useStatsPeriod()
+  const navigate = useNavigate()
   const q = useDepositsStats(s.query)
 
   const series = useMemo(() => {
@@ -46,16 +51,23 @@ export default function DepositsStats() {
         const win = inPeriod(q.data?.points, period)
         const amount = win.reduce((a, p) => a + p.amount, 0)
         const count = win.reduce((a, p) => a + p.count, 0)
+        const prev = prevPeriod(period, s.g, s.bounds!)
+        const prevAmount = prev ? inPeriod(q.data!.points, prev).reduce((a, p) => a + p.amount, 0) : 0
         const before = q.data!.total_before + inPeriod(q.data!.points, { from: 0, to: period.from }).reduce((a, p) => a + p.amount, 0)
         const props = { g: s.g, bounds: s.bounds!, period, onPeriod: s.setPeriod, fetching: q.isFetching }
 
         return (
           <div className="stack">
             <div className="kpi-grid">
-              <Kpi icon="wallet" label="Пополнено за период" value={rub(Math.round(amount))} note={win.length ? `в среднем ${rubCompact(Math.round(amount / win.length))} ${AVG[s.g]}` : undefined} />
-              <Kpi icon="receipt" label="Оплаченных счетов" value={num(count)} />
+              <Kpi
+                icon="wallet"
+                label="Пополнено за период"
+                value={<CountUp value={Math.round(amount)} format={rub} />}
+                trend={prev && <Trend value={change(amount, prevAmount)} hint={PREV_HINT} />}
+                note={win.length ? `в среднем ${rubCompact(Math.round(amount / win.length))} ${AVG[s.g]}` : undefined} />
+              <Kpi icon="receipt" label="Оплаченных счетов" value={<CountUp value={count} format={num} />} />
               <Kpi icon="card" label="Средний чек" value={count ? rub(Math.round(amount / count)) : '—'} />
-              <Kpi icon="trendUp" label="Пополнено всего" value={rubCompact(Math.round(before + amount))} note="на конец периода" />
+              <Kpi icon="trendUp" label="Пополнено всего" value={<CountUp value={Math.round(before + amount)} format={rubCompact} />} note="на конец периода" />
             </div>
 
             <div className="stats-grid">
@@ -68,6 +80,9 @@ export default function DepositsStats() {
                 format={rub}
                 total="Всего"
                 className="is-wide"
+                // шаг «часы» — счета за весь день: фильтр счетов по дням
+                pickHint={`счета за ${PICK[s.g]}`}
+                onPick={(from, to) => navigate(`/invoices?status=PAID&by=paid&from=${toDateInput(from)}&to=${toDateInput(to - 1)}`)}
                 {...props}
               />
               <PieCard

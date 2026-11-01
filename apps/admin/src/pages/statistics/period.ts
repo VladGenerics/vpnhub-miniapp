@@ -163,7 +163,7 @@ export function useStatsPeriod() {
             const n = new URLSearchParams(prev)
             n.set('g', nextG)
             n.set('from', encode(p.from))
-            n.set('to', encode(nextG === 'hour' ? p.to : p.to - DAY))
+            n.set('to', encode(nextG === 'hour' ? p.to : step(p.to, 'day', -1)))
             return n
           },
           { replace: true },
@@ -219,6 +219,16 @@ export const inPeriod = <T extends { t: string }>(points: T[] | undefined, p: Pe
     const t = new Date(x.t).getTime()
     return t >= p.from && t < p.to
   })
+
+/** Такой же по длине период прямо перед выбранным; null, если он выходит за начало данных */
+export function prevPeriod(p: Period, g: Granularity, bounds: Period): Period | null {
+  let n = 0
+  for (let t = p.from; t < p.to; t = step(t, g)) n++
+  const from = step(p.from, g, -n)
+  return from < bounds.from ? null : { from, to: p.from }
+}
+
+export const PREV_HINT = 'К предыдущему периоду той же длины'
 
 /* ---------- Подписи дат ---------- */
 

@@ -100,7 +100,7 @@ Authorization: tma <initData>
 | `GET /admin/users/:id/referrals` | список | `Paginated<ReferralRow>` |
 | `GET /admin/users/:id/ledger` | `page`, `page_size` | `Paginated<LedgerEntry>`, новые сверху |
 | `POST /admin/users/:id/balance` | `{ direction, amount, comment? }` | `AdminUserDetails` |
-| `GET /admin/invoices` | список + `status`, `provider`, `user_id` | `Paginated<AdminInvoiceRow>` |
+| `GET /admin/invoices` | список + `status`, `provider`, `user_id`, `from`, `to`, `date_by` | `Paginated<AdminInvoiceRow>` |
 | `GET /admin/payment-methods` | | `PaymentMethod[]` — все, включая выключенные |
 | `PATCH /admin/payment-methods/:id` | `{ name?, is_active?, min_amount? }` | `PaymentMethod` |
 | `GET /admin/settings` | | `AdminSettings` |
@@ -119,7 +119,12 @@ Authorization: tma <initData>
 |---|---|---|
 | пользователи | `id`, `tg_user_id` (точное число), `language_code` | `id`, `tg_user_id`, `registered_at`, `balance`, `subscription_expires_at`, `referrals_count` |
 | рефералы пользователя | — | `id`, `invited_at`, `deposits_total` |
-| счета | `id`, `user_id`, `tg_user_id`, `external_invoice_id` | `id`, `amount`, `created_at`, `paid_at` |
+| счета | `id`, `user_id`, `tg_user_id` (точное число), `external_invoice_id` (вхождение) | `id`, `amount`, `created_at`, `paid_at` |
+
+Период у счетов: `from`, `to` — ISO 8601 с поясом, полуинтервал `[from, to)`, любую границу можно
+опустить; `date_by=created` (по умолчанию) — по `created_at`, `date_by=paid` — по `paid_at`
+(неоплаченные не попадают). Админка шлёт границы суток браузера. «Зависшие» счета на главной —
+`status=UNPAID&to=<сейчас − 1 ч>`: отдельной ручки не нужно.
 
 Фильтр `flag` у пользователей: `bot` — `is_bot`; `blocked` — заблокировали бота;
 `premium` — Telegram Premium; `trial` — пользовались пробной подпиской;

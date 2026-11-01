@@ -1,10 +1,10 @@
 import { useMemo } from 'react'
 import { useUsersStats } from '../../api/queries'
-import { Kpi } from '../../components/ui'
+import { change, CountUp, Kpi, Trend } from '../../components/ui'
 import { num, percent } from '../../lib/format'
 import { PieCard } from './charts/PieCard'
 import { TimeSeriesCard, type Series } from './charts/TimeSeriesCard'
-import { inPeriod, useStatsPeriod } from './period'
+import { inPeriod, prevPeriod, PREV_HINT, useStatsPeriod } from './period'
 import { AVG, PER, StatsFrame } from './StatsFrame'
 
 /*
@@ -35,15 +35,22 @@ export default function UsersStats() {
         const nTotal = sum((p) => p.new_total)
         const nBlocked = sum((p) => p.new_blocked)
         const nBots = sum((p) => p.new_bots)
+        const prev = prevPeriod(period, s.g, s.bounds!)
+        const nPrev = prev ? inPeriod(q.data!.points, prev).reduce((a, p) => a + p.new_total, 0) : 0
         const props = { g: s.g, bounds: s.bounds!, period, onPeriod: s.setPeriod, fetching: q.isFetching }
 
         return (
           <div className="stack">
             <div className="kpi-grid">
-              <Kpi icon="users" label="Всего на конец периода" value={num(last?.total ?? 0)} note={last && last.total !== now.total ? `сейчас ${num(now.total)}` : undefined} />
-              <Kpi icon="userPlus" label="Новых за период" value={num(nTotal)} note={win.length ? `в среднем ${num(Math.round(nTotal / win.length))} ${AVG[s.g]}` : undefined} />
-              <Kpi icon="trendDown" label="Заблокировали бота" value={num(now.blocked)} note={`сейчас · ${percent(now.blocked, now.total)} аудитории`} />
-              <Kpi icon="shield" label="Боты" value={num(now.bots)} note={`сейчас · ${percent(now.bots, now.total)} аудитории`} />
+              <Kpi icon="users" label="Всего на конец периода" value={<CountUp value={last?.total ?? 0} format={num} />} note={last && last.total !== now.total ? `сейчас ${num(now.total)}` : undefined} />
+              <Kpi
+                icon="userPlus"
+                label="Новых за период"
+                value={<CountUp value={nTotal} format={num} />}
+                trend={prev && <Trend value={change(nTotal, nPrev)} hint={PREV_HINT} />}
+                note={win.length ? `в среднем ${num(Math.round(nTotal / win.length))} ${AVG[s.g]}` : undefined} />
+              <Kpi icon="trendDown" label="Заблокировали бота" value={<CountUp value={now.blocked} format={num} />} note={`сейчас · ${percent(now.blocked, now.total)} аудитории`} />
+              <Kpi icon="shield" label="Боты" value={<CountUp value={now.bots} format={num} />} note={`сейчас · ${percent(now.bots, now.total)} аудитории`} />
             </div>
 
             <div className="stats-grid">
