@@ -182,7 +182,8 @@ export const mockApi: UserApi = {
       expires_at: iso(base + days * DAY),
       url: 'https://sub.vpnhub.app/s/8Kf2xQ9mZt4pLw7R',
       auto_renewal: subscription?.auto_renewal ?? { is_enabled: true, days: 30 },
-      slots: Array.from({ length: devices }, (_, i) => emptySlot(i + 1)),
+      // продление с тем же числом устройств не отвязывает их
+      slots: subscription?.slots.length === devices ? subscription.slots : Array.from({ length: devices }, (_, i) => emptySlot(i + 1)),
     }
     return delay(subscription, 500)
   },

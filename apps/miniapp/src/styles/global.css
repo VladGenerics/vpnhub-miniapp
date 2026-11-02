@@ -802,6 +802,10 @@ p {
 }
 
 /* автопродление в карточке подписки */
+.status-renew {
+  margin-top: 12px;
+}
+
 .renew-status {
   display: grid;
   gap: 6px;
@@ -914,6 +918,15 @@ p {
   width: 100%;
   padding: 12px 12px 12px 16px;
   transition: background 0.15s;
+}
+
+.url-copy {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-align: left;
 }
 
 .url-row:hover,

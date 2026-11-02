@@ -892,8 +892,10 @@ p {
 /* период в «Счетах»: по какой дате + с — по */
 .date-range {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 6px;
+  max-width: 100%;
 }
 .date-range .input {
   width: 148px;
@@ -1738,6 +1740,10 @@ p {
     flex: 1;
     width: auto;
     min-width: 0;
+  }
+  /* на телефоне «Созданы/Оплачены» отдельной строкой, даты — под ней */
+  .date-range .select {
+    flex: 1 1 100%;
   }
 }
 

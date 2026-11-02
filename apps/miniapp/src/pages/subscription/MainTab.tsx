@@ -14,6 +14,7 @@ import { useCountdown } from '../../hooks/useCountdown'
 import { copyText, countdown, date, days, rub } from '../../lib/format'
 import { haptic } from '../../lib/telegram'
 import { AutoRenewSheet } from './AutoRenewSheet'
+import { RenewSheet } from './RenewSheet'
 
 /** Сколько стоит следующее автопродление и сколько на него не хватает */
 function useRenewal(sub: Subscription) {
@@ -24,7 +25,7 @@ function useRenewal(sub: Subscription) {
   return { cost, balance: me.balance, lacking: Math.max(0, cost - me.balance) }
 }
 
-function StatusCard({ sub }: { sub: Subscription }) {
+function StatusCard({ sub, onRenew }: { sub: Subscription; onRenew(): void }) {
   const qc = useQueryClient()
   // таймер дошёл до нуля, перезапрашиваем подписку: вдруг продлилась
   const left = useCountdown(sub.expires_at, () => {
@@ -71,6 +72,10 @@ function StatusCard({ sub }: { sub: Subscription }) {
           </div>
         )}
       </div>
+
+      <Button stretched className="status-renew" onClick={onRenew}>
+        Продлить
+      </Button>
     </div>
   )
 }
@@ -80,6 +85,7 @@ export function MainTab({ sub }: { sub: Subscription }) {
   const { data: tariffs } = useTariffs()
   const toast = useToast()
   const [renewOpen, setRenewOpen] = useState(false)
+  const [extendOpen, setExtendOpen] = useState(false)
   const [qrOpen, setQrOpen] = useState(false)
   const [copied, setCopied] = useState(false)
 
@@ -99,41 +105,51 @@ export function MainTab({ sub }: { sub: Subscription }) {
 
   return (
     <div className="tab-content">
-      <StatusCard sub={sub} />
+      <StatusCard sub={sub} onRenew={() => setExtendOpen(true)} />
 
       {sub.url && (
         <Section title="Ссылка подписки" footer="Добавьте ссылку в приложение-клиент на любом устройстве">
-          <button className="url-row" onClick={copy}>
-            <Lottie name={E.link} size={30} />
-            <span className="url-text">{sub.url.replace('https://', '')}</span>
-            <span className={`copy-btn ${copied ? 'is-done' : ''}`} aria-label={copied ? 'Скопировано' : 'Скопировать'}>
-              {copied ? (
-                <svg key="done" width="18" height="18" viewBox="0 0 24 24" aria-hidden>
-                  <path
-                    className="copy-check"
-                    d="M5 12.5l4.5 4.5L19 7.5"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.4"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              ) : (
-                <svg key="copy" width="18" height="18" viewBox="0 0 24 24" aria-hidden>
-                  <rect x="8" y="8" width="12" height="12" rx="3" fill="none" stroke="currentColor" strokeWidth="2" />
-                  <path d="M16 8V6a2 2 0 00-2-2H6a2 2 0 00-2 2v8a2 2 0 002 2h2" fill="none" stroke="currentColor" strokeWidth="2" />
-                </svg>
-              )}
-            </span>
-          </button>
-          <Cell
-            icon={<Lottie name={E.phone} size={30} />}
-            title="QR-код"
-            subtitle="Отсканируйте камерой другого устройства"
-            onClick={() => setQrOpen(true)}
-            chevron
-          />
+          <div className="url-row">
+            <button className="url-copy" onClick={copy} aria-label="Скопировать ссылку">
+              <Lottie name={E.link} size={30} />
+              <span className="url-text">{sub.url.replace('https://', '')}</span>
+              <span className={`copy-btn ${copied ? 'is-done' : ''}`} aria-label={copied ? 'Скопировано' : 'Скопировать'}>
+                {copied ? (
+                  <svg key="done" width="18" height="18" viewBox="0 0 24 24" aria-hidden>
+                    <path
+                      className="copy-check"
+                      d="M5 12.5l4.5 4.5L19 7.5"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.4"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                ) : (
+                  <svg key="copy" width="18" height="18" viewBox="0 0 24 24" aria-hidden>
+                    <rect x="8" y="8" width="12" height="12" rx="3" fill="none" stroke="currentColor" strokeWidth="2" />
+                    <path d="M16 8V6a2 2 0 00-2-2H6a2 2 0 00-2 2v8a2 2 0 002 2h2" fill="none" stroke="currentColor" strokeWidth="2" />
+                  </svg>
+                )}
+              </span>
+            </button>
+            <button
+              className="copy-btn"
+              onClick={() => {
+                haptic.tap()
+                setQrOpen(true)
+              }}
+              aria-label="Показать QR-код"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+                <rect x="3" y="3" width="7" height="7" rx="1.5" />
+                <rect x="14" y="3" width="7" height="7" rx="1.5" />
+                <rect x="3" y="14" width="7" height="7" rx="1.5" />
+                <path d="M14 14h3v3h-3zM20 14v.01M14 20v.01M17 17h3v3" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+          </div>
         </Section>
       )}
 
@@ -155,6 +171,7 @@ export function MainTab({ sub }: { sub: Subscription }) {
         )}
       </Section>
 
+      <RenewSheet sub={sub} open={extendOpen} onClose={() => setExtendOpen(false)} />
       <AutoRenewSheet sub={sub} open={renewOpen} onClose={() => setRenewOpen(false)} />
       {sub.url && (
         <Sheet open={qrOpen} onClose={() => setQrOpen(false)} expandable={false}>
