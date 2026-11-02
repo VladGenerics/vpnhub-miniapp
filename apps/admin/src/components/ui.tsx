@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, useState, type ButtonHTMLAttributes, type ReactNode } from 'react'
+import { Link } from 'react-router-dom'
 import { copyText } from '../lib/format'
 import { Icon } from './Icon'
 import type { IconName } from './icons'
@@ -140,6 +141,8 @@ export function Kpi({
   spark,
   sparkColor,
   trend,
+  to,
+  toLabel,
 }: {
   icon?: IconName
   label: ReactNode
@@ -148,16 +151,28 @@ export function Kpi({
   spark?: number[]
   sparkColor?: string
   trend?: ReactNode
+  /** Куда ведёт клик по карточке; ссылки внутри note остаются кликабельными поверх */
+  to?: string
+  /** Подсказка к переходу: «Открыть оплаченные счета за сегодня» */
+  toLabel?: string
 }) {
   return (
-    <div className="card kpi">
+    <div className={`card kpi ${to ? 'is-link' : ''}`}>
       <div className="kpi-label">
         {icon && (
           <span className="kpi-icon">
             <Icon name={icon} size={16} />
           </span>
         )}
-        {label}
+        {to ? (
+          // ссылка растянута на всю карточку псевдоэлементом — без вложенных <a>
+          <Link className="kpi-link" to={to} title={toLabel} aria-label={toLabel}>
+            {label}
+          </Link>
+        ) : (
+          label
+        )}
+        {to && <Icon name="chevronRight" size={14} className="kpi-go" />}
       </div>
       <div className="kpi-value">{value ?? <span className="skeleton" style={{ width: '60%', height: 28 }} />}</div>
       {(note || trend) && (

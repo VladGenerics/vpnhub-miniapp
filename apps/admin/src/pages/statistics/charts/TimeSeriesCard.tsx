@@ -8,6 +8,18 @@ import { bucketLabel, periodLabel, step, tickLabel, truncate, type Period } from
 import { echarts, type ECharts } from './echarts'
 import { hoverSync } from './hoverSync'
 
+/** Ширина столбца: 80 % интервала в текущем окне (зазор 20 %), не шире 140 px */
+function barWidth(c: ECharts, p: Period, g: Granularity) {
+  let n = 0
+  for (let t = p.from; t < p.to && n < 5000; t = step(t, g)) n++
+  // ширина области графика без подписей оси Y; до первой отрисовки — приблизительно
+  const grid = (c as unknown as { getModel(): { getComponent(t: string): { coordinateSystem?: { getRect(): { width: number } } } } | undefined })
+    .getModel()
+    ?.getComponent('grid')?.coordinateSystem
+  const plot = grid ? grid.getRect().width : c.getWidth() - 60
+  return Math.max(1, Math.min(140, (plot / Math.max(1, n)) * 0.8))
+}
+
 /** Видимая по вертикали часть элемента в его координатах: ниже шапки и в пределах окна */
 function visibleBand(el: HTMLElement): [number, number] {
   const box = el.getBoundingClientRect()
@@ -165,9 +177,18 @@ export function TimeSeriesCard({
   const gapWidth = (p: Period) => {
     const c = chart.current
     if (!c || type !== 'bar' || !stacked) return 0
-    let n = 0
-    for (let t = p.from; t < p.to && n < 2000; t = step(t, g)) n++
-    return c.getWidth() / Math.max(1, n) > 14 ? 1 : 0
+    return barWidth(c, p, g) > 11 ? 1 : 0
+  }
+
+  /**
+   * Ширина столбцов под окно p. Сам ECharts при перетаскивании ползунка считает её по прошлому окну:
+   * растягиваешь период — столбцы остаются широкими и налезают друг на друга, пока не отпустишь.
+   */
+  const fitBars = (c: ECharts, p: Period, gg: Granularity) => {
+    if (type !== 'bar') return
+    const w = barWidth(c, p, gg)
+    const n = (c.getOption() as { series?: unknown[] }).series?.length ?? 0
+    c.setOption({ series: Array.from({ length: n }, () => ({ barWidth: w, itemStyle: stacked ? { borderWidth: w > 11 ? 1 : 0 } : {} })) })
   }
 
   /* создание графика и реакция на размер */
@@ -176,6 +197,7 @@ export function TimeSeriesCard({
     const c = echarts.init(ref.current, null, { renderer: 'canvas' })
     chart.current = c
     let raf = 0
+    let dragging: ReturnType<typeof setTimeout> | undefined
     c.on('datazoom', () => {
       cancelAnimationFrame(raf)
       raf = requestAnimationFrame(() => {
@@ -186,6 +208,15 @@ export function TimeSeriesCard({
         const from = type === 'bar' && first < dz.startValue ? step(first, gg) : first
         const p = { from, to: Math.max(step(truncate(dz.endValue, gg), gg), step(from, gg)) }
         shown.current = p
+        // пока тянут ползунок — без анимации: каждый шаг перезапускал её с середины, столбцы отставали
+        // от оси и стояли на месте прошлого окна, пока не отпустишь
+        if (!dragging) c.setOption({ animation: false })
+        clearTimeout(dragging)
+        dragging = setTimeout(() => {
+          dragging = undefined
+          c.setOption({ animation: true })
+        }, 250)
+        fitBars(c, p, gg)
         cb(p)
       })
     })
@@ -224,6 +255,7 @@ export function TimeSeriesCard({
     ro.observe(ref.current)
     return () => {
       cancelAnimationFrame(raf)
+      clearTimeout(dragging)
       unsubscribe()
       ro.disconnect()
       c.dispose()
@@ -340,8 +372,7 @@ export function TimeSeriesCard({
               name: s.name,
               data: hasPartial ? s.data.map((d) => (d[0] === partial ? { value: d, itemStyle: { opacity: 0.45 } } : d)) : s.data,
               stack: stacked ? 'total' : undefined,
-              barMaxWidth: 140,
-              barCategoryGap: '20%',
+              barWidth: chart.current ? barWidth(chart.current, p, g) : undefined,
               itemStyle: {
                 color,
                 // скругление 4 px — только у верхнего края столбца; зазор между частями — цветом фона
@@ -398,13 +429,11 @@ export function TimeSeriesCard({
     c.setOption({ xAxis: { splitNumber: n <= fit ? Math.max(1, n) : Math.ceil(n / Math.ceil(n / fit)) } })
   }, [period, g, visible, theme, skin, bounds, asTable])
 
-  /* ширина зазора между частями столбцов зависит от того, сколько столбцов на экране */
+  /* ширина столбцов и зазора между их частями зависит от того, сколько столбцов на экране */
   useEffect(() => {
     const c = chart.current
-    if (!c || type !== 'bar' || !stacked) return
-    const w = gapWidth(period)
-    c.setOption({ series: visible.map(() => ({ itemStyle: { borderWidth: w } })) })
-  }, [period, visible, type, stacked])
+    if (c) fitBars(c, period, g)
+  }, [period, g, visible, type, stacked])
 
   const tableRows = useMemo(() => {
     if (!asTable) return []

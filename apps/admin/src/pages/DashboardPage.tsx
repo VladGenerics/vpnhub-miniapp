@@ -34,6 +34,8 @@ export function DashboardPage() {
   // зависшие: не оплачены дольше часа — тем же списком счетов, отдельной ручки не нужно
   const cutoff = useStaleCutoff()
   const stale = useInvoices({ status: 'UNPAID', to: new Date(cutoff).toISOString(), page: 1, page_size: 1, sort: 'created_at', order: 'desc' }).data?.total
+  const today = toDateInput(Date.now())
+  const monthAgo = toDateInput(new Date(new Date().setDate(new Date().getDate() - 29)).getTime())
   /** Клик по дню пополнений — оплаченные счета этого дня */
   const openDay = (t: string) => {
     const d = toDateInput(Date.parse(t))
@@ -65,8 +67,17 @@ export function DashboardPage() {
           note={d && `+${num(d.users_today)} сегодня`}
           trend={d && <Trend value={wow((p) => p.new_users)} hint="Новые за 7 дней к предыдущим 7 дням" />}
           spark={d?.daily.map((p) => p.new_users)}
+          to="/users"
+          toLabel="Открыть пользователей — новые сверху"
         />
-        <Kpi icon="shield" label="Активные подписки" value={d && <CountUp value={d.subscriptions_active} format={num} />} note={d && `${percent(d.subscriptions_active, d.users_total)} от всех`} />
+        <Kpi
+          icon="shield"
+          label="Активные подписки"
+          to="/users?flag=active_sub"
+          toLabel="Открыть пользователей с активной подпиской"
+          value={d && <CountUp value={d.subscriptions_active} format={num} />}
+          note={d && `${percent(d.subscriptions_active, d.users_total)} от всех`}
+        />
         <Kpi
           icon="wallet"
           label="Пополнения сегодня"
@@ -75,12 +86,30 @@ export function DashboardPage() {
           trend={d && <Trend value={wow((p) => p.deposits)} hint="Пополнения за 7 дней к предыдущим 7 дням" />}
           spark={d?.daily.map((p) => p.deposits)}
           sparkColor="var(--success)"
+          to={`/invoices?status=PAID&by=paid&from=${today}&to=${today}`}
+          toLabel="Открыть оплаченные счета за сегодня"
         />
-        <Kpi icon="receipt" label="Покупки за 30 дней" value={d && <CountUp value={d.purchases_30d_count} format={num} />} note={d && `на ${rubCompact(d.purchases_30d_amount)}`} />
-        <Kpi icon="trendDown" label="Заблокировали бота" value={d && <CountUp value={d.users_blocked} format={num} />} note={d && `${percent(d.users_blocked, d.users_total)} · ботов ${num(d.users_bots)}`} />
+        <Kpi
+          icon="receipt"
+          label="Покупки за 30 дней"
+          to={`/statistics/purchases?g=day&from=${monthAgo}&to=${today}`}
+          toLabel="Открыть статистику покупок за 30 дней"
+          value={d && <CountUp value={d.purchases_30d_count} format={num} />}
+          note={d && `на ${rubCompact(d.purchases_30d_amount)}`}
+        />
+        <Kpi
+          icon="trendDown"
+          label="Заблокировали бота"
+          to="/users?flag=blocked"
+          toLabel="Открыть пользователей, заблокировавших бота"
+          value={d && <CountUp value={d.users_blocked} format={num} />}
+          note={d && `${percent(d.users_blocked, d.users_total)} · ботов ${num(d.users_bots)}`}
+        />
         <Kpi
           icon="card"
           label="Ждут оплаты"
+          to="/invoices?status=UNPAID"
+          toLabel="Открыть неоплаченные счета"
           value={d && <CountUp value={d.invoices_unpaid} format={num} />}
           note={
             stale ? (

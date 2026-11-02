@@ -437,6 +437,43 @@ p {
   position: relative;
   container-type: inline-size;
 }
+/* карточка-переход: вся карточка кликабельна, ссылки в подписи — поверх */
+.kpi.is-link {
+  transition: border-color 0.15s, background 0.15s;
+}
+.kpi.is-link:hover {
+  border-color: var(--accent);
+}
+.kpi-link {
+  color: inherit;
+}
+.kpi-link::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: inherit;
+}
+.kpi-link:focus-visible {
+  outline: none;
+}
+.kpi.is-link:has(.kpi-link:focus-visible) {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.kpi-note a {
+  position: relative;
+  z-index: 2;
+}
+.kpi-go {
+  margin-left: auto;
+  opacity: 0;
+  transition: opacity 0.15s, transform 0.15s;
+}
+.kpi.is-link:hover .kpi-go {
+  opacity: 1;
+  transform: translateX(2px);
+}
 .kpi-trend {
   padding: 1px 6px;
   border-radius: 6px;
