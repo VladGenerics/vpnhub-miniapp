@@ -1,18 +1,7 @@
-import type {
-  DeviceSlot,
-  InvoiceStatus,
-  LedgerEntryType,
-  PaymentMethod,
-  PaymentProvider,
-  PurchaseKind,
-  UserRole,
-} from '@vpnhub/shared'
+import type { DeviceSlot, InvoiceStatus, LedgerEntryType, PaymentMethod, PaymentProvider, PurchaseKind, UserRole } from '@vpnhub/shared'
 
-/*
- * Генератор демо-базы: ~14 месяцев жизни сервиса. Детерминированный (seed),
- * поэтому цифры не прыгают между перезагрузками в пределах одного дня.
- * Логика повторяет схему БД: пользователи → счета → покупки → кошелёк.
- */
+// Демо-база примерно за 14 месяцев. Генератор с seed, поэтому цифры не скачут между перезагрузками.
+// Порядок как в БД: пользователи → счета → покупки → кошелёк.
 
 export const DAY = 864e5
 const HISTORY_DAYS = 420
@@ -34,7 +23,7 @@ const pick = <T>(items: readonly (readonly [T, number])[]): T => {
 }
 const round2 = (n: number) => Math.round(n * 100) / 100
 
-/* ---------- Сущности демо-базы (время — в мс) ---------- */
+// --- сущности (время в мс) ---
 
 export interface MUser {
   id: number
@@ -101,7 +90,7 @@ export interface MEarning {
   created_at: number
 }
 
-/* ---------- Справочники ---------- */
+// --- справочники ---
 
 export const settings = {
   support_link: 'https://t.me/vpnhub_support',
@@ -161,7 +150,7 @@ const DEVICE_DISCOUNT: Record<number, number> = { 1: 0, 2: 0.05, 3: 0.1, 4: 0.1,
 const pricePerDay = (days: number) => PRICES.filter((p) => p.min_days <= days).at(-1)!.price_per_day
 const cost = (days: number, devices: number) => round2(days * devices * pricePerDay(days) * (1 - (DEVICE_DISCOUNT[devices] ?? 0.15)))
 
-/* ---------- Генерация ---------- */
+// --- генерация ---
 
 export const NOW = Date.now()
 const startOfDay = (ms: number) => {
@@ -192,7 +181,7 @@ function generate() {
     const campaign = rnd() < 0.035 ? 2.6 : 1
     const count = Math.round(base * weekly * campaign * (0.7 + 0.6 * rnd()))
 
-    // время регистраций внутри дня — по возрастанию, чтобы id шли в порядке регистрации, как в базе
+    // время регистраций внутри дня по возрастанию, чтобы id шли по порядку
     const times = Array.from({ length: count }, () => START + d * DAY + Math.floor(rnd() * DAY)).sort((a, b) => a - b)
     for (const registered_at of times) {
       if (registered_at > NOW) continue
@@ -244,7 +233,14 @@ function generate() {
     let balance = 0
     if (u.referrer_id) {
       balance += settings.invited_bonus
-      ledger.push({ user_id: u.id, entry_type: 'INIT_BALANCE', amount: settings.invited_bonus, source_type: null, source_id: null, created_at: u.registered_at })
+      ledger.push({
+        user_id: u.id,
+        entry_type: 'INIT_BALANCE',
+        amount: settings.invited_bonus,
+        source_type: null,
+        source_id: null,
+        created_at: u.registered_at,
+      })
       earnings.push({ user_id: u.referrer_id, amount: settings.referral_bonus, reason: 'BONUS_FROM_INVITE', created_at: u.registered_at })
     }
 
@@ -260,7 +256,7 @@ function generate() {
       }
     }
 
-    // объявлено через as: иначе TS «запоминает» null и не видит присваивания внутри buy()
+    // через as, иначе TS считает переменную всегда null и не видит присваивания в buy()
     let sub = null as MSubscription | null
     let firstPurchase = true
     const autorenew = rnd() < 0.7
@@ -315,7 +311,14 @@ function generate() {
       renewUntil(t)
       const amount = pick(AMOUNTS)
       const recent = NOW - t < 2 * 36e5
-      const status: InvoiceStatus = recent && rnd() < 0.5 ? 'UNPAID' : pick([['PAID', 79], ['EXPIRED', 14], ['FAILED', 7]] as const)
+      const status: InvoiceStatus =
+        recent && rnd() < 0.5
+          ? 'UNPAID'
+          : pick([
+              ['PAID', 79],
+              ['EXPIRED', 14],
+              ['FAILED', 7],
+            ] as const)
       const inv: MInvoice = {
         id: invoiceId++,
         user_id: u.id,
@@ -331,7 +334,8 @@ function generate() {
 
       balance += amount
       ledger.push({ user_id: u.id, entry_type: 'DEPOSIT', amount, source_type: 'INVOICE', source_id: inv.id, created_at: inv.paid_at })
-      if (u.referrer_id) earnings.push({ user_id: u.referrer_id, amount: round2(amount * 0.1), reason: 'BONUS_FROM_REFERRAL_FILL_BALANCE', created_at: inv.paid_at })
+      if (u.referrer_id)
+        earnings.push({ user_id: u.referrer_id, amount: round2(amount * 0.1), reason: 'BONUS_FROM_REFERRAL_FILL_BALANCE', created_at: inv.paid_at })
 
       const at = inv.paid_at + 60_000 + Math.floor(rnd() * 3_600_000)
       if (at > NOW) continue
@@ -371,7 +375,7 @@ function generate() {
     })
   }
 
-  // номера счетов и покупок растут со временем, как у автоинкремента в БД
+  // номера счетов и покупок растут со временем, как автоинкремент
   invoices.sort((a, b) => a.created_at - b.created_at)
   purchases.sort((a, b) => a.created_at - b.created_at)
   const invoiceIds = new Map(invoices.map((x, i) => [x.id, i + 1]))
@@ -386,7 +390,7 @@ function generate() {
 
 generate()
 
-/* ---------- Производные данные ---------- */
+// --- производные данные ---
 
 const PLATFORMS = [
   ['iOS', 'iPhone 15', '18.1', 'Streisand'],

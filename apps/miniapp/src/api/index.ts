@@ -14,11 +14,12 @@ import type {
 import { ApiError, http } from './http'
 import { mockApi } from './mock'
 
-/** Контракт API кабинета. Описание эндпоинтов — docs/api.md. */
+/** Все запросы кабинета. Описание — docs/api.md */
 export interface UserApi {
-  /** Вход с сайта через Telegram Login Widget; новый пользователь регистрируется */
+  /** Вход с сайта через Telegram, новый пользователь регистрируется */
   loginTelegram(req: TelegramLoginRequest): Promise<AuthResponse>
   getMe(): Promise<Me>
+  bindEmail(email: string): Promise<Me>
   /** null — подписки нет */
   getSubscription(): Promise<Subscription | null>
   getTariffs(): Promise<Tariffs>
@@ -35,10 +36,12 @@ export interface UserApi {
 const httpApi: UserApi = {
   loginTelegram: (req) => http('POST', '/auth/telegram', req),
   getMe: () => http('GET', '/me'),
+  bindEmail: (email) => http('PUT', '/me/email', { email }),
   getSubscription: async () => {
     try {
-      const s = await http<Subscription>('GET', '/subscription')
-      return s.status === 'NOT_FOUND' ? null : s
+      const s = await http<Subscription | null>('GET', '/subscription')
+      // подписки нет: 404, пустой ответ или status NOT_FOUND
+      return !s || s.status === 'NOT_FOUND' ? null : s
     } catch (e) {
       if (e instanceof ApiError && e.status === 404) return null
       throw e
@@ -55,7 +58,7 @@ const httpApi: UserApi = {
   deleteSlot: (id) => http('DELETE', `/subscription/slots/${id}`),
 }
 
-/** Моки включены явно (VITE_USE_MOCKS=true) или когда не задан адрес API. */
+/** Демо-данные, если VITE_USE_MOCKS=true или не задан VITE_API_URL */
 export const USE_MOCKS = import.meta.env.VITE_USE_MOCKS === 'true' || !import.meta.env.VITE_API_URL
 
 export const api: UserApi = USE_MOCKS ? mockApi : httpApi

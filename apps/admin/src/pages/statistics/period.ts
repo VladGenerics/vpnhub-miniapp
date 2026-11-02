@@ -3,15 +3,12 @@ import { useSearchParams } from 'react-router-dom'
 import type { Granularity, StatsQuery } from '@vpnhub/shared'
 import { TZ, useStatsRange } from '../../api/queries'
 
-/*
- * Период и шаг статистики. Время — в часовом поясе браузера (его же получает бэкенд в tz),
- * границы интервалов: начало часа / дня / месяца / года.
- * Период живёт в адресе (?g=day&from=2026-10-02&to=2026-11-01), у каждой вкладки свой.
- */
+// Период и шаг статистики. Время в поясе браузера, его же шлём бэкенду в tz.
+// Период хранится в адресе (?g=day&from=2026-10-02&to=2026-11-01), у каждой вкладки свой.
 
 export const HOUR = 36e5
 export const DAY = 864e5
-/** По часам грузим только последний месяц: за год это 9 тысяч точек, читать их всё равно нельзя */
+// по часам грузим только последний месяц, за год было бы ~9 тыс. точек
 const HOUR_HISTORY_DAYS = 31
 
 export function truncate(ms: number, g: Granularity) {
@@ -74,7 +71,7 @@ export const PRESETS: Record<Granularity, Preset[]> = {
   year: [{ label: 'Всё время', count: null }],
 }
 
-/** По умолчанию: часы — 3 дня, дни — 30 дней (как в ТЗ), месяцы — год, годы — всё */
+// по умолчанию: часы — 3 дня, дни — 30 дней, месяцы — год, годы — всё
 const DEFAULT_PRESET: Record<Granularity, number> = { hour: 1, day: 1, month: 1, year: 0 }
 
 export function presetPeriod(p: Preset, g: Granularity, bounds: Period): Period {
@@ -111,18 +108,15 @@ export function clampPeriod(p: Period, g: Granularity, bounds: Period): Period {
   return { from, to }
 }
 
-/**
- * Состояние вкладки статистики: шаг, период, границы данных и запрос к API.
- * Пока тянут ползунок шкалы, период меняется мгновенно (метрики пересчитываются на лету),
- * а в адрес записывается с задержкой — история браузера не засоряется.
- */
+// Состояние вкладки: шаг, период, границы данных и запрос.
+// Пока тянут ползунок, период меняется сразу, а в адрес пишется с задержкой, чтобы не засорять историю.
 export function useStatsPeriod() {
   const [sp, setSp] = useSearchParams()
   const range = useStatsRange()
   const g = (GRANULARITIES.some((x) => x.value === sp.get('g')) ? sp.get('g') : 'day') as Granularity
   const [now] = useState(() => Date.now())
 
-  // какие данные загружать: вся история (по часам — последний месяц) до конца текущего интервала
+  // грузим всю историю (по часам — последний месяц) до конца текущего интервала
   const bounds = useMemo<Period | null>(() => {
     if (!range.data) return null
     const start = new Date(range.data.from).getTime()
@@ -137,10 +131,7 @@ export function useStatsPeriod() {
     return from !== null && to !== null ? { from, to: g === 'hour' ? to : step(truncate(to, 'day'), 'day') } : null
   }, [sp, g])
 
-  const initial = useCallback(
-    (b: Period) => (fromUrl ? clampPeriod(fromUrl, g, b) : presetPeriod(PRESETS[g][DEFAULT_PRESET[g]], g, b)),
-    [fromUrl, g],
-  )
+  const initial = useCallback((b: Period) => (fromUrl ? clampPeriod(fromUrl, g, b) : presetPeriod(PRESETS[g][DEFAULT_PRESET[g]], g, b)), [fromUrl, g])
 
   const [period, setPeriodState] = useState<Period | null>(null)
   const urlTimer = useRef<ReturnType<typeof setTimeout>>(undefined)
@@ -215,10 +206,12 @@ export function useStatsPeriod() {
 
 /** Точки внутри периода */
 export const inPeriod = <T extends { t: string }>(points: T[] | undefined, p: Period | null) =>
-  !points || !p ? [] : points.filter((x) => {
-    const t = new Date(x.t).getTime()
-    return t >= p.from && t < p.to
-  })
+  !points || !p
+    ? []
+    : points.filter((x) => {
+        const t = new Date(x.t).getTime()
+        return t >= p.from && t < p.to
+      })
 
 /** Такой же по длине период прямо перед выбранным; null, если он выходит за начало данных */
 export function prevPeriod(p: Period, g: Granularity, bounds: Period): Period | null {
@@ -230,7 +223,7 @@ export function prevPeriod(p: Period, g: Granularity, bounds: Period): Period | 
 
 export const PREV_HINT = 'К предыдущему периоду той же длины'
 
-/* ---------- Подписи дат ---------- */
+// --- подписи дат ---
 
 const MONTHS_SHORT = ['янв', 'фев', 'мар', 'апр', 'мая', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек']
 const MONTHS_NOM = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь']

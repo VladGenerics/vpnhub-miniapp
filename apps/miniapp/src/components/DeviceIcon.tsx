@@ -36,9 +36,7 @@ const GLYPH: Record<Platform, ReactNode> = {
       <rect x="6" y="13" width="12" height="6.5" rx="1.6" fill="#fff" opacity=".85" />
     </>
   ),
-  windows: (
-    <path d="M4 5.6l7-1v6.9H4zM12.4 4.4L20 3.3v8.2h-7.6zM4 12.9h7v6.9l-7-1zM12.4 12.9H20v8.2l-7.6-1.1z" fill="#fff" />
-  ),
+  windows: <path d="M4 5.6l7-1v6.9H4zM12.4 4.4L20 3.3v8.2h-7.6zM4 12.9h7v6.9l-7-1zM12.4 12.9H20v8.2l-7.6-1.1z" fill="#fff" />,
   linux: (
     <>
       <rect x="3.5" y="4.5" width="17" height="15" rx="2.2" fill="none" stroke="#fff" strokeWidth="1.8" />

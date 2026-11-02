@@ -25,9 +25,9 @@ import type {
 } from '@vpnhub/shared'
 import { http } from './http'
 
-/** Контракт API админ-панели. Описание эндпоинтов — docs/api.md. */
+/** Все запросы админки. Описание — docs/api.md */
 export interface AdminApi {
-  /** Тот же вход, что в кабинете; права проверяет /admin/me */
+  /** Тот же вход, что в кабинете, права проверяет /admin/me */
   loginTelegram(req: TelegramAuthData): Promise<AuthResponse>
   getMe(): Promise<AdminMe>
   getDashboard(tz: string): Promise<Dashboard>
@@ -67,13 +67,13 @@ const httpApi: AdminApi = {
   getPurchasesStats: (q) => http('GET', '/admin/stats/purchases', undefined, q),
 }
 
-/** Роль демо-входа: выбирается на странице входа, чтобы показать и режим поддержки (только чтение) */
+/** Роль для демо-входа, чтобы можно было посмотреть и режим поддержки */
 export const DEMO_ROLE_KEY = 'vpnhub.admin.demo-role'
 
-/** Моки включены явно (VITE_USE_MOCKS=true) или когда не задан адрес API. */
+/** Демо-данные, если VITE_USE_MOCKS=true или не задан VITE_API_URL */
 export const USE_MOCKS = import.meta.env.VITE_USE_MOCKS === 'true' || !import.meta.env.VITE_API_URL
 
-/** Демо-бэкенд подгружается отдельным файлом и только в демо-режиме — с настоящим API этот файл не загружается */
+// демо-бэкенд лежит отдельным чанком и с настоящим API не грузится
 function lazyMock(): AdminApi {
   let loaded: Promise<AdminApi> | null = null
   const load = () => (loaded ??= import('./mock').then((m) => m.mockApi))

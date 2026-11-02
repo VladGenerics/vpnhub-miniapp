@@ -3,23 +3,21 @@ import type { AnimationItem } from 'lottie-web/build/player/lottie_light'
 import { emojiFolder } from '../lib/palette'
 import { useApp } from '../store/AppStore'
 
-/* Кэш загруженных анимаций: один fetch на файл, клон на каждый экземпляр
-   (lottie-web мутирует переданный объект). */
+// кэш анимаций: один fetch на файл, каждому экземпляру клон (lottie-web мутирует объект)
 const cache = new Map<string, Promise<unknown>>()
 
-/* Сам плеер (~150 КБ) грузим отдельным файлом: первый экран рисуется,
-   не дожидаясь его, а эмодзи проявляются, когда он готов. */
+// плеер (~150 КБ) грузим отдельно: первый экран не ждёт его, эмодзи проявляются позже
 let player: Promise<typeof import('lottie-web/build/player/lottie_light').default> | null = null
 const loadPlayer = () => (player ??= import('lottie-web/build/player/lottie_light').then((m) => m.default))
 
 function load(path: string) {
   let p = cache.get(path)
   if (!p) {
-    p = fetch(`/${path}.json`).then((r) => {
+    p = fetch(`${import.meta.env.BASE_URL}${path}.json`).then((r) => {
       if (!r.ok) throw new Error(`HTTP ${r.status}`)
       return r.json()
     })
-    // Неудачную загрузку не кэшируем — следующий показ попробует ещё раз
+    // ошибку не кэшируем, в следующий раз попробуем снова
     p.catch(() => cache.delete(path))
     cache.set(path, p)
   }
@@ -31,16 +29,15 @@ export function preloadEmoji(folder: string, ...names: string[]) {
   names.forEach((n) => load(`${folder}/${n}`))
 }
 
-/* Очередь инициализации: создание анимации тяжёлое (парсинг сотен КБ),
-   поэтому разносим его по кадрам и стартуем после начала переходов —
-   иначе подтормаживают навигация и анимации страниц. */
+// Создание анимации тяжёлое (парсинг сотен КБ), поэтому разносим его по кадрам
+// и начинаем после переходов, иначе подтормаживает навигация.
 const queue: (() => void)[] = []
 let pumping = false
 
 function pump() {
   const t0 = performance.now()
   while (queue.length && performance.now() - t0 < 6) {
-    // Битый файл анимации не должен останавливать очередь для остальных эмодзи
+    // битый файл не должен останавливать остальные эмодзи
     try {
       queue.shift()!()
     } catch (e) {
@@ -59,8 +56,7 @@ function schedule(job: () => void) {
   }
 }
 
-/* Все эмодзи крутятся по кругу, но те, что вне экрана, ставим на паузу —
-   иначе десятки SVG-анимаций зря грузят процессор. */
+// эмодзи вне экрана ставим на паузу, иначе десятки анимаций зря грузят процессор
 const visible = new WeakMap<Element, (inView: boolean) => void>()
 const observer =
   typeof IntersectionObserver !== 'undefined'

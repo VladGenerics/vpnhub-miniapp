@@ -34,8 +34,19 @@ const columns: Column<AdminUserRow>[] = [
   { key: 'reg', title: 'Регистрация', sort: 'registered_at', render: (u) => dateTime(u.registered_at) },
   { key: 'lang', title: 'Язык', render: (u) => (u.language_code ? <span className="mono">{u.language_code}</span> : <span className="muted">—</span>) },
   { key: 'balance', title: 'Баланс', sort: 'balance', num: true, render: (u) => (u.balance ? rub(u.balance) : <span className="muted">0 ₽</span>) },
-  { key: 'sub', title: 'Подписка', sort: 'subscription_expires_at', render: (u) => <SubBadge status={u.subscription_status} expires={u.subscription_expires_at} /> },
-  { key: 'refs', title: 'Рефералы', sort: 'referrals_count', num: true, render: (u) => (u.referrals_count ? num(u.referrals_count) : <span className="muted">0</span>) },
+  {
+    key: 'sub',
+    title: 'Подписка',
+    sort: 'subscription_expires_at',
+    render: (u) => <SubBadge status={u.subscription_status} expires={u.subscription_expires_at} />,
+  },
+  {
+    key: 'refs',
+    title: 'Рефералы',
+    sort: 'referrals_count',
+    num: true,
+    render: (u) => (u.referrals_count ? num(u.referrals_count) : <span className="muted">0</span>),
+  },
   { key: 'flags', title: 'Признаки', render: (u) => <UserFlags user={u} /> },
 ]
 

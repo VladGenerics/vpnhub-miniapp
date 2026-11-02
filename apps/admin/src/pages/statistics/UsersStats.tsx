@@ -7,11 +7,8 @@ import { TimeSeriesCard, type Series } from './charts/TimeSeriesCard'
 import { inPeriod, prevPeriod, PREV_HINT, useStatsPeriod } from './period'
 import { AVG, PER, StatsFrame } from './StatsFrame'
 
-/*
- * Пользователи: рост аудитории и новые за интервал — по датам регистрации. Когда человек
- * заблокировал бота или стал ботом, в базе не хранится, поэтому категории (активные,
- * заблокировали, боты) — только в круговых диаграммах и по текущим флагам.
- */
+// Пользователи: рост и новые за интервал по датам регистрации. Когда человек заблокировал бота
+// или стал ботом, в базе не хранится, поэтому эти категории — только в круговых, по текущим флагам.
 export default function UsersStats() {
   const s = useStatsPeriod()
   const q = useUsersStats(s.query)
@@ -42,14 +39,25 @@ export default function UsersStats() {
         return (
           <div className="stack">
             <div className="kpi-grid">
-              <Kpi icon="users" label="Всего на конец периода" value={<CountUp value={last?.total ?? 0} format={num} />} note={last && last.total !== now.total ? `сейчас ${num(now.total)}` : undefined} />
+              <Kpi
+                icon="users"
+                label="Всего на конец периода"
+                value={<CountUp value={last?.total ?? 0} format={num} />}
+                note={last && last.total !== now.total ? `сейчас ${num(now.total)}` : undefined}
+              />
               <Kpi
                 icon="userPlus"
                 label="Новых за период"
                 value={<CountUp value={nTotal} format={num} />}
                 trend={prev && <Trend value={change(nTotal, nPrev)} hint={PREV_HINT} />}
-                note={win.length ? `в среднем ${num(Math.round(nTotal / win.length))} ${AVG[s.g]}` : undefined} />
-              <Kpi icon="trendDown" label="Заблокировали бота" value={<CountUp value={now.blocked} format={num} />} note={`сейчас · ${percent(now.blocked, now.total)} аудитории`} />
+                note={win.length ? `в среднем ${num(Math.round(nTotal / win.length))} ${AVG[s.g]}` : undefined}
+              />
+              <Kpi
+                icon="trendDown"
+                label="Заблокировали бота"
+                value={<CountUp value={now.blocked} format={num} />}
+                note={`сейчас · ${percent(now.blocked, now.total)} аудитории`}
+              />
               <Kpi icon="shield" label="Боты" value={<CountUp value={now.bots} format={num} />} note={`сейчас · ${percent(now.bots, now.total)} аудитории`} />
             </div>
 

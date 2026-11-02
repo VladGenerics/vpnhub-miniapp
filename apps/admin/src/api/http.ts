@@ -1,8 +1,8 @@
 import { createHttpClient } from '@vpnhub/shared'
 
-/* Клиент API панели: токен после входа через Telegram; внутри Telegram — initData. */
+// В браузере токен после входа через Telegram, внутри Telegram — initData
 
-export const API_URL = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, '') ?? '/api'
+export const API_URL = ((import.meta.env.VITE_API_URL as string | undefined) ?? '').replace(/\/$/, '')
 
 const tg = (window as unknown as { Telegram?: { WebApp?: { initData?: string } } }).Telegram?.WebApp
 

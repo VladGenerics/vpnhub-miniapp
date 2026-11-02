@@ -3,12 +3,8 @@ import { quote } from '@vpnhub/shared'
 import { getTgUser } from '../lib/telegram'
 import type { UserApi } from './index'
 
-/*
- * Демо-бэкенд в памяти: та же форма данных, что у настоящего API.
- * Параметры адреса для проверки сценариев:
- *   ?sub=0         — без подписки
- *   ?expires=90    — подписка закончится через 90 секунд (проверка таймера)
- */
+// Демо-бэкенд в памяти, данные той же формы, что у настоящего API.
+// Для проверки: ?sub=0 — без подписки, ?expires=90 — подписка кончится через 90 с.
 
 const params = new URLSearchParams(location.search)
 const DAY = 864e5
@@ -89,15 +85,15 @@ function requireSub(): Subscription {
   return subscription
 }
 
-/** Ручки для тестовой страницы: включить/выключить подписку в демо. */
+/** Для тестовой страницы /ui: управлять подпиской в демо */
 export const mockControls = {
   hasSubscription: () => subscription?.status === 'ACTIVE',
-  /** Подписка закончится через `sec` секунд (проверка таймера и автопродления) */
+  /** Подписка закончится через sec секунд, чтобы проверить таймер и автопродление */
   expireIn(sec: number) {
     this.setHasSubscription(true)
     subscription!.expires_at = iso(Date.now() + sec * 1000)
   },
-  /** Задать баланс (проверка «хватает ли средств на автопродление») */
+  /** Задать баланс, чтобы проверить нехватку денег на автопродление */
   setBalance(v: number) {
     me = { ...me, balance: v }
   },
@@ -124,8 +120,12 @@ export const mockApi: UserApi = {
     return delay({ token: `mock-${req.id}` }, 600)
   },
   getMe: () => delay(me),
+  bindEmail: async (email) => {
+    me = { ...me, email }
+    return delay(me)
+  },
   getSubscription() {
-    // истекла: автопродление с баланса, если хватает денег, иначе — отключение
+    // истекла: продлеваем с баланса, если хватает, иначе отключаем
     if (subscription?.status === 'ACTIVE' && +new Date(subscription.expires_at) <= Date.now()) {
       const { is_enabled, days } = subscription.auto_renewal
       const { total } = quote(tariffs, subscription.slots.length, days)
@@ -153,7 +153,7 @@ export const mockApi: UserApi = {
       external_invoice_id: null,
       pay_url: null,
       paid_at: null,
-      payAt: Date.now() + 1500, // «оплата» проходит через полторы секунды
+      payAt: Date.now() + 1500, // «оплата» проходит через 1,5 с
     }
     invoices.set(inv.id, inv)
     return delay(inv, 400)

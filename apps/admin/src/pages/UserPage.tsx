@@ -25,16 +25,26 @@ import { date, dateTime, num, percent, relative, rub } from '../lib/format'
 const MONTHS = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря']
 const MAX_ADJUST = 1_000_000
 
-/* ---------- Таблицы вкладок ---------- */
+// --- таблицы вкладок ---
 
 const referralCols: Column<ReferralRow>[] = [
   { key: 'id', title: 'ID', sort: 'id', render: (r) => <span className="mono">{r.id}</span> },
   { key: 'tg', title: 'Telegram ID', render: (r) => <span className="mono">{r.tg_user_id}</span> },
   { key: 'invited', title: 'Приглашён', sort: 'invited_at', render: (r) => dateTime(r.invited_at) },
-  { key: 'trial', title: 'Пробный', render: (r) => (r.has_used_trial_subscription ? <Badge tone="success">Активировал</Badge> : <span className="muted">—</span>) },
+  {
+    key: 'trial',
+    title: 'Пробный',
+    render: (r) => (r.has_used_trial_subscription ? <Badge tone="success">Активировал</Badge> : <span className="muted">—</span>),
+  },
   { key: 'sub', title: 'Подписка', render: (r) => <SubBadge status={r.subscription_status} /> },
   { key: 'bot', title: 'Бот', render: (r) => (r.is_blocked_bot ? <Badge tone="warn">Заблокировал</Badge> : <span className="muted">Активен</span>) },
-  { key: 'dep', title: 'Пополнил', sort: 'deposits_total', num: true, render: (r) => (r.deposits_total ? rub(r.deposits_total) : <span className="muted">0 ₽</span>) },
+  {
+    key: 'dep',
+    title: 'Пополнил',
+    sort: 'deposits_total',
+    num: true,
+    render: (r) => (r.deposits_total ? rub(r.deposits_total) : <span className="muted">0 ₽</span>),
+  },
 ]
 
 const OUT_TYPES = new Set(['PURCHASE_VPN', 'PURCHASE_ADDITIONAL_DEVICE_SLOTS', 'ADMIN_DEDUCT'])
@@ -45,7 +55,12 @@ const ledgerCols: Column<LedgerEntry>[] = [
   {
     key: 'source',
     title: 'Источник',
-    render: (l) => (l.source_type && l.source_id ? <span className="mono muted">{l.source_type === 'INVOICE' ? `Счёт #${l.source_id}` : `Покупка #${l.source_id}`}</span> : <span className="muted">—</span>),
+    render: (l) =>
+      l.source_type && l.source_id ? (
+        <span className="mono muted">{l.source_type === 'INVOICE' ? `Счёт #${l.source_id}` : `Покупка #${l.source_id}`}</span>
+      ) : (
+        <span className="muted">—</span>
+      ),
   },
   {
     key: 'amount',
@@ -112,7 +127,7 @@ function InvoicesTable({ id }: { id: number }) {
       <DataTable columns={invoiceCols} rows={data?.items} rowKey={(i) => i.id} loading={!data} skeletonRows={5} empty="Счетов нет" />
       {!!data?.total && <Pagination page={page} pageSize={PAGE_SIZE} total={data.total} onPage={setPage} />}
       {!!data?.total && (
-        // там фильтры по статусу и способу, сортировка — без ручного ввода ID в поиск
+        // там есть фильтры по статусу и способу оплаты, ID руками вводить не нужно
         <div className="pagination">
           <Link className="link link-more" to={`/invoices?user_id=${id}`}>
             Все счета пользователя в разделе «Счета» <Icon name="chevronRight" size={14} />
@@ -123,7 +138,7 @@ function InvoicesTable({ id }: { id: number }) {
   )
 }
 
-/* ---------- Изменение баланса ---------- */
+// --- изменение баланса ---
 
 function BalanceModal({ user, direction, onClose }: { user: AdminUserDetails; direction: LedgerDirection | null; onClose(): void }) {
   const amount = useMoneyInput()
@@ -189,7 +204,11 @@ function BalanceModal({ user, direction, onClose }: { user: AdminUserDetails; di
           submit()
         }}
       >
-        <Field label="Сумма" error={error ?? (adjust.error as Error | null)?.message} hint={after !== null ? `Баланс станет: ${rub(Math.round(after * 100) / 100)}` : 'В рублях, до двух знаков после запятой'}>
+        <Field
+          label="Сумма"
+          error={error ?? (adjust.error as Error | null)?.message}
+          hint={after !== null ? `Баланс станет: ${rub(Math.round(after * 100) / 100)}` : 'В рублях, до двух знаков после запятой'}
+        >
           {(fid) => (
             <div className="input-wrap">
               <input
@@ -226,7 +245,7 @@ function BalanceModal({ user, direction, onClose }: { user: AdminUserDetails; di
   )
 }
 
-/* ---------- Страница ---------- */
+// --- страница ---
 
 export function UserPage() {
   const id = Number(useParams().id)
@@ -238,8 +257,7 @@ export function UserPage() {
   const [modal, setModal] = useState<LedgerDirection | null>(null)
   const tab = (['referrals', 'ledger', 'invoices'].includes(sp.get('tab') ?? '') ? sp.get('tab') : 'referrals') as Tab
 
-  // «Назад» — туда, откуда пришли (список, рефералы другого пользователя…). Если карточку открыли
-  // из меню или по прямой ссылке — к списку с теми же фильтрами, иначе шаг назад увёл бы в «Счета»
+  // «Назад» ведёт туда, откуда пришли. Если карточку открыли по прямой ссылке — к списку с теми же фильтрами
   const fromNav = (location.state as { fromNav?: boolean } | null)?.fromNav
   const back = () => (location.key !== 'default' && !fromNav ? navigate(-1) : navigate(sectionListPath('/users')))
 

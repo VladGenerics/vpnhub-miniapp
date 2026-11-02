@@ -18,7 +18,7 @@ if (tg?.initData) {
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
-      {/* basename — если панель собрана под путём (VITE_BASE_PATH), например /admin */}
+      {/* basename нужен, если панель собрана под путём из VITE_BASE_PATH, например /admin/ */}
       <BrowserRouter basename={import.meta.env.BASE_URL.replace(/\/$/, '') || undefined}>
         <AuthProvider>
           <ToastProvider>

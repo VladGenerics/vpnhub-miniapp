@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 
-/* Минимальная типизация Telegram WebApp — только то, что используем. */
+// Типы Telegram WebApp, только то, что используем
 type HapticStyle = 'light' | 'medium' | 'heavy' | 'rigid' | 'soft'
 type NotifyType = 'error' | 'success' | 'warning'
 
@@ -47,15 +47,13 @@ interface TgWebApp {
 
 const w = window as unknown as { Telegram?: { WebApp?: TgWebApp } }
 export const tg: TgWebApp | undefined = w.Telegram?.WebApp
-/** true — открыто внутри Telegram, false — обычный браузер */
+/** Открыто внутри Telegram */
 export const isTelegram = !!tg?.initData
 
 const WEB_USER_KEY = 'vpnhub.user'
 
-/**
- * Профиль Telegram: в мини-аппе — из initData, в браузере — сохранённый
- * при входе через Telegram Login Widget (бэкенд имя и фото не хранит).
- */
+// Профиль Telegram: в мини-аппе из initData, в браузере — сохранённый при входе
+// (имя и фото бэкенд не хранит).
 export function getTgUser(): TgUser | undefined {
   if (isTelegram) return tg?.initDataUnsafe.user
   try {
@@ -73,7 +71,7 @@ export function saveWebUser(u: TgUser | null) {
       localStorage.setItem(WEB_USER_KEY, JSON.stringify({ id, first_name, last_name, username, photo_url }))
     } else localStorage.removeItem(WEB_USER_KEY)
   } catch {
-    /* хранилище недоступно — покажем «Гость» */
+    /* хранилище недоступно, покажем «Гость» */
   }
 }
 
@@ -114,7 +112,7 @@ export const haptic = {
   },
 }
 
-/** Показывает нативную кнопку «Назад» Telegram, пока смонтирована страница. */
+/** Родная кнопка «Назад» Telegram, пока страница смонтирована */
 export function useTelegramBackButton(onBack: (() => void) | null) {
   const ref = useRef(onBack)
   ref.current = onBack
@@ -132,13 +130,11 @@ export function useTelegramBackButton(onBack: (() => void) | null) {
 
 export function openSupport(url: string) {
   if (isTelegram && tg) tg.openTelegramLink(url)
-  else window.open(url, '_blank')
+  else window.open(url, '_blank', 'noopener')
 }
 
-/**
- * Открывает страницу оплаты счёта. Счета Telegram Stars (t.me/$…) — нативным
- * окном оплаты, ссылки t.me — внутри Telegram, остальное — во внешнем браузере.
- */
+// Открывает оплату счёта: Telegram Stars (t.me/$…) — родным окном, ссылки t.me — внутри Telegram,
+// остальное — во внешнем браузере.
 export function openPayment(url: string) {
   if (isTelegram && tg) {
     if (/^https:\/\/t\.me\/(\$|invoice\/)/.test(url) && tg.openInvoice && tg.isVersionAtLeast('6.1')) tg.openInvoice(url)

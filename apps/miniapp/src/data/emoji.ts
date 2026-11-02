@@ -1,5 +1,4 @@
-/* Реестр эмодзи из паков VHub Project (V) и Toxic Emojis Mini (T).
-   Файлы — Lottie JSON (сконвертированы из .tgs), см. public/emoji. */
+// Эмодзи из паков VHub Project (V) и Toxic Emojis Mini (T), Lottie JSON в public/emoji
 const V = (n: number) => `VHubProject_${String(n).padStart(2, '0')}`
 const T = (n: number) => `toxicemojismini_${String(n).padStart(2, '0')}`
 

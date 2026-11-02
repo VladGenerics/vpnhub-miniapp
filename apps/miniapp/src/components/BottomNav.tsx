@@ -3,13 +3,13 @@ import { NavLink, useLocation } from 'react-router-dom'
 import { haptic } from '../lib/telegram'
 import { NAV_ITEMS } from './nav'
 
-/**
- * Плавающая навигация: подложка активной вкладки «перепрыгивает» на выбранную
- * кнопку с пружиной и растяжением, иконка подпрыгивает.
- */
+// Нижняя навигация: подложка с пружиной перепрыгивает на выбранную вкладку, иконка подпрыгивает.
 export function BottomNav() {
   const { pathname } = useLocation()
-  const index = Math.max(0, NAV_ITEMS.findIndex((i) => i.to === pathname))
+  const index = Math.max(
+    0,
+    NAV_ITEMS.findIndex((i) => i.to === pathname),
+  )
   const prev = useRef(index)
   const [dir, setDir] = useState<'left' | 'right' | null>(null)
   const [pulse, setPulse] = useState(0)
@@ -29,14 +29,7 @@ export function BottomNav() {
           <i key={pulse} className={dir ? `is-moving-${dir}` : ''} />
         </span>
         {NAV_ITEMS.map((it, i) => (
-          <NavLink
-            key={it.to}
-            to={it.to}
-            end
-            replace
-            className={`nav-item ${i === index ? 'is-active' : ''}`}
-            onClick={() => i !== index && haptic.select()}
-          >
+          <NavLink key={it.to} to={it.to} end replace className={`nav-item ${i === index ? 'is-active' : ''}`} onClick={() => i !== index && haptic.select()}>
             <span className="nav-icon" key={i === index ? `on-${pulse}` : 'off'}>
               {it.icon}
             </span>

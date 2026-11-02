@@ -29,9 +29,9 @@ const invoiceCols: Column<AdminInvoiceRow>[] = [
 export function DashboardPage() {
   const { data: d, error, refetch } = useDashboard()
   const navigate = useNavigate()
-  // день под курсором — общий для обоих графиков, чтобы сравнивать регистрации и пополнения за одну дату
+  // день под курсором общий для обоих графиков, чтобы сравнивать одну дату
   const [day, setDay] = useState<number | null>(null)
-  // зависшие: не оплачены дольше часа — тем же списком счетов, отдельной ручки не нужно
+  // зависшие — неоплаченные дольше часа, обычным списком счетов
   const cutoff = useStaleCutoff()
   const stale = useInvoices({ status: 'UNPAID', to: new Date(cutoff).toISOString(), page: 1, page_size: 1, sort: 'created_at', order: 'desc' }).data?.total
   const today = toDateInput(Date.now())
@@ -45,7 +45,7 @@ export function DashboardPage() {
   if (error && !d) return <ErrorView error={error} onRetry={refetch} />
 
   const newUsers30 = d?.daily.reduce((s, p) => s + p.new_users, 0) ?? 0
-  // Неделя к неделе по полным дням: сегодняшний день ещё не закончился
+  // неделя к неделе по полным дням, сегодня ещё не закончилось
   const week = (f: (p: NonNullable<typeof d>['daily'][number]) => number, back: number) =>
     d ? d.daily.slice(-1 - 7 * (back + 1), -1 - 7 * back).reduce((s, p) => s + f(p), 0) : 0
   const wow = (f: (p: NonNullable<typeof d>['daily'][number]) => number) => change(week(f, 0), week(f, 1))

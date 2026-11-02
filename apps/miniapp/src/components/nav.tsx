@@ -1,16 +1,20 @@
 import type { ReactNode } from 'react'
 import { getTgUser } from '../lib/telegram'
 
-/* Пункты основной навигации — общие для нижней панели (телефон) и боковой (ПК). */
+// Пункты меню, общие для нижней панели (телефон) и боковой (ПК)
 
 const ShieldIcon = () => (
   <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden>
+    <path d="M12 2.5l7.5 3v5.6c0 4.7-3.1 8.9-7.5 10.4-4.4-1.5-7.5-5.7-7.5-10.4V5.5l7.5-3z" fill="currentColor" opacity=".9" />
     <path
-      d="M12 2.5l7.5 3v5.6c0 4.7-3.1 8.9-7.5 10.4-4.4-1.5-7.5-5.7-7.5-10.4V5.5l7.5-3z"
-      fill="currentColor"
-      opacity=".9"
+      className="nav-check"
+      d="M8.6 12.2l2.3 2.3 4.6-4.8"
+      fill="none"
+      stroke="var(--nav-bg-solid)"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
     />
-    <path className="nav-check" d="M8.6 12.2l2.3 2.3 4.6-4.8" fill="none" stroke="var(--nav-bg-solid)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 )
 
@@ -39,7 +43,7 @@ export interface NavItem {
   to: string
   label: string
   icon: ReactNode
-  /** Вложенные страницы, при которых пункт подсвечивается */
+  /** Вложенные страницы, на которых пункт тоже подсвечен */
   match: string[]
 }
 
@@ -51,7 +55,7 @@ export const NAV_ITEMS: NavItem[] = [
 
 export const NAV_ROUTES = NAV_ITEMS.map((i) => i.to)
 
-/** Индекс пункта меню для адреса (−1, если страница вне меню) */
+/** Индекс пункта меню для адреса, −1 если страницы нет в меню */
 export function navIndex(pathname: string) {
   const exact = NAV_ROUTES.indexOf(pathname)
   if (exact >= 0) return exact

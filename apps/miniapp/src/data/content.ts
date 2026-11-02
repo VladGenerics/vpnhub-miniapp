@@ -1,19 +1,13 @@
-/* Тексты и константы интерфейса. Данные пользователя приходят из API (src/api). */
+// Тексты и константы интерфейса. Данные пользователя приходят из API.
 import type { PaymentProvider } from '@vpnhub/shared'
 import { E } from './emoji'
 
 /** Максимум устройств при оформлении подписки */
 export const MAX_DEVICES = 5
 
-export const NO_SUB_TITLES = [
-  'Интернет без границ',
-  'Быстрый и надёжный VPN',
-  'Одна подписка на всё',
-  'Подключение за минуту',
-  'Ваши данные под защитой',
-]
+export const NO_SUB_TITLES = ['Интернет без границ', 'Быстрый и надёжный VPN', 'Одна подписка на всё', 'Подключение за минуту', 'Ваши данные под защитой']
 
-/** Оформление способов оплаты: эмодзи и подпись по коду провайдера */
+/** Эмодзи и подпись для каждого способа оплаты */
 export const PROVIDER_LOOK: Record<PaymentProvider, { emoji: string; subtitle: string }> = {
   yookassa: { emoji: E.cardTile, subtitle: 'Visa, Mastercard, МИР' },
   WATA: { emoji: E.dollarTile, subtitle: 'Без комиссии, моментально' },

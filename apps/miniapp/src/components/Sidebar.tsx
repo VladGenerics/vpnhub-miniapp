@@ -20,11 +20,7 @@ const EXTRA = [
   { to: '/ui', label: 'Оформление', emoji: E.gearTile },
 ]
 
-/**
- * Боковая панель справа для широких экранов (как в ChatGPT/Gemini):
- * навигация, ссылки и карточка пользователя. Сворачивается до полосы иконок,
- * состояние запоминается.
- */
+// Боковая панель справа на широком экране: меню, ссылки и профиль. Сворачивается до иконок, состояние запоминается.
 export function Sidebar() {
   const { pathname } = useLocation()
   const { sidebarCollapsed: collapsed, toggleSidebar } = useApp()

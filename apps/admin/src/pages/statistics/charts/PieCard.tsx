@@ -15,10 +15,7 @@ export interface PieItem {
   note?: string
 }
 
-/**
- * Доли за выбранный период: кольцо + легенда-таблица со значениями и процентами.
- * Нажатие на строку легенды скрывает долю, проценты пересчитываются по оставшимся.
- */
+// Доли за период: кольцо и легенда с процентами. Клик по строке скрывает долю, проценты пересчитываются.
 export function PieCard({
   title,
   sub,
@@ -37,7 +34,7 @@ export function PieCard({
   className?: string
 }) {
   const theme = useResolvedTheme()
-  // смена темы меняет фон и сетку — график перечитывает цвета
+  // при смене темы перечитываем цвета фона и сетки
   const skin = useSkin()
   const ref = useRef<HTMLDivElement>(null)
   const chart = useRef<ECharts | null>(null)
@@ -84,7 +81,7 @@ export function PieCard({
             avoidLabelOverlap: false,
             label: { show: false },
             labelLine: { show: false },
-            // 2 px цвета фона между долями — вместо обводки
+            // зазор между долями цветом фона вместо обводки
             itemStyle: {
               borderColor: ch.surface,
               borderWidth: 2,

@@ -1,6 +1,6 @@
 import type { InvoiceStatus, LedgerEntryType, PaymentProvider, PurchaseKind, SubscriptionStatus, UserRole } from './types'
 
-/* Подписи перечислений для интерфейса (по note из database.dbml). */
+// Подписи статусов и типов для интерфейса
 
 export const ROLE_LABEL: Record<UserRole, string> = {
   USER: 'Пользователь',

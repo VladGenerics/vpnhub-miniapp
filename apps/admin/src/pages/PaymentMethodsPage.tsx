@@ -112,11 +112,7 @@ export function PaymentMethodsPage() {
   return (
     <>
       <PageHead title="Платёжные системы" />
-      <Card
-        flush
-        title="Способы оплаты"
-        sub={data ? `Включено ${active} из ${data.length}. Выключенные способы не показываются в мини-аппе и кабинете.` : ' '}
-      >
+      <Card flush title="Способы оплаты" sub={data ? `Включено ${active} из ${data.length}. Выключенные способы не показываются в мини-аппе и кабинете.` : ' '}>
         {error && !data ? (
           <ErrorView error={error} onRetry={refetch} />
         ) : (

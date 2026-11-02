@@ -10,7 +10,7 @@ import { setThemeMode, useThemeMode, type ThemeMode } from '../lib/theme'
 
 const MAX_BONUS = 100_000
 
-/** «@vpnhub_support» и «t.me/…» достраиваем до полной ссылки — так их обычно и вставляют */
+/** «@vpnhub_support» и «t.me/…» достраиваем до полной ссылки, их обычно так и вставляют */
 function normalizeLink(v: string) {
   const t = v.trim()
   if (/^@\w{3,}$/.test(t)) return `https://t.me/${t.slice(1)}`
@@ -41,7 +41,7 @@ function SettingsForm({ s }: { s: AdminSettings }) {
   const referral = useMoneyInput(String(s.referral_bonus))
   const [touched, setTouched] = useState(false)
 
-  // после сохранения в форме — то, что вернул сервер
+  // после сохранения подставляем то, что вернул сервер
   useEffect(() => setLink(s.support_link), [s.support_link])
 
   const errors = {
@@ -162,7 +162,7 @@ const THEME_OPTIONS: { value: ThemeMode; label: string }[] = [
   { value: 'dark', label: 'Тёмная' },
 ]
 
-/** Тема панели. Запоминается в этом браузере. */
+/** Тема запоминается в этом браузере */
 function AppearanceCard() {
   const theme = useThemeMode()
   return (

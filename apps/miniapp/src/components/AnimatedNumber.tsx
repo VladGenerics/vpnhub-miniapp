@@ -3,7 +3,17 @@ import { useEffect, useRef, useState } from 'react'
 const easeOut = (t: number) => 1 - Math.pow(1 - t, 4)
 
 /** Число, плавно докручивающееся до нового значения */
-export function AnimatedNumber({ value, format = String, duration = 700, from }: { value: number; format?(n: number): string; duration?: number; from?: number }) {
+export function AnimatedNumber({
+  value,
+  format = String,
+  duration = 700,
+  from,
+}: {
+  value: number
+  format?(n: number): string
+  duration?: number
+  from?: number
+}) {
   const [shown, setShown] = useState(from ?? value)
   const current = useRef(from ?? value)
   const [bump, setBump] = useState(0)

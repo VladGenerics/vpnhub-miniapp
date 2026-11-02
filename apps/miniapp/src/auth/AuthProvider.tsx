@@ -4,16 +4,12 @@ import { authToken, setUnauthorizedHandler } from '../api/http'
 import { queryClient } from '../api/queries'
 import { isTelegram, saveWebUser, type TgUser } from '../lib/telegram'
 
-/*
- * Авторизация.
- * В Telegram пользователь авторизован всегда — каждый запрос несёт initData.
- * В браузере нужен токен, который бэкенд выдаёт после входа через Telegram
- * (страница /login). Токен хранится в localStorage.
- */
+// В Telegram пользователь авторизован всегда, каждый запрос несёт initData.
+// В браузере нужен токен, который бэкенд выдаёт после входа на /login. Храним его в localStorage.
 
 interface AuthState {
   isAuthed: boolean
-  /** user — данные из Telegram Login Widget для шапки профиля в браузере */
+  /** user — данные из Telegram Login Widget, для шапки профиля в браузере */
   login(token: string, user?: TgUser): void
   logout(): void
 }
@@ -51,7 +47,7 @@ export function useAuth() {
   return v
 }
 
-/** Пускает дальше только авторизованных, остальных — на /login с возвратом обратно */
+/** Неавторизованных отправляет на /login и потом возвращает обратно */
 export function RequireAuth({ children }: { children: ReactNode }) {
   const { isAuthed } = useAuth()
   const location = useLocation()

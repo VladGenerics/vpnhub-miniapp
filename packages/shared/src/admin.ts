@@ -13,14 +13,11 @@ import type {
   UserRole,
 } from './types'
 
-/*
- * Контракт API админ-панели (префикс /admin). Поля — как в database.dbml,
- * вычисляемые поля (суммы, количества) помечены комментариями.
- */
+// Типы API админки (префикс /admin). Поля как в database.dbml, вычисляемые помечены комментариями.
 
 export type SourceType = 'INVOICE' | 'PURCHASE' | 'PURCHASE_VPN'
 
-/* ---------- Списки ---------- */
+// --- списки ---
 
 export type SortOrder = 'asc' | 'desc'
 
@@ -43,7 +40,7 @@ export interface Paginated<T> {
   page_size: number
 }
 
-/* ---------- Админ ---------- */
+// --- админ ---
 
 /** GET /admin/me — кто вошёл. Доступ есть у OWNER, ADMIN и SUPPORT_AGENT (только чтение). */
 export interface AdminMe {
@@ -52,7 +49,7 @@ export interface AdminMe {
   role: UserRole
 }
 
-/* ---------- Пользователи ---------- */
+// --- пользователи ---
 
 export type UserFlag = 'bot' | 'blocked' | 'premium' | 'trial' | 'active_sub'
 
@@ -166,7 +163,7 @@ export interface BalanceAdjustRequest {
   comment?: string
 }
 
-/* ---------- Счета ---------- */
+// --- счета ---
 
 /**
  * GET /admin/invoices — счета.
@@ -189,7 +186,7 @@ export interface InvoicesParams extends ListParams {
   date_by?: 'created' | 'paid'
 }
 
-/* ---------- Платёжные системы и настройки ---------- */
+// --- платёжные системы и настройки ---
 
 /** PATCH /admin/payment-methods/:id */
 export interface PaymentMethodPatch {
@@ -211,7 +208,7 @@ export interface AdminSettings {
 /** PATCH /admin/settings */
 export type AdminSettingsPatch = Partial<Pick<AdminSettings, 'support_link' | 'invited_bonus' | 'referral_bonus'>>
 
-/* ---------- Dashboard ---------- */
+// --- dashboard ---
 
 /** GET /admin/dashboard — сводка; «сегодня» и «30 дней» считаются в часовом поясе tz */
 export interface Dashboard {
@@ -233,7 +230,7 @@ export interface Dashboard {
   latest_invoices: AdminInvoiceRow[]
 }
 
-/* ---------- Статистика ---------- */
+// --- статистика ---
 
 export type Granularity = 'hour' | 'day' | 'month' | 'year'
 

@@ -5,8 +5,6 @@ import { Icon } from './Icon'
 import type { IconName } from './icons'
 import { useToast } from './Toast'
 
-/* Базовые элементы интерфейса панели. */
-
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: 'primary' | 'secondary' | 'ghost' | 'danger' | 'success'
   size?: 'md' | 'sm'
@@ -70,10 +68,8 @@ export function Card({
 
 const easeOut = (t: number) => 1 - Math.pow(1 - t, 4)
 
-/**
- * Число, которое при первом показе набегает от нуля. Дальше значение меняется сразу —
- * чтобы итоги не «плыли» при движении ползунка периода.
- */
+// Число набегает от нуля только при первом показе, дальше меняется сразу,
+// чтобы итоги не плыли при движении ползунка.
 export function CountUp({ value, format, duration = 900 }: { value: number; format(n: number): string; duration?: number }) {
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
   const [shown, setShown] = useState(reduced ? value : 0)
@@ -113,7 +109,16 @@ function Spark({ data, color }: { data: number[]; color?: string }) {
         </linearGradient>
       </defs>
       <path d={`${line}L${w},${h}L0,${h}Z`} fill={`url(#${id})`} />
-      <path className="kpi-spark-line" d={line} fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round" pathLength={1} />
+      <path
+        className="kpi-spark-line"
+        d={line}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinejoin="round"
+        strokeLinecap="round"
+        pathLength={1}
+      />
     </svg>
   )
 }
@@ -165,7 +170,7 @@ export function Kpi({
           </span>
         )}
         {to ? (
-          // ссылка растянута на всю карточку псевдоэлементом — без вложенных <a>
+          // ссылка растянута на всю карточку через ::after, без вложенных <a>
           <Link className="kpi-link" to={to} title={toLabel} aria-label={toLabel}>
             {label}
           </Link>
@@ -260,7 +265,8 @@ export function ErrorView({ error, onRetry }: { error?: unknown; onRetry?: () =>
       title={status === 404 ? 'Не найдено' : status === 403 ? 'Нет доступа' : 'Не удалось загрузить данные'}
       text={status === 404 ? 'Запись удалена или адрес указан неверно' : (error as Error | undefined)?.message}
       action={
-        onRetry && status !== 404 && (
+        onRetry &&
+        status !== 404 && (
           <Button icon="refresh" onClick={onRetry}>
             Повторить
           </Button>
@@ -302,19 +308,13 @@ export function Modal({
     if (!d) return
     if (open && !d.open) {
       d.showModal()
-      // showModal ставит фокус на первую кнопку (крестик) — переводим на первое поле ввода
+      // showModal фокусирует первую кнопку (крестик), а нужно первое поле
       d.querySelector<HTMLElement>('input, textarea, select')?.focus()
     }
     if (!open && d.open) d.close()
   }, [open])
   return (
-    <dialog
-      ref={ref}
-      className="modal"
-      aria-labelledby={titleId}
-      onClose={onClose}
-      onMouseDown={(e) => e.target === ref.current && onClose()}
-    >
+    <dialog ref={ref} className="modal" aria-labelledby={titleId} onClose={onClose} onMouseDown={(e) => e.target === ref.current && onClose()}>
       {open && (
         <div className="modal-inner">
           <div className="modal-head">

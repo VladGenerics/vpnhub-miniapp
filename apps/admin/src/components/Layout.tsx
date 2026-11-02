@@ -16,12 +16,8 @@ export const NAV: { to: string; label: string; icon: IconName }[] = [
   { to: '/settings', label: 'Настройки', icon: 'settings' },
 ]
 
-/**
- * Последний адрес каждого раздела вместе с фильтрами, сортировкой и страницей (они живут в адресе).
- * Меню ведёт туда, а не на «голый» раздел — иначе после похода в «Счета» список пользователей сбрасывался.
- * Открытую карточку (/users/123) тоже: ушёл в «Счета» и вернулся — та же карточка. Список под ней
- * помним отдельно — для «Назад» из карточки и для клика по меню, когда раздел уже открыт.
- */
+// Помним последний адрес каждого раздела вместе с фильтрами и страницей: меню ведёт туда же,
+// а не сбрасывает список. Открытую карточку (/users/123) тоже помним.
 const lastPath: Record<string, string> = {}
 const lastList: Record<string, string> = {}
 export const sectionPath = (to: string) => lastPath[to] ?? to
@@ -29,8 +25,7 @@ export const sectionListPath = (to: string) => lastList[to] ?? to
 
 function Avatar({ name, photo }: { name: string; photo?: string }) {
   const [broken, setBroken] = useState(false)
-  if (photo && !broken)
-    return <img className="avatar" src={photo} alt="" width={30} height={30} referrerPolicy="no-referrer" onError={() => setBroken(true)} />
+  if (photo && !broken) return <img className="avatar" src={photo} alt="" width={30} height={30} referrerPolicy="no-referrer" onError={() => setBroken(true)} />
   return (
     <span className="avatar" aria-hidden>
       {name.slice(0, 1).toUpperCase()}
@@ -54,7 +49,7 @@ export function Layout() {
     document.title = `${title} — VPNHub Admin`
   }, [title])
 
-  // мобильное меню закрывается при переходе, по Esc и когда окно стало шире телефона; страница под ним не прокручивается
+  // мобильное меню закрывается при переходе, по Esc и на широком экране
   useEffect(() => setOpen(false), [pathname])
   useEffect(() => {
     const wide = matchMedia('(min-width: 641px)')
@@ -73,7 +68,7 @@ export function Layout() {
     }
   }, [open])
 
-  // «/» — к поиску на странице, как в GitHub и Gmail; в русской раскладке та же клавиша даёт «.»
+  // «/» — к поиску, как в GitHub. В русской раскладке это «.»
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (!(e.key === '/' || (e.code === 'Slash' && !e.shiftKey)) || e.ctrlKey || e.metaKey || e.altKey) return
@@ -100,19 +95,20 @@ export function Layout() {
         </div>
         <nav className="side-nav">
           {NAV.map((n) => (
-            <NavLink key={n.to} to={n === section ? sectionListPath(n.to) : sectionPath(n.to)} state={{ fromNav: true }} end={n.to === '/'} className="side-link" data-label={n.label}>
+            <NavLink
+              key={n.to}
+              to={n === section ? sectionListPath(n.to) : sectionPath(n.to)}
+              state={{ fromNav: true }}
+              end={n.to === '/'}
+              className="side-link"
+              data-label={n.label}
+            >
               <Icon name={n.icon} />
               <span className="side-link-text">{n.label}</span>
             </NavLink>
           ))}
         </nav>
-        <div className="side-foot">
-          {USE_MOCKS ? (
-            <span className="badge is-warn badge-dot">Демо-данные</span>
-          ) : (
-            <span>Панель управления VPNHub</span>
-          )}
-        </div>
+        <div className="side-foot">{USE_MOCKS ? <span className="badge is-warn badge-dot">Демо-данные</span> : <span>Панель управления VPNHub</span>}</div>
       </aside>
       {open && <div className="side-backdrop" onClick={() => setOpen(false)} />}
 

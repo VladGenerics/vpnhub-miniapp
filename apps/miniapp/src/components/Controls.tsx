@@ -63,17 +63,7 @@ export function Stepper({ value, min, max, onChange, suffix }: { value: number; 
   )
 }
 
-export function Chips({
-  items,
-  value,
-  onChange,
-  render,
-}: {
-  items: number[]
-  value: number | null
-  onChange(v: number): void
-  render?(v: number): ReactNode
-}) {
+export function Chips({ items, value, onChange, render }: { items: number[]; value: number | null; onChange(v: number): void; render?(v: number): ReactNode }) {
   return (
     <div className="chips">
       {items.map((it) => (

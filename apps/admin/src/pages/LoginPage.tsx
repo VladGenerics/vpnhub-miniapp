@@ -46,7 +46,14 @@ export function LoginPage() {
         } catch {
           /* без хранилища демо войдёт владельцем */
         }
-        data = { id: 5_000_000_001, first_name: 'Демо', last_name: ROLE_LABEL[role], username: 'vpnhub_admin', auth_date: Math.floor(Date.now() / 1000), hash: 'mock' }
+        data = {
+          id: 5_000_000_001,
+          first_name: 'Демо',
+          last_name: ROLE_LABEL[role],
+          username: 'vpnhub_admin',
+          auth_date: Math.floor(Date.now() / 1000),
+          hash: 'mock',
+        }
       } else {
         if (!BOT_ID) throw new Error('Вход не настроен: укажите VITE_TG_BOT_ID')
         data = await telegramLoginPopup(BOT_ID)
@@ -99,7 +106,7 @@ export function LoginPage() {
   )
 }
 
-/** Вошёл, но не сотрудник (или роль USER) */
+/** Вошёл, но не сотрудник */
 export function NoAccessPage() {
   const { logout, profile } = useAuth()
   return (
@@ -109,8 +116,8 @@ export function NoAccessPage() {
         <div>
           <h1>Нет доступа</h1>
           <p className="muted" style={{ marginTop: 6 }}>
-            {profile?.username ? `Аккаунт @${profile.username}` : 'Этот аккаунт'} не входит в команду проекта. Доступ выдаёт владелец — ролью
-            администратора или поддержки.
+            {profile?.username ? `Аккаунт @${profile.username}` : 'Этот аккаунт'} не входит в команду проекта. Доступ выдаёт владелец — ролью администратора или
+            поддержки.
           </p>
         </div>
         <Button variant="secondary" icon="logout" wide onClick={logout}>

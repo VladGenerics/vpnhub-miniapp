@@ -17,7 +17,7 @@ type Mode = 'login' | 'register'
 
 const REF_KEY = 'vpnhub.ref'
 
-/** Реферальный код из ?ref=… — запоминаем на время сессии, чтобы пережил переходы */
+/** Реферальный код из ?ref=…, держим его в sessionStorage, чтобы пережил переходы */
 function useRefCode(): string | null {
   const { search } = useLocation()
   const [ref] = useState(() => {
@@ -53,17 +53,25 @@ export function LoginPage() {
   const location = useLocation()
   const ref = useRefCode()
   const [mode, setMode] = useState<Mode>(ref ? 'register' : 'login')
-  const { data: settings } = useSettings()
+  // бонус нужен только в тексте про приглашение
+  const { data: settings } = useSettings(!!ref)
   const from = (location.state as { from?: string } | null)?.from ?? '/'
 
   useEffect(preloadTelegramLogin, [])
 
   const auth = useMutation({
     mutationFn: async () => {
-      // в демо-режиме без бота окно Telegram не открываем — входим тестовым пользователем
+      // в демо без бота окно Telegram не открываем, входим тестовым пользователем
       const data: TelegramAuthData | null =
         USE_MOCKS && !BOT_ID
-          ? { id: 5_812_334_097, first_name: 'Демо', last_name: 'Пользователь', username: 'vpnhub_demo', auth_date: Math.floor(Date.now() / 1000), hash: 'mock' }
+          ? {
+              id: 5_812_334_097,
+              first_name: 'Демо',
+              last_name: 'Пользователь',
+              username: 'vpnhub_demo',
+              auth_date: Math.floor(Date.now() / 1000),
+              hash: 'mock',
+            }
           : await telegramLogin()
       if (!data) return null
       const res = await api.loginTelegram({ ...data, ref: ref ?? undefined })
@@ -124,9 +132,7 @@ export function LoginPage() {
         {mode === 'register' && ref && (
           <div className="notice is-accent">
             <Lottie name={E.gift} size={26} />
-            <span>
-              Вас пригласили — {settings ? `${rub(settings.invited_bonus)} ` : ''}бонусом на баланс после регистрации
-            </span>
+            <span>Вас пригласили — {settings ? `${rub(settings.invited_bonus)} ` : ''}бонусом на баланс после регистрации</span>
           </div>
         )}
 
@@ -144,7 +150,9 @@ export function LoginPage() {
         {auth.isError && <p className="login-error">{auth.error.message || 'Не удалось войти, попробуйте ещё раз'}</p>}
 
         <p className="login-legal">
-          {mode === 'login' ? 'Нет аккаунта? Он создастся автоматически при первом входе.' : 'Уже пользовались ботом? Просто войдите — подписка и баланс сохранятся.'}
+          {mode === 'login'
+            ? 'Нет аккаунта? Он создастся автоматически при первом входе.'
+            : 'Уже пользовались ботом? Просто войдите — подписка и баланс сохранятся.'}
           {USE_MOCKS && !BOT_ID && <span className="login-demo">Демо-режим: вход выполняется тестовым пользователем</span>}
         </p>
       </div>

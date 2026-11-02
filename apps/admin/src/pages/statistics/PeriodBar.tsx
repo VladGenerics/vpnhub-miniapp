@@ -3,10 +3,7 @@ import { Segmented } from '../../components/Segmented'
 import { fromDateInput, toDateInput } from '../../lib/format'
 import { GRANULARITIES, PRESETS, presetPeriod, step, type Period } from './period'
 
-/**
- * Одна строка фильтров над всеми графиками вкладки: шаг, быстрые периоды и даты вручную.
- * Всё, что ниже, считается по выбранному периоду.
- */
+// Строка фильтров над графиками: шаг, быстрые периоды и даты. Всё ниже считается по этому периоду.
 export function PeriodBar({
   g,
   bounds,
@@ -22,7 +19,7 @@ export function PeriodBar({
 }) {
   const presets = PRESETS[g].map((p) => ({ ...p, period: presetPeriod(p, g, bounds) }))
   const active = presets.find((p) => p.period.from === period.from && p.period.to === period.to)
-  // поля дат — по дням включительно; для часов «по» — день, в котором кончается период
+  // даты по дням включительно; для часов «по» — день, в котором кончается период
   const lastDay = period.to - 1
   const min = toDateInput(bounds.from)
   const max = toDateInput(bounds.to - 1)
@@ -34,7 +31,7 @@ export function PeriodBar({
   }
   const setTo = (v: string) => {
     if (!v) return
-    // календарным шагом, не + 24 ч: в день перевода часов сутки длятся 23 или 25 ч
+    // по календарю, а не +24 ч: в день перевода часов сутки длятся 23 или 25 ч
     const day = fromDateInput(v)
     onPeriod({ from: Math.min(period.from, day), to: step(day, 'day') }, true)
   }

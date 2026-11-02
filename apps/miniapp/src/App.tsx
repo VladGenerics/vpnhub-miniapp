@@ -19,7 +19,7 @@ import { currentBg, emojiFolder, type PaletteId } from './lib/palette'
 import { useApp, type ThemeMode } from './store/AppStore'
 import { useIsWide } from './hooks/useMediaQuery'
 
-// витрины UI и эмодзи — служебные страницы, в основной файл не тянем
+// витрины /ui и /emoji служебные, грузим их отдельно
 const UiKitPage = lazy(() => import('./pages/UiKitPage').then((m) => ({ default: m.UiKitPage })))
 const EmojiGalleryPage = lazy(() => import('./pages/EmojiGalleryPage').then((m) => ({ default: m.EmojiGalleryPage })))
 
@@ -94,7 +94,7 @@ export default function App() {
       >
         <div className="app-main">
           <div className={`route ${routeAnim}`} key={pathname}>
-            {/* у каждой страницы своя граница: ошибка сбрасывается при переходе */}
+            {/* у каждой страницы своя граница ошибок, при переходе она сбрасывается */}
             <ErrorBoundary>
               <Suspense fallback={null}>
                 <Routes>

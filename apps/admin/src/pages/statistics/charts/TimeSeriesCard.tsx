@@ -38,7 +38,7 @@ export interface Series {
 
 const esc = (s: string) => s.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`)
 
-/** Кнопки-переключатели серий под графиком — как в статистике Telegram */
+// кнопки серий под графиком, как в статистике Telegram
 export function LegendPills({
   items,
   hidden,
@@ -91,11 +91,8 @@ export function useHidden() {
   return { hidden, toggle }
 }
 
-/**
- * График временного ряда с ползунком периода внизу.
- * Ползунок двигает общий период вкладки — вместе с ним меняются метрики, круговые диаграммы
- * и остальные графики. Пока данные перезагружаются, остаётся прошлый кадр с прозрачностью.
- */
+// График с ползунком периода внизу. Ползунок двигает период всей вкладки,
+// вместе с ним меняются цифры, круговые и соседние графики.
 export function TimeSeriesCard({
   title,
   sub,
@@ -156,34 +153,27 @@ export function TimeSeriesCard({
   /** Период, который график показывает сейчас — чтобы не применять его повторно */
   const shown = useRef<Period | null>(null)
 
-  /**
-   * Столбец стоит по центру своей даты, поэтому для столбцов окно и ось шире на полшага с каждой стороны —
-   * иначе крайние столбцы режутся пополам. Обратно из окна в период: первый и последний столбец, чей центр внутри.
-   */
+  // Столбец стоит по центру своей даты, поэтому окно и ось шире на полшага с каждой стороны,
+  // иначе крайние столбцы режутся пополам.
   const pad = (t: number) => (type === 'bar' ? (step(t, g) - t) / 2 : 0)
   const zoomWindow = (p: Period) => {
     const last = truncate(p.to - 1, g)
     return { startValue: p.from - pad(p.from), endValue: last + pad(last) }
   }
 
-  /**
-   * Последний интервал ещё идёт (сегодня, текущий месяц) — его значение неполное.
-   * Такой отрезок рисуем пунктиром, столбец — бледнее, иначе кажется, что всё упало.
-   * Накопительных рядов это не касается: там последняя точка — текущее значение.
-   */
+  // Последний интервал ещё идёт (сегодня, текущий месяц), рисуем его пунктиром или бледнее,
+  // иначе кажется, что всё упало. Накопительных рядов это не касается.
   const partial = !cumulative && bounds.to > Date.now() ? truncate(bounds.to - 1, g) : null
 
-  /** Зазор между частями столбца — только если столбцы достаточно широкие, иначе он съедает узкие столбцы */
+  /** Зазор между частями столбца, только если столбцы широкие */
   const gapWidth = (p: Period) => {
     const c = chart.current
     if (!c || type !== 'bar' || !stacked) return 0
     return barWidth(c, p, g) > 11 ? 1 : 0
   }
 
-  /**
-   * Ширина столбцов под окно p. Сам ECharts при перетаскивании ползунка считает её по прошлому окну:
-   * растягиваешь период — столбцы остаются широкими и налезают друг на друга, пока не отпустишь.
-   */
+  // Ширина столбцов под окно p. ECharts при перетаскивании считает её по старому окну,
+  // и столбцы налезают друг на друга, пока не отпустишь.
   const fitBars = (c: ECharts, p: Period, gg: Granularity) => {
     if (type !== 'bar') return
     const w = barWidth(c, p, gg)
@@ -191,7 +181,7 @@ export function TimeSeriesCard({
     c.setOption({ series: Array.from({ length: n }, () => ({ barWidth: w, itemStyle: stacked ? { borderWidth: w > 11 ? 1 : 0 } : {} })) })
   }
 
-  /* создание графика и реакция на размер */
+  // создание графика и ресайз
   useLayoutEffect(() => {
     if (!ref.current || asTable) return
     const c = echarts.init(ref.current, null, { renderer: 'canvas' })
@@ -208,8 +198,7 @@ export function TimeSeriesCard({
         const from = type === 'bar' && first < dz.startValue ? step(first, gg) : first
         const p = { from, to: Math.max(step(truncate(dz.endValue, gg), gg), step(from, gg)) }
         shown.current = p
-        // пока тянут ползунок — без анимации: каждый шаг перезапускал её с середины, столбцы отставали
-        // от оси и стояли на месте прошлого окна, пока не отпустишь
+        // пока тянут ползунок — без анимации, иначе столбцы отстают от оси
         if (!dragging) c.setOption({ animation: false })
         clearTimeout(dragging)
         dragging = setTimeout(() => {
@@ -228,7 +217,7 @@ export function TimeSeriesCard({
       hoverSync.emit(c, inside ? (c.convertFromPixel({ xAxisIndex: 0 }, e.offsetX) as number) : null)
       if (inside && live.current.onPick) zr.setCursorStyle('pointer')
     })
-    // клик берёт интервал, который сейчас в подсказке, — а не ближайший к пикселю: они могут расходиться у краёв
+    // клик берёт интервал из подсказки, а не ближайший к пикселю: у краёв они расходятся
     let pointed: number | null = null
     c.on('updateAxisPointer', (e) => {
       const v = (e as { axesInfo?: { value?: number }[] }).axesInfo?.[0]?.value
@@ -244,7 +233,7 @@ export function TimeSeriesCard({
     const unsubscribe = hoverSync.subscribe((source, t) => {
       if (source === c) return
       const x = t === null ? NaN : (c.convertToPixel({ xAxisIndex: 0 }, t) as number)
-      // подсказку — в видимую часть графика: соседний мог наполовину уехать под шапку или за край экрана
+      // держим подсказку в видимой части графика
       const [top, bottom] = visibleBand(c.getDom())
       const y = (top + bottom) / 2
       if (bottom > top && Number.isFinite(x) && c.containPixel('grid', [x, y])) c.dispatchAction({ type: 'showTip', x, y })
@@ -263,7 +252,7 @@ export function TimeSeriesCard({
     }
   }, [asTable])
 
-  /* данные, тема, набор серий — полная перерисовка */
+  // поменялись данные, тема или набор серий — перерисовываем целиком
   useEffect(() => {
     const c = chart.current
     if (!c) return
@@ -303,7 +292,7 @@ export function TimeSeriesCard({
           borderWidth: 1,
           padding: [10, 12],
           textStyle: { color: ch.text, fontFamily: 'Inter, system-ui, sans-serif', fontSize: 13 },
-          // z-index ниже шапки (20): у ECharts по умолчанию 9999999, подсказка ложилась поверх неё
+          // ниже шапки (z-index 20), у ECharts по умолчанию 9999999
           extraCssText: 'border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.14);z-index:15;',
           position: (point: number[], _p: unknown, _d: unknown, _r: unknown, size: { contentSize: number[]; viewSize: number[] }) => {
             const [w, h] = size.contentSize
@@ -332,7 +321,10 @@ export function TimeSeriesCard({
                   `<div style="display:flex;align-items:center;gap:8px;line-height:1.7"><span style="width:12px;height:3px;border-radius:2px;background:${pr.color}"></span><b style="font-variant-numeric:tabular-nums">${esc(format(pr.value[1]))}</b><span style="color:${ch.hint}">${esc(pr.seriesName)}</span></div>`,
               )
               .join('')
-            const sum = total && params.length > 1 ? `<div style="border-top:1px solid ${ch.axis};margin-top:6px;padding-top:6px"><b>${esc(format(params.reduce((s, pr) => s + pr.value[1], 0)))}</b> <span style="color:${ch.hint}">${esc(total)}</span></div>` : ''
+            const sum =
+              total && params.length > 1
+                ? `<div style="border-top:1px solid ${ch.axis};margin-top:6px;padding-top:6px"><b>${esc(format(params.reduce((s, pr) => s + pr.value[1], 0)))}</b> <span style="color:${ch.hint}">${esc(total)}</span></div>`
+                : ''
             const hint = pickHint ? `<div style="color:${ch.hint};margin-top:6px;font-size:12px">Клик — ${esc(pickHint)}</div>` : ''
             return head + rows + sum + hint
           },
@@ -408,7 +400,7 @@ export function TimeSeriesCard({
     shown.current = p
   }, [visible, theme, skin, type, stacked, cumulative, g, bounds, partial, format, axisFormat, total, pickHint, asTable])
 
-  /* период поменяли снаружи (пресет, даты, соседний график) — сдвигаем окно */
+  // период поменяли снаружи (пресет, даты, соседний график) — сдвигаем окно
   useEffect(() => {
     const c = chart.current
     if (!c) return
@@ -418,7 +410,7 @@ export function TimeSeriesCard({
     c.setOption({ dataZoom: [zoomWindow(period)] })
   }, [period, g])
 
-  /* подпись под каждым интервалом, если влезает: по умолчанию ECharts делит ось примерно на 5 частей и пропускает даты */
+  // подписываем каждый интервал, если влезает; сам ECharts делит ось примерно на 5 частей
   useEffect(() => {
     const c = chart.current
     if (!c) return
@@ -429,7 +421,7 @@ export function TimeSeriesCard({
     c.setOption({ xAxis: { splitNumber: n <= fit ? Math.max(1, n) : Math.ceil(n / Math.ceil(n / fit)) } })
   }, [period, g, visible, theme, skin, bounds, asTable])
 
-  /* ширина столбцов и зазора между их частями зависит от того, сколько столбцов на экране */
+  // ширина столбцов и зазоров зависит от того, сколько их на экране
   useEffect(() => {
     const c = chart.current
     if (c) fitBars(c, period, g)
@@ -471,7 +463,7 @@ export function TimeSeriesCard({
       }
       flush
     >
-      {/* Разные key: иначе React переиспользует тот же div, а ECharts при dispose очищает его вместе с таблицей */}
+      {/* разные key, иначе ECharts при dispose вычистит div вместе с таблицей */}
       {asTable ? (
         <div key="table" className="chart-table" style={{ maxHeight: height }}>
           <table className="table">
@@ -516,7 +508,14 @@ export function TimeSeriesCard({
           </table>
         </div>
       ) : (
-        <div key="chart" ref={ref} className={`chart ${fetching ? 'is-fetching' : ''}`} style={{ height }} role="img" aria-label={`График: ${typeof title === 'string' ? title : ''}. Значения доступны в виде таблицы`} />
+        <div
+          key="chart"
+          ref={ref}
+          className={`chart ${fetching ? 'is-fetching' : ''}`}
+          style={{ height }}
+          role="img"
+          aria-label={`График: ${typeof title === 'string' ? title : ''}. Значения доступны в виде таблицы`}
+        />
       )}
       {series.length > 1 && <LegendPills items={series} hidden={hidden} onToggle={toggle} theme={theme} />}
       {series.length <= 1 && <div style={{ height: 12 }} />}

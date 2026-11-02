@@ -8,7 +8,7 @@ export interface TabDef {
   content: ReactNode
 }
 
-/** Сегмент-контрол «как папки в Telegram» + контент, листаемый свайпом. */
+/** Вкладки как папки в Telegram, контент листается свайпом */
 export function SwipeTabs({ tabs }: { tabs: TabDef[] }) {
   const [index, setIndex] = useState(0)
   const [dx, setDx] = useState(0)
@@ -73,28 +73,14 @@ export function SwipeTabs({ tabs }: { tabs: TabDef[] }) {
           }}
         />
         {tabs.map((t, i) => (
-          <button
-            key={t.key}
-            role="tab"
-            aria-selected={i === index}
-            className={`segmented-item ${i === index ? 'is-active' : ''}`}
-            onClick={() => go(i)}
-          >
+          <button key={t.key} role="tab" aria-selected={i === index} className={`segmented-item ${i === index ? 'is-active' : ''}`} onClick={() => go(i)}>
             {t.label}
             {t.badge && <span className="badge">{t.badge}</span>}
           </button>
         ))}
       </div>
 
-      <div
-        className="tabs-viewport"
-        ref={viewport}
-        style={{ height }}
-        onTouchStart={onStart}
-        onTouchMove={onMove}
-        onTouchEnd={onEnd}
-        onTouchCancel={onEnd}
-      >
+      <div className="tabs-viewport" ref={viewport} style={{ height }} onTouchStart={onStart} onTouchMove={onMove} onTouchEnd={onEnd} onTouchCancel={onEnd}>
         <div
           className="tabs-track"
           style={{

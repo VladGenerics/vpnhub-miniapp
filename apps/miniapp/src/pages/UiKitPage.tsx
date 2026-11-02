@@ -194,7 +194,12 @@ function Overlays() {
   return (
     <Section title="Уведомления и окна">
       <Cell icon={<Lottie name={E.check} size={30} />} title="Показать уведомление" onClick={() => toast('Готово!', E.check)} chevron={false} />
-      <Cell icon={<Lottie name={E.memo} size={30} />} title="Открыть окно" subtitle="На телефоне — шторка, на ПК — модальное окно" onClick={() => setOpen(true)} />
+      <Cell
+        icon={<Lottie name={E.memo} size={30} />}
+        title="Открыть окно"
+        subtitle="На телефоне — шторка, на ПК — модальное окно"
+        onClick={() => setOpen(true)}
+      />
       <Sheet open={open} onClose={() => setOpen(false)}>
         <div className="sheet-head">
           <Lottie name={E.party} size={80} />
@@ -237,7 +242,7 @@ function Lists() {
   )
 }
 
-/** Переключатели демо-данных — только когда приложение работает без бэкенда */
+/** Переключатели демо-данных, только когда нет бэкенда */
 function DemoData() {
   const qc = useQueryClient()
   const { active } = useActiveSubscription()
@@ -290,7 +295,7 @@ function DemoData() {
   )
 }
 
-/** Тестовый раздел: компоненты интерфейса и настройки цветового профиля */
+/** Тестовая страница: компоненты и цветовой профиль */
 export function UiKitPage() {
   return (
     <Page back>

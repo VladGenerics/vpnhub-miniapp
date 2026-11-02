@@ -5,11 +5,8 @@ import { authToken, isTelegram, setUnauthorizedHandler } from '../api/http'
 import { queryClient, useAdminMe } from '../api/queries'
 import { ErrorView } from '../components/ui'
 
-/*
- * Вход в панель — тот же, что в кабинете: Telegram Login Widget → POST /auth/telegram → токен.
- * Права проверяет GET /admin/me: USER получает 403 и видит экран «Нет доступа».
- * Внутри Telegram (панель открыта как Mini App) запросы несут initData, токен не нужен.
- */
+// Вход как в кабинете: Telegram Login Widget → POST /auth/telegram → токен.
+// Права проверяет GET /admin/me, обычный USER получает 403. В Telegram вместо токена идёт initData.
 
 /** Имя и аватар для шапки — из Telegram, в базе этих полей нет */
 export interface Profile {
@@ -22,8 +19,7 @@ export interface Profile {
 const PROFILE_KEY = 'vpnhub.admin.profile'
 
 function readProfile(): Profile | null {
-  const tgUser = (window as unknown as { Telegram?: { WebApp?: { initDataUnsafe?: { user?: Profile } } } }).Telegram?.WebApp
-    ?.initDataUnsafe?.user
+  const tgUser = (window as unknown as { Telegram?: { WebApp?: { initDataUnsafe?: { user?: Profile } } } }).Telegram?.WebApp?.initDataUnsafe?.user
   if (isTelegram && tgUser) return tgUser
   try {
     return JSON.parse(localStorage.getItem(PROFILE_KEY) ?? 'null') as Profile | null
@@ -45,7 +41,7 @@ interface AuthState {
   isAuthed: boolean
   me: AdminMe | undefined
   profile: Profile | null
-  /** Может менять данные: балансы, платёжные системы, настройки. Поддержка — только смотрит. */
+  /** Может менять данные. Поддержка только смотрит */
   canEdit: boolean
   login(token: string, user: TelegramAuthData): void
   logout(): void
@@ -100,10 +96,7 @@ export function useAuth() {
   return v
 }
 
-/**
- * Пускает дальше только сотрудников. Пока /admin/me грузится — пустой экран со спиннером,
- * чтобы не мелькала панель у тех, кому туда нельзя.
- */
+// Пускает только сотрудников. Пока грузится /admin/me — спиннер, чтобы панель не мелькала.
 export function RequireAdmin({ children, denied }: { children: ReactNode; denied: ReactNode }) {
   const { isAuthed } = useAuth()
   const location = useLocation()

@@ -1,12 +1,9 @@
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react'
 import { applyPalette, initialPalette, type PaletteId } from '../lib/palette'
 
-/*
- * Локальные настройки интерфейса (не данные пользователя — те приходят из API,
- * см. src/api/queries.ts).
- */
+// Локальные настройки интерфейса. Данные пользователя приходят из API (src/api/queries.ts).
 
-/** auto — как в Telegram / системе, иначе принудительно */
+/** auto — как в Telegram или системе */
 export type ThemeMode = 'auto' | 'dark' | 'light'
 
 const THEME_KEY = 'vpnhub.theme'
@@ -34,7 +31,7 @@ interface AppState {
   setPalette(id: PaletteId): void
   themeMode: ThemeMode
   setThemeMode(m: ThemeMode): void
-  /** Правая панель на десктопе свёрнута до иконок */
+  /** Боковая панель на ПК свёрнута до иконок */
   sidebarCollapsed: boolean
   toggleSidebar(): void
 }

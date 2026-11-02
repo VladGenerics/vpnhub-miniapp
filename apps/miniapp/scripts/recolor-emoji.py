@@ -2,8 +2,8 @@
 
 Оригиналы (как скачаны из паков) лежат в emoji-src/, результат — в public/emoji/,
 а оригинальные зелёные (для темы «Неон») — в public/emoji-original/.
-Запуск:  python3 scripts/recolor-emoji.py            (голубой)
-         python3 scripts/recolor-emoji.py --original (скопировать без изменений)
+Запуск:  python3 apps/miniapp/scripts/recolor-emoji.py            (голубой)
+         python3 apps/miniapp/scripts/recolor-emoji.py --original (скопировать как есть)
 """
 import colorsys, json, pathlib, shutil, sys
 

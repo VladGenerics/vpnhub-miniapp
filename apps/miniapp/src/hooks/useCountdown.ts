@@ -1,10 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 
-/**
- * Остаток миллисекунд до момента `target`, обновляется раз в секунду
- * (тик выравнивается по границе секунды, чтобы цифры менялись ровно).
- * `onZero` вызывается один раз, когда отсчёт дошёл до нуля.
- */
+// Сколько мс осталось до target. Тикает раз в секунду ровно по границе секунды.
+// onZero вызывается один раз, когда дошли до нуля.
 export function useCountdown(target: string | Date, onZero?: () => void) {
   const end = +new Date(target)
   const [left, setLeft] = useState(() => Math.max(0, end - Date.now()))
@@ -27,7 +24,7 @@ export function useCountdown(target: string | Date, onZero?: () => void) {
       timer = setTimeout(tick, (ms % 1000) + 5)
     }
     tick()
-    // после сна вкладки/телефона таймеры стоят — пересчитываем при возврате
+    // после сна телефона таймеры стоят, пересчитываем при возврате
     const onVisible = () => document.visibilityState === 'visible' && (clearTimeout(timer), tick())
     document.addEventListener('visibilitychange', onVisible)
     return () => {

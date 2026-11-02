@@ -1,9 +1,6 @@
 import { preloadTelegramLogin as preload, telegramLoginPopup, type TelegramAuthData } from '@vpnhub/shared'
 
-/*
- * Вход через Telegram на сайте. Нужны VITE_TG_BOT_ID (числовой id бота — первая
- * часть токена) и домен сайта, привязанный к боту в @BotFather командой /setdomain.
- */
+// Вход через Telegram на сайте. Нужен VITE_TG_BOT_ID и домен, привязанный к боту (@BotFather → /setdomain).
 
 export const BOT_ID = Number(import.meta.env.VITE_TG_BOT_ID) || null
 export const BOT_USERNAME = (import.meta.env.VITE_TG_BOT_USERNAME as string | undefined) || null

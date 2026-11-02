@@ -11,7 +11,7 @@ export const PLATFORM_LABEL: Record<Platform, string> = {
   other: 'Устройство',
 }
 
-/** Платформа из device_slots.platform (строка от клиента: «iOS», «android», «Windows» …) */
+/** Платформа из device_slots.platform, строка от клиента: iOS, android, Windows… */
 export function platformOf(raw: string | null): Platform {
   const p = (raw ?? '').toLowerCase()
   if (p.includes('mac') || p.includes('darwin')) return 'macos'

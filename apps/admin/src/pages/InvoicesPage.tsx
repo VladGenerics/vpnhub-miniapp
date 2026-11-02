@@ -15,7 +15,7 @@ import { useStaleCutoff } from '../lib/invoices'
 const FILTERS = ['status', 'provider', 'user_id', 'from', 'to', 'by', 'stale'] as const
 
 const iso = (ms: number) => new Date(ms).toISOString()
-/** Начало следующего дня — календарно: в день перевода часов сутки не 24 ч */
+/** Начало следующего дня по календарю: в день перевода часов сутки не 24 ч */
 const dayAfter = (v: string) => {
   const d = new Date(fromDateInput(v))
   d.setDate(d.getDate() + 1)
@@ -70,7 +70,7 @@ export function InvoicesPage() {
   const { data, error, isFetching, refetch } = useInvoices(query)
   const onSearch = useCallback((q: string) => set({ q }), [set])
   const today = toDateInput(Date.now())
-  // ручной выбор статуса или дат снимает «зависшие»: это отдельный готовый срез
+  // ручной выбор статуса или дат снимает фильтр «зависшие»
   const setFilter = (patch: Parameters<typeof set>[0]) => set({ ...patch, stale: undefined })
 
   return (
@@ -79,7 +79,12 @@ export function InvoicesPage() {
       <Card flush>
         <div className="toolbar">
           <SearchInput value={params.q ?? ''} onChange={onSearch} placeholder="Счёт, ID или Telegram ID, внешний ID" label="Поиск счетов" />
-          <select className="select" value={stale ? 'UNPAID' : (params.status ?? '')} onChange={(e) => setFilter({ status: e.target.value })} aria-label="Статус">
+          <select
+            className="select"
+            value={stale ? 'UNPAID' : (params.status ?? '')}
+            onChange={(e) => setFilter({ status: e.target.value })}
+            aria-label="Статус"
+          >
             <option value="">Все статусы</option>
             {(Object.keys(INVOICE_STATUS_LABEL) as InvoiceStatus[]).map((s) => (
               <option key={s} value={s}>
@@ -96,7 +101,12 @@ export function InvoicesPage() {
             ))}
           </select>
           <div className="date-range" role="group" aria-label="Период">
-            <select className="select" value={by === 'paid' ? 'paid' : 'created'} onChange={(e) => setFilter({ by: e.target.value === 'paid' ? 'paid' : undefined })} aria-label="По какой дате">
+            <select
+              className="select"
+              value={by === 'paid' ? 'paid' : 'created'}
+              onChange={(e) => setFilter({ by: e.target.value === 'paid' ? 'paid' : undefined })}
+              aria-label="По какой дате"
+            >
               <option value="created">Созданы</option>
               <option value="paid">Оплачены</option>
             </select>

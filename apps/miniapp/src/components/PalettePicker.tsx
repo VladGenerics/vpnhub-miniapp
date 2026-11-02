@@ -2,7 +2,7 @@ import { PALETTES } from '../lib/palette'
 import { haptic } from '../lib/telegram'
 import { useApp } from '../store/AppStore'
 
-/** Выбор цветовой палитры (демо-режим) */
+/** Выбор палитры, для тестовой страницы /ui */
 export function PalettePicker() {
   const { palette, setPalette } = useApp()
   return (

@@ -6,11 +6,8 @@ export const num = (n: number) => n.toLocaleString('ru-RU', { maximumFractionDig
 /** 12,3 тыс. / 1,2 млн */
 export const compact = (n: number) => n.toLocaleString('ru-RU', { notation: 'compact', maximumFractionDigits: 1 })
 
-/**
- * Подпись деления оси: коротко, но без потери точности. Деления — круглые числа,
- * поэтому печатаем их точно (до 3 знаков в тыс./млн), иначе на узком
- * диапазоне вышло бы «4,2 млн» на каждом делении. Не влезает — полное число.
- */
+// Подпись деления оси. Деления круглые, поэтому печатаем точно (до 3 знаков в тыс./млн),
+// иначе на узком диапазоне на каждом делении было бы «4,2 млн».
 export function axisNum(n: number) {
   const a = Math.abs(n)
   const unit = a >= 1e9 ? 1e9 : a >= 1e6 ? 1e6 : a >= 1e3 ? 1e3 : 1
@@ -23,12 +20,10 @@ export function axisNum(n: number) {
 export const rubCompact = (n: number) => (Math.abs(n) >= 10_000 ? `${compact(n)} ₽` : `${num(n)} ₽`)
 
 /** Доля в процентах: 0.1234 → «12,3 %» */
-export const percent = (part: number, total: number) =>
-  total > 0 ? `${((part / total) * 100).toLocaleString('ru-RU', { maximumFractionDigits: 1 })} %` : '—'
+export const percent = (part: number, total: number) => (total > 0 ? `${((part / total) * 100).toLocaleString('ru-RU', { maximumFractionDigits: 1 })} %` : '—')
 
 /** 01.11.2026 — для полей и подписей */
-export const dateNum = (d: Date | string | number) =>
-  new Date(d).toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' })
+export const dateNum = (d: Date | string | number) => new Date(d).toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' })
 
 /** 1 ноя 2026 */
 export const dateShort = (d: Date | string | number) =>

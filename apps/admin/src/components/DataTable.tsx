@@ -14,10 +14,7 @@ export interface Column<T> {
   num?: boolean
 }
 
-/**
- * Таблица со страничной загрузкой: сортировку, поиск и страницы считает бэкенд,
- * таблица только показывает текущую страницу и сообщает, что выбрал пользователь.
- */
+// Таблица с серверной пагинацией: сортировку, поиск и страницы считает бэкенд.
 export function DataTable<T>({
   columns,
   rows,
@@ -86,7 +83,7 @@ export function DataTable<T>({
                   key={rowKey(r)}
                   className={onRowClick ? 'is-clickable' : undefined}
                   onClick={onRowClick && (() => onRowClick(r))}
-                  // строка открывается и с клавиатуры: Tab до строки, затем Enter
+                  // строку можно открыть с клавиатуры: Tab, потом Enter
                   tabIndex={onRowClick ? 0 : undefined}
                   onKeyDown={onRowClick && ((e) => e.key === 'Enter' && e.target === e.currentTarget && onRowClick(r))}
                 >

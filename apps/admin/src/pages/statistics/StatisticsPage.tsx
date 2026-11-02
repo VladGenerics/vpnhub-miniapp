@@ -20,7 +20,12 @@ export default function StatisticsPage() {
     <>
       <PageHead title="Статистика" />
       <div className="stats-tabs">
-        <Segmented<Tab> options={TABS} value={TABS.some((t) => t.value === tab) ? tab : ''} onChange={(t) => navigate(`/statistics${t ? `/${t}` : ''}`)} label="Раздел статистики" />
+        <Segmented<Tab>
+          options={TABS}
+          value={TABS.some((t) => t.value === tab) ? tab : ''}
+          onChange={(t) => navigate(`/statistics${t ? `/${t}` : ''}`)}
+          label="Раздел статистики"
+        />
       </div>
       <Outlet />
     </>

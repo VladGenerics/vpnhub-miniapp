@@ -1,26 +1,16 @@
-/*
- * Типы данных, которыми фронтенд обменивается с бэкендом.
- * Имена полей повторяют колонки database.dbml (snake_case), чтобы бэкенду
- * не приходилось переименовывать поля. Деньги приходят числом в рублях.
- * Даты — строки ISO 8601 (timestamptz).
- */
+// Типы данных между фронтендом и бэкендом. Поля называются как колонки в database.dbml (snake_case).
+// Деньги — число в рублях, даты — строки ISO 8601.
 
 export type ISODate = string
 
-/* ---------- Перечисления ---------- */
+// --- перечисления ---
 
 export type UserRole = 'USER' | 'ADMIN' | 'OWNER' | 'SUPPORT_AGENT'
 export type SubscriptionStatus = 'ACTIVE' | 'DISABLED' | 'NOT_FOUND'
 export type InvoiceStatus = 'UNPAID' | 'PAID' | 'EXPIRED' | 'FAILED'
 export type InvoiceCurrency = 'RUB' | 'USD' | 'EUR'
 export type PaymentProvider = 'cryptobot' | 'yookassa' | 'tg_stars' | 'lolz' | 'heleket' | 'WATA' | 'rollypay'
-export type PurchaseKind =
-  | 'VPN_FIRST_PURCHASE'
-  | 'VPN_EXTENSION'
-  | 'VPN_RENEWAL'
-  | 'VPN_AUTORENEWAL'
-  | 'DEVICE_SLOTS'
-  | 'VPN_PURCHASE'
+export type PurchaseKind = 'VPN_FIRST_PURCHASE' | 'VPN_EXTENSION' | 'VPN_RENEWAL' | 'VPN_AUTORENEWAL' | 'DEVICE_SLOTS' | 'VPN_PURCHASE'
 export type LedgerDirection = 'IN' | 'OUT'
 export type LedgerEntryType =
   | 'DEPOSIT'
@@ -33,7 +23,7 @@ export type LedgerEntryType =
   | 'BONUS_FROM_INVITE'
   | 'BONUS_FROM_REFERRAL_FILL_BALANCE'
 
-/* ---------- Пользователь ---------- */
+// --- пользователь ---
 
 /** Текущий пользователь (кабинет). users + баланс кошелька. */
 export interface Me {
@@ -46,11 +36,11 @@ export interface Me {
   role: UserRole
   /** wallets.balance кошелька пользователя */
   balance: number
-  /** Почта для входа с сайта. В database.dbml поля нет — ждём решения бэкенда. */
+  /** Привязанная почта (PUT /me/email). В database.dbml такого поля пока нет */
   email?: string | null
 }
 
-/* ---------- Подписка ---------- */
+// --- подписка ---
 
 export interface AutoRenewal {
   is_enabled: boolean
@@ -82,7 +72,7 @@ export interface Subscription {
   slots: DeviceSlot[]
 }
 
-/* ---------- Тарифы ---------- */
+// --- тарифы ---
 
 /** prices: цена дня за одно устройство, действует от min_days дней */
 export interface Price {
@@ -111,7 +101,7 @@ export interface Tariffs {
   personal_discount: PersonalDiscount | null
 }
 
-/* ---------- Оплата ---------- */
+// --- оплата ---
 
 /** payment_methods */
 export interface PaymentMethod {
@@ -139,7 +129,7 @@ export interface Invoice {
   paid_at: ISODate | null
 }
 
-/* ---------- Публичные настройки ---------- */
+// --- публичные настройки ---
 
 export interface PublicSettings {
   support_link: string
@@ -147,7 +137,7 @@ export interface PublicSettings {
   referral_bonus: number
 }
 
-/* ---------- Вход с сайта ---------- */
+// --- вход с сайта ---
 
 /** Данные Telegram Login Widget — бэкенд проверяет hash токеном бота */
 export interface TelegramAuthData {
@@ -169,7 +159,7 @@ export interface AuthResponse {
   token: string
 }
 
-/* ---------- Запросы ---------- */
+// --- запросы ---
 
 export interface CreateInvoiceRequest {
   provider: PaymentProvider

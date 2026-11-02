@@ -2,11 +2,8 @@ import { useCallback, useMemo } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import type { SortOrder } from '@vpnhub/shared'
 
-/**
- * Параметры списка (страница, сортировка, поиск, фильтры) живут в адресе страницы:
- * ссылку можно отправить коллеге, а «Назад» из карточки возвращает к той же выборке.
- * filters — константа уровня модуля, иначе параметры пересчитываются на каждый рендер.
- */
+// Параметры списка (страница, сортировка, поиск, фильтры) хранятся в адресе: ссылку можно скинуть
+// коллеге, а «Назад» из карточки вернёт к той же выборке. filters держать константой модуля.
 export function useListParams<F extends string>(defaults: { sort: string; order: SortOrder; page_size?: number }, filters: readonly F[]) {
   const [sp, setSp] = useSearchParams()
 
@@ -23,7 +20,7 @@ export function useListParams<F extends string>(defaults: { sort: string; order:
     }
   }, [sp, defaults.sort, defaults.order, defaults.page_size, filters])
 
-  /** Меняет параметры; любое изменение, кроме страницы, возвращает на первую страницу */
+  /** Любое изменение, кроме страницы, возвращает на первую страницу */
   const set = useCallback(
     (patch: Partial<Record<'page' | 'size' | 'sort' | 'order' | 'q' | F, string | number | undefined>>) => {
       setSp(

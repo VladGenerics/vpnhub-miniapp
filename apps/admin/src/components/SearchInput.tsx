@@ -2,10 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 import { useDebounced } from '../hooks/useDebounced'
 import { Icon } from './Icon'
 
-/**
- * Поиск по мере ввода: запрос уходит через 350 мс после последней буквы.
- * value — то, что сейчас в адресе; при «Назад» поле подхватывает его.
- */
+// Поиск по мере ввода, запрос уходит через 350 мс после последней буквы.
+// value — то, что сейчас в адресе, при «Назад» поле подхватывает его.
 export function SearchInput({ value, onChange, placeholder, label }: { value: string; onChange(v: string): void; placeholder: string; label: string }) {
   const [text, setText] = useState(value)
   const debounced = useDebounced(text.trim())
@@ -18,7 +16,7 @@ export function SearchInput({ value, onChange, placeholder, label }: { value: st
     }
   }, [debounced, onChange])
 
-  // адрес поменялся снаружи (навигация назад, сброс фильтров)
+  // адрес поменялся снаружи (назад, сброс фильтров)
   useEffect(() => {
     if (value !== last.current) {
       last.current = value

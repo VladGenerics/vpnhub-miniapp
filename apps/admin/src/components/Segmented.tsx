@@ -5,10 +5,7 @@ export interface SegOption<T extends string> {
   label: string
 }
 
-/**
- * Сегмент-контрол по макету Tabs из ТЗ: подложка выбранного пункта
- * плавно переезжает под нажатый. Управляется стрелками с клавиатуры.
- */
+// Переключатель-сегменты: подложка переезжает под выбранный пункт, работают стрелки с клавиатуры.
 export function Segmented<T extends string>({
   options,
   value,
@@ -24,7 +21,10 @@ export function Segmented<T extends string>({
 }) {
   const refs = useRef<(HTMLButtonElement | null)[]>([])
   const [thumb, setThumb] = useState<{ x: number; w: number } | null>(null)
-  const index = Math.max(0, options.findIndex((o) => o.value === value))
+  const index = Math.max(
+    0,
+    options.findIndex((o) => o.value === value),
+  )
 
   useLayoutEffect(() => {
     const el = refs.current[index]

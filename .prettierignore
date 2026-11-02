@@ -1,0 +1,6 @@
+node_modules
+dist
+package-lock.json
+apps/miniapp/public
+apps/miniapp/emoji-src
+*.md

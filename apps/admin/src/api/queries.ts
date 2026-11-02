@@ -16,14 +16,14 @@ export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 30_000,
-      // 401/403/404 повторять бессмысленно
+      // 401/403/404 повторять нет смысла
       retry: (count, err) => count < 1 && ![401, 403, 404].includes((err as { status?: number }).status ?? 0),
       refetchOnWindowFocus: true,
     },
   },
 })
 
-/** Часовой пояс браузера: «сегодня» и интервалы статистики считаются в нём */
+/** Пояс браузера: в нём считаются «сегодня» и интервалы статистики */
 export const TZ = Intl.DateTimeFormat().resolvedOptions().timeZone
 
 export const keys = {
@@ -44,15 +44,14 @@ export const useAdminMe = (enabled: boolean) => useQuery({ queryKey: keys.me, qu
 
 export const useDashboard = () => useQuery({ queryKey: keys.dashboard, queryFn: () => api.getDashboard(TZ), refetchInterval: 60_000 })
 
-/* Списки: пока грузится следующая страница, показываем предыдущую — таблица не прыгает */
+// пока грузится следующая страница, показываем предыдущую, чтобы таблица не прыгала
 export const useUsers = (p: UsersParams) => useQuery({ queryKey: keys.users(p), queryFn: () => api.getUsers(p), placeholderData: keepPreviousData })
 export const useUser = (id: number) => useQuery({ queryKey: keys.user(id), queryFn: () => api.getUser(id), enabled: id > 0 })
 export const useReferrals = (id: number, p: ListParams) =>
   useQuery({ queryKey: keys.referrals(id, p), queryFn: () => api.getUserReferrals(id, p), placeholderData: keepPreviousData })
 export const useLedger = (id: number, p: ListParams) =>
   useQuery({ queryKey: keys.ledger(id, p), queryFn: () => api.getUserLedger(id, p), placeholderData: keepPreviousData })
-export const useInvoices = (p: InvoicesParams) =>
-  useQuery({ queryKey: keys.invoices(p), queryFn: () => api.getInvoices(p), placeholderData: keepPreviousData })
+export const useInvoices = (p: InvoicesParams) => useQuery({ queryKey: keys.invoices(p), queryFn: () => api.getInvoices(p), placeholderData: keepPreviousData })
 
 export const usePaymentMethods = () => useQuery({ queryKey: keys.paymentMethods, queryFn: api.getPaymentMethods })
 export const useSettings = () => useQuery({ queryKey: keys.settings, queryFn: api.getSettings })
@@ -73,8 +72,7 @@ export function useUpdatePaymentMethod() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: ({ id, patch }: { id: number; patch: PaymentMethodPatch }) => api.updatePaymentMethod(id, patch),
-    onSuccess: (m: PaymentMethod) =>
-      qc.setQueryData<PaymentMethod[]>(keys.paymentMethods, (list) => list?.map((x) => (x.id === m.id ? m : x))),
+    onSuccess: (m: PaymentMethod) => qc.setQueryData<PaymentMethod[]>(keys.paymentMethods, (list) => list?.map((x) => (x.id === m.id ? m : x))),
   })
 }
 
@@ -86,7 +84,7 @@ export function useUpdateSettings() {
   })
 }
 
-/* ---------- Статистика ---------- */
+// --- статистика ---
 
 export const useStatsRange = () => useQuery({ queryKey: keys.statsRange, queryFn: api.getStatsRange, staleTime: 10 * 60_000 })
 

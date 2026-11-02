@@ -1,26 +1,22 @@
-import {
-  INVOICE_STATUS_LABEL,
-  ROLE_LABEL,
-  type AdminUserRow,
-  type InvoiceStatus,
-  type SubscriptionStatus,
-  type UserRole,
-} from '@vpnhub/shared'
+import { INVOICE_STATUS_LABEL, ROLE_LABEL, type AdminUserRow, type InvoiceStatus, type SubscriptionStatus, type UserRole } from '@vpnhub/shared'
 import { isStale, waited } from '../lib/invoices'
 import { dateNum } from '../lib/format'
 import { Badge, type Tone } from './ui'
 
-/* Метки статусов — одинаковые во всех таблицах и карточках. */
-
 export function SubBadge({ status, expires }: { status: SubscriptionStatus; expires?: string | null }) {
-  if (status === 'ACTIVE') return <Badge tone="success" dot>{expires ? `до ${dateNum(expires)}` : 'Активна'}</Badge>
+  if (status === 'ACTIVE')
+    return (
+      <Badge tone="success" dot>
+        {expires ? `до ${dateNum(expires)}` : 'Активна'}
+      </Badge>
+    )
   if (status === 'DISABLED') return <Badge dot>{expires ? `истекла ${dateNum(expires)}` : 'Отключена'}</Badge>
   return <span className="muted">—</span>
 }
 
 const INVOICE_TONE: Record<InvoiceStatus, Tone> = { PAID: 'success', UNPAID: 'warn', EXPIRED: 'neutral', FAILED: 'danger' }
 
-/** created — дата создания: неоплаченный дольше часа подсвечивается как зависший */
+/** Неоплаченный дольше часа подсвечивается как зависший */
 export function InvoiceBadge({ status, created }: { status: InvoiceStatus; created?: string }) {
   if (created && isStale({ status, created_at: created }))
     return (
@@ -43,7 +39,13 @@ export function RoleBadge({ role }: { role: UserRole }) {
 }
 
 /** Признаки пользователя: бот, заблокировал бота, Premium, пробный период */
-export function UserFlags({ user, trial = true }: { user: Pick<AdminUserRow, 'is_bot' | 'is_blocked_bot' | 'is_premium' | 'has_used_trial_subscription' | 'role'>; trial?: boolean }) {
+export function UserFlags({
+  user,
+  trial = true,
+}: {
+  user: Pick<AdminUserRow, 'is_bot' | 'is_blocked_bot' | 'is_premium' | 'has_used_trial_subscription' | 'role'>
+  trial?: boolean
+}) {
   const any = user.is_bot || user.is_blocked_bot || user.is_premium || (trial && user.has_used_trial_subscription) || user.role !== 'USER'
   if (!any) return <span className="muted">—</span>
   return (

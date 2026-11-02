@@ -7,16 +7,13 @@ interface Props {
   open: boolean
   onClose(): void
   children: ReactNode
-  /** Разрешить разворачивание на весь экран свайпом вверх (мобильные) */
+  /** Можно ли растянуть на весь экран свайпом вверх */
   expandable?: boolean
 }
 
 const CLOSE_MS = 260
 
-/**
- * Диалоговое окно: на мобильных — выдвижная панель снизу (тянется вверх
- * на весь экран, вниз — сворачивается/закрывается), на ПК — модалка.
- */
+// На телефоне — шторка снизу (вверх разворачивается, вниз закрывается), на ПК — обычная модалка
 export function Sheet({ open, onClose, children, expandable = true }: Props) {
   const isDesktop = useIsDesktop()
   const [mounted, setMounted] = useState(open)
@@ -24,6 +21,8 @@ export function Sheet({ open, onClose, children, expandable = true }: Props) {
   const [expanded, setExpanded] = useState(false)
   const [drag, setDrag] = useState(0)
   const start = useRef<{ y: number; t: number } | null>(null)
+  const closeRef = useRef(onClose)
+  closeRef.current = onClose
 
   useEffect(() => {
     if (open) {
@@ -42,7 +41,7 @@ export function Sheet({ open, onClose, children, expandable = true }: Props) {
 
   useEffect(() => {
     if (!mounted) return
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose()
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && closeRef.current()
     document.addEventListener('keydown', onKey)
     document.body.classList.add('no-scroll')
     return () => {
@@ -81,19 +80,12 @@ export function Sheet({ open, onClose, children, expandable = true }: Props) {
     }
   }
 
-  const style = drag
-    ? { transform: `translateY(${Math.max(drag, expanded ? -20 : -window.innerHeight)}px)`, transition: 'none' }
-    : undefined
+  const style = drag ? { transform: `translateY(${Math.max(drag, expanded ? -20 : -window.innerHeight)}px)`, transition: 'none' } : undefined
 
   return createPortal(
     <div className={`sheet-root ${isDesktop ? 'is-modal' : 'is-sheet'} ${closing ? 'is-closing' : ''}`}>
       <div className="sheet-backdrop" onClick={onClose} />
-      <div
-        className={`sheet ${expanded ? 'is-expanded' : ''}`}
-        style={style}
-        role="dialog"
-        aria-modal="true"
-      >
+      <div className={`sheet ${expanded ? 'is-expanded' : ''}`} style={style} role="dialog" aria-modal="true">
         {isDesktop ? (
           <button className="sheet-close" onClick={onClose} aria-label="Закрыть">
             <svg width="14" height="14" viewBox="0 0 14 14">
@@ -101,13 +93,7 @@ export function Sheet({ open, onClose, children, expandable = true }: Props) {
             </svg>
           </button>
         ) : (
-          <div
-            className="sheet-grip"
-            onPointerDown={onDown}
-            onPointerMove={onMove}
-            onPointerUp={onUp}
-            onPointerCancel={onUp}
-          >
+          <div className="sheet-grip" onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp}>
             <span />
           </div>
         )}

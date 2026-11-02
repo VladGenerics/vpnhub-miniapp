@@ -39,7 +39,11 @@ function InvoiceSheet({ invoiceId, onClose }: { invoiceId: number | null; onClos
     <Sheet open={invoiceId !== null} onClose={onClose} expandable={false}>
       {!inv || inv.status === 'UNPAID' ? (
         <>
-          {head(E.walletTile, 'Ожидаем оплату', inv?.pay_url ? 'Оплатите счёт на странице платёжной системы — баланс пополнится автоматически' : 'Проверяем статус платежа…')}
+          {head(
+            E.walletTile,
+            'Ожидаем оплату',
+            inv?.pay_url ? 'Оплатите счёт на странице платёжной системы — баланс пополнится автоматически' : 'Проверяем статус платежа…',
+          )}
           <div className="sheet-actions">
             {inv?.pay_url && (
               <Button stretched onClick={() => openPayment(inv.pay_url!)}>
@@ -62,7 +66,11 @@ function InvoiceSheet({ invoiceId, onClose }: { invoiceId: number | null; onClos
         </>
       ) : (
         <>
-          {head(E.warning, inv.status === 'EXPIRED' ? 'Счёт истёк' : 'Оплата не прошла', 'Деньги не списаны. Попробуйте ещё раз или выберите другой способ оплаты')}
+          {head(
+            E.warning,
+            inv.status === 'EXPIRED' ? 'Счёт истёк' : 'Оплата не прошла',
+            'Деньги не списаны. Попробуйте ещё раз или выберите другой способ оплаты',
+          )}
           <div className="sheet-actions">
             <Button stretched variant="secondary" onClick={onClose}>
               Закрыть
@@ -94,7 +102,7 @@ export function TopUpPage() {
     create.mutate(
       { provider: method.provider, amount },
       {
-        // ссылку открывает кнопка в окне счёта: открытие без клика блокируют браузеры и Telegram
+        // ссылку открывает кнопка в окне счёта: без клика браузеры и Telegram её блокируют
         onSuccess: setInvoice,
         onError: () => {
           haptic.notify('error')

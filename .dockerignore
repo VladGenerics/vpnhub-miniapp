@@ -2,9 +2,9 @@
 **/dist
 .git
 .claude
-.env
-.env.*
-!.env.example
+**/.env
+**/.env.*
+!**/.env.example
 *.log
 # исходники эмодзи нужны только скрипту перекраски; в сборку идёт лишь список для витрины /emoji
 apps/miniapp/emoji-src/*

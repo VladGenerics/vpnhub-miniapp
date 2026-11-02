@@ -1,6 +1,6 @@
-/* Варианты цветовой палитры (демо для выбора заказчиком). */
+// Цветовые палитры кабинета, переключаются на /ui
 
-/* emoji — папка с эмодзи: голубые (перекрашенные) или оригинальные зелёные из пака */
+// emoji — папка с эмодзи: голубые (перекрашенные) или оригинальные зелёные
 export const PALETTES = [
   { id: 'graphite', title: 'Графит', swatch: ['#0e0f11', '#3d9bff'], emoji: 'emoji' },
   { id: 'telegram', title: 'Telegram', swatch: ['#17212b', '#2aabee'], emoji: 'emoji' },
@@ -12,7 +12,7 @@ export type PaletteId = (typeof PALETTES)[number]['id']
 export const emojiFolder = (id: PaletteId) => PALETTES.find((p) => p.id === id)!.emoji
 
 const KEY = 'vpnhub.palette'
-const ALIASES: Record<string, PaletteId> = { aqua: 'neon' } // старые ссылки ?palette=aqua
+const ALIASES: Record<string, PaletteId> = { aqua: 'neon' } // старое имя из ранних ссылок
 const isPalette = (v: unknown): v is PaletteId => PALETTES.some((p) => p.id === v)
 
 export function initialPalette(): PaletteId {
@@ -42,5 +42,5 @@ export function applyPalette(id: PaletteId, animate = false) {
   }
 }
 
-/** Текущий цвет фона — для шапки и нижней панели Telegram */
+/** Цвет фона для шапки и нижней панели Telegram */
 export const currentBg = () => getComputedStyle(document.documentElement).getPropertyValue('--bg').trim()

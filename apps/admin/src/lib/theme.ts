@@ -1,6 +1,6 @@
 import { useEffect, useSyncExternalStore } from 'react'
 
-/* Тема панели: авто (как в системе / Telegram), светлая или тёмная. Выбор хранится в localStorage. */
+// Тема панели: авто (как в системе или Telegram), светлая или тёмная. Хранится в localStorage.
 
 export type ThemeMode = 'auto' | 'light' | 'dark'
 
@@ -23,7 +23,7 @@ export function setThemeMode(m: ThemeMode) {
   try {
     localStorage.setItem(KEY, m)
   } catch {
-    /* хранилище недоступно — тема просто не запомнится */
+    /* хранилище недоступно, тема просто не запомнится */
   }
   listeners.forEach((l) => l())
 }
@@ -54,7 +54,7 @@ export function useApplyTheme() {
   }, [m])
 }
 
-/** Цвет строки состояния браузера — фон текущей темы и палитры */
+/** Цвет строки состояния браузера под фон темы */
 export function syncThemeColor() {
   const bg = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim()
   if (bg) document.querySelector('meta[name=theme-color]')?.setAttribute('content', bg)
@@ -69,12 +69,12 @@ const observeRoot = (cb: () => void) => {
   return () => obs.disconnect()
 }
 
-/** Текущая применённая тема — для графиков, которые рисуются на canvas */
+/** Текущая тема, для графиков на canvas */
 export function useResolvedTheme(): 'light' | 'dark' {
   return useSyncExternalStore(observeRoot, () => (document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light'))
 }
 
-/** Текущая тема — графикам, чтобы перечитать цвета фона и сетки */
+/** Хук с текущей темой: графики по нему перечитывают цвета */
 export function useSkin(): string {
   return useSyncExternalStore(observeRoot, () => document.documentElement.dataset.theme ?? '')
 }

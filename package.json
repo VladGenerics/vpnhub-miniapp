@@ -13,6 +13,10 @@
     "build": "npm run build --workspaces --if-present",
     "build:miniapp": "npm run build -w @vpnhub/miniapp",
     "build:admin": "npm run build -w @vpnhub/admin",
-    "typecheck": "npm run typecheck --workspaces --if-present"
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "format": "prettier --write \"apps/*/src/**/*.{ts,tsx}\" \"packages/*/src/**/*.ts\" \"apps/*/vite.config.ts\""
+  },
+  "devDependencies": {
+    "prettier": "^3.9.10"
   }
 }

@@ -2,7 +2,7 @@ import manifest from '../../emoji-src/manifest.json'
 import { Page } from '../components/Page'
 import { Lottie } from '../components/Lottie'
 
-/** Служебная страница /emoji — все эмодзи из паков в виде Lottie */
+/** Служебная страница /emoji со всеми эмодзи */
 export function EmojiGalleryPage() {
   return (
     <Page back>

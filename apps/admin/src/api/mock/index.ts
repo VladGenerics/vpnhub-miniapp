@@ -34,16 +34,13 @@ import {
   type MUser,
 } from './data'
 
-/*
- * Демо-бэкенд админки в памяти. Отвечает теми же формами данных, что описаны
- * в docs/api.md, с небольшой задержкой, чтобы были видны состояния загрузки.
- */
+// Демо-бэкенд в памяти. Отдаёт то же, что описано в docs/api.md, с небольшой задержкой.
 
 const iso = (ms: number) => new Date(ms).toISOString()
 const delay = <T>(v: T, ms = 180 + Math.random() * 220) => new Promise<T>((r) => setTimeout(() => r(structuredClone(v)), ms))
 const round2 = (n: number) => Math.round(n * 100) / 100
 
-/* ---------- Индексы ---------- */
+// --- индексы ---
 
 const group = <T>(items: T[], key: (i: T) => number | null) => {
   const m = new Map<number, T[]>()
@@ -111,7 +108,7 @@ function invoiceRow(i: MInvoice): AdminInvoiceRow {
   }
 }
 
-/* ---------- Списки ---------- */
+// --- списки ---
 
 function paginate<T>(list: T[], p: Pick<ListParams, 'page' | 'page_size'>): Paginated<T> {
   const size = Math.min(100, Math.max(1, p.page_size))
@@ -134,7 +131,7 @@ function sortList<T>(list: T[], getters: Record<string, (r: T) => number | strin
 
 const isNumeric = (q: string) => /^\d+$/.test(q)
 
-/* ---------- Статистика ---------- */
+// --- статистика ---
 
 function truncate(ms: number, g: Granularity) {
   const d = new Date(ms)
@@ -198,7 +195,7 @@ function demoRole(): UserRole {
   }
 }
 
-/* ---------- API ---------- */
+// --- API ---
 
 export const mockApi: AdminApi = {
   async loginTelegram() {
@@ -213,8 +210,7 @@ export const mockApi: AdminApi = {
   async getDashboard() {
     const now = Date.now()
     const today = truncate(now, 'day')
-    // календарно, не 29 × 24 ч: в месяце с переводом часов граница уехала бы на час,
-    // а пополнения легли бы в соседний день
+    // по календарю, а не 29 × 24 ч, иначе при переводе часов граница съедет на час
     const days = buckets(iso(new Date(today).setDate(new Date(today).getDate() - 29)), iso(now), 'day')
     const monthAgo = days[0]
     const paid = paidByTime
@@ -227,7 +223,14 @@ export const mockApi: AdminApi = {
       (t) => ({ t: iso(t), new_users: 0, deposits: 0 }),
       (p) => p.new_users++,
     )
-    const deposits = fill(days, 'day', paid, (i) => i.paid_at!, () => ({ v: 0 }), (p, i) => (p.v = round2(p.v + i.amount)))
+    const deposits = fill(
+      days,
+      'day',
+      paid,
+      (i) => i.paid_at!,
+      () => ({ v: 0 }),
+      (p, i) => (p.v = round2(p.v + i.amount)),
+    )
     daily.forEach((p, k) => (p.deposits = deposits[k].v))
     return delay({
       users_total: users.length,
@@ -257,9 +260,7 @@ export const mockApi: AdminApi = {
     if (p.flag === 'active_sub') list = list.filter((u) => subStatus(u.id).status === 'ACTIVE')
     const q = p.q?.trim().toLowerCase()
     if (q) {
-      list = isNumeric(q)
-        ? list.filter((u) => String(u.id) === q || String(u.tg_user_id) === q)
-        : list.filter((u) => u.language_code?.startsWith(q))
+      list = isNumeric(q) ? list.filter((u) => String(u.id) === q || String(u.tg_user_id) === q) : list.filter((u) => u.language_code?.startsWith(q))
     }
     const rows = list.map(userRow)
     const sorted = sortList(
@@ -302,10 +303,7 @@ export const mockApi: AdminApi = {
             slots: slotsFor(sub),
           }
         : null,
-      discount:
-        id % 17 === 0
-          ? { discount: 0.15, text: 'Скидка 15% за отзыв', expire_at: iso(NOW + 9 * DAY) }
-          : null,
+      discount: id % 17 === 0 ? { discount: 0.15, text: 'Скидка 15% за отзыв', expire_at: iso(NOW + 9 * DAY) } : null,
       referrer: referrer ? { id: referrer.id, tg_user_id: referrer.tg_user_id } : null,
       ref_link: u.ref_link ? { ...u.ref_link, joined_at: iso(u.registered_at) } : null,
       referral_stats: {
@@ -397,12 +395,7 @@ export const mockApi: AdminApi = {
         ? list.filter((i) => String(i.id) === q || String(i.user_id) === q || String(users[i.user_id - 1].tg_user_id) === q)
         : list.filter((i) => i.external_invoice_id.includes(q))
     }
-    const sorted = sortList(
-      list,
-      { created_at: (i) => i.created_at, id: (i) => i.id, amount: (i) => i.amount, paid_at: (i) => i.paid_at },
-      p.sort,
-      p.order,
-    )
+    const sorted = sortList(list, { created_at: (i) => i.created_at, id: (i) => i.id, amount: (i) => i.amount, paid_at: (i) => i.paid_at }, p.sort, p.order)
     const page = paginate(sorted, p)
     return delay({ ...page, items: page.items.map(invoiceRow) })
   },

@@ -13,7 +13,7 @@ import { SettingsPage } from './pages/SettingsPage'
 import { UserPage } from './pages/UserPage'
 import { UsersPage } from './pages/UsersPage'
 
-// статистика тянет ECharts (~400 КБ) — грузится, только когда открыли раздел
+// статистика тянет ECharts (~400 КБ), грузим её только при переходе в раздел
 const StatisticsPage = lazy(() => import('./pages/statistics/StatisticsPage'))
 const UsersStats = lazy(() => import('./pages/statistics/UsersStats'))
 const DepositsStats = lazy(() => import('./pages/statistics/DepositsStats'))
@@ -39,7 +39,7 @@ function NotFound() {
   )
 }
 
-/** Сбрасывает «упавшую» страницу при переходе в другой раздел */
+/** Сбрасывает упавшую страницу при переходе в другой раздел */
 function Page() {
   const { pathname } = useLocation()
   const section = pathname.split('/')[1]

@@ -10,17 +10,15 @@ import { TimeSeriesCard, type Series } from './charts/TimeSeriesCard'
 import { inPeriod, prevPeriod, PREV_HINT, useStatsPeriod } from './period'
 import { AVG, PER, StatsFrame } from './StatsFrame'
 
-/** Порядок и цвета способов оплаты фиксированы — цвет не меняется при скрытии других */
+/** Порядок и цвета способов оплаты фиксированы, при скрытии других цвет не меняется */
 const PROVIDERS: PaymentProvider[] = ['yookassa', 'tg_stars', 'cryptobot', 'WATA', 'heleket', 'lolz', 'rollypay']
 const slotOf = (i: number) => (i + 1) as Slot
 
 /** Подпись к клику по столбцу: за какой отрезок откроются счета */
 const PICK: Record<Granularity, string> = { hour: 'этот день', day: 'день', month: 'месяц', year: 'год' }
 
-/*
- * Пополнения — оплаченные счета по времени оплаты. Накопительная сумма за всё время
- * (стартует с total_before) и динамика по способам оплаты с выбранным шагом.
- */
+// Пополнения — оплаченные счета по времени оплаты: накопительная сумма за всё время
+// (стартует с total_before) и разбивка по способам оплаты.
 export default function DepositsStats() {
   const s = useStatsPeriod()
   const navigate = useNavigate()
@@ -64,14 +62,23 @@ export default function DepositsStats() {
                 label="Пополнено за период"
                 value={<CountUp value={Math.round(amount)} format={rub} />}
                 trend={prev && <Trend value={change(amount, prevAmount)} hint={PREV_HINT} />}
-                note={win.length ? `в среднем ${rubCompact(Math.round(amount / win.length))} ${AVG[s.g]}` : undefined} />
+                note={win.length ? `в среднем ${rubCompact(Math.round(amount / win.length))} ${AVG[s.g]}` : undefined}
+              />
               <Kpi icon="receipt" label="Оплаченных счетов" value={<CountUp value={count} format={num} />} />
               <Kpi icon="card" label="Средний чек" value={count ? rub(Math.round(amount / count)) : '—'} />
               <Kpi icon="trendUp" label="Пополнено всего" value={<CountUp value={Math.round(before + amount)} format={rubCompact} />} note="на конец периода" />
             </div>
 
             <div className="stats-grid">
-              <TimeSeriesCard title="Сумма пополнений, накопительно" type="area" cumulative series={series.cumulative} format={rub} className="is-wide" {...props} />
+              <TimeSeriesCard
+                title="Сумма пополнений, накопительно"
+                type="area"
+                cumulative
+                series={series.cumulative}
+                format={rub}
+                className="is-wide"
+                {...props}
+              />
               <TimeSeriesCard
                 title={`Пополнения ${PER[s.g]}`}
                 type="bar"
@@ -80,7 +87,7 @@ export default function DepositsStats() {
                 format={rub}
                 total="Всего"
                 className="is-wide"
-                // шаг «часы» — счета за весь день: фильтр счетов по дням
+                // на шаге «часы» открываем счета за весь день, фильтр счетов работает по дням
                 pickHint={`счета за ${PICK[s.g]}`}
                 onPick={(from, to) => navigate(`/invoices?status=PAID&by=paid&from=${toDateInput(from)}&to=${toDateInput(to - 1)}`)}
                 {...props}

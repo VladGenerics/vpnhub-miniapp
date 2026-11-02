@@ -15,7 +15,7 @@ import { copyText, countdown, date, days, rub } from '../../lib/format'
 import { haptic } from '../../lib/telegram'
 import { AutoRenewSheet } from './AutoRenewSheet'
 
-/** Стоимость следующего автопродления и нехватка баланса для него */
+/** Сколько стоит следующее автопродление и сколько на него не хватает */
 function useRenewal(sub: Subscription) {
   const { data: me } = useMe()
   const { data: tariffs } = useTariffs()
@@ -26,7 +26,7 @@ function useRenewal(sub: Subscription) {
 
 function StatusCard({ sub }: { sub: Subscription }) {
   const qc = useQueryClient()
-  // таймер дошёл до нуля — запрашиваем актуальные данные (продлилась ли подписка)
+  // таймер дошёл до нуля, перезапрашиваем подписку: вдруг продлилась
   const left = useCountdown(sub.expires_at, () => {
     qc.invalidateQueries({ queryKey: keys.subscription })
     qc.invalidateQueries({ queryKey: keys.me })
@@ -109,7 +109,15 @@ export function MainTab({ sub }: { sub: Subscription }) {
             <span className={`copy-btn ${copied ? 'is-done' : ''}`} aria-label={copied ? 'Скопировано' : 'Скопировать'}>
               {copied ? (
                 <svg key="done" width="18" height="18" viewBox="0 0 24 24" aria-hidden>
-                  <path className="copy-check" d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+                  <path
+                    className="copy-check"
+                    d="M5 12.5l4.5 4.5L19 7.5"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.4"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
                 </svg>
               ) : (
                 <svg key="copy" width="18" height="18" viewBox="0 0 24 24" aria-hidden>
@@ -119,7 +127,13 @@ export function MainTab({ sub }: { sub: Subscription }) {
               )}
             </span>
           </button>
-          <Cell icon={<Lottie name={E.phone} size={30} />} title="QR-код" subtitle="Отсканируйте камерой другого устройства" onClick={() => setQrOpen(true)} chevron />
+          <Cell
+            icon={<Lottie name={E.phone} size={30} />}
+            title="QR-код"
+            subtitle="Отсканируйте камерой другого устройства"
+            onClick={() => setQrOpen(true)}
+            chevron
+          />
         </Section>
       )}
 
@@ -131,12 +145,7 @@ export function MainTab({ sub }: { sub: Subscription }) {
           onClick={() => setRenewOpen(true)}
           chevron
         />
-        <Cell
-          icon={<Lottie name={E.walletTile} size={32} />}
-          title="Пополнить баланс"
-          subtitle={me ? `На балансе ${rub(me.balance)}` : ' '}
-          to="/topup"
-        />
+        <Cell icon={<Lottie name={E.walletTile} size={32} />} title="Пополнить баланс" subtitle={me ? `На балансе ${rub(me.balance)}` : ' '} to="/topup" />
         {tariffs && (
           <Cell
             icon={<Lottie name={E.dollarTile} size={32} />}

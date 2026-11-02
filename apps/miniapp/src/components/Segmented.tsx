@@ -5,7 +5,7 @@ export interface SegmentOption<T extends string> {
   label: string
 }
 
-/** Сегмент-контрол без контента (выбор одного значения) — тот же вид, что у вкладок */
+/** Выбор одного значения, выглядит как вкладки */
 export function Segmented<T extends string>({
   options,
   value,
@@ -17,13 +17,13 @@ export function Segmented<T extends string>({
   onChange(v: T): void
   label: string
 }) {
-  const index = Math.max(0, options.findIndex((o) => o.value === value))
+  const index = Math.max(
+    0,
+    options.findIndex((o) => o.value === value),
+  )
   return (
     <div className="segmented" role="radiogroup" aria-label={label}>
-      <div
-        className="segmented-thumb"
-        style={{ width: `calc((100% - 8px) / ${options.length})`, transform: `translateX(${index * 100}%)` }}
-      />
+      <div className="segmented-thumb" style={{ width: `calc((100% - 8px) / ${options.length})`, transform: `translateX(${index * 100}%)` }} />
       {options.map((o) => (
         <button
           key={o.value}

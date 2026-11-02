@@ -8,7 +8,7 @@ import { Button } from '../components/Controls'
 import { Sheet } from '../components/Sheet'
 import { useToast } from '../components/Toast'
 import { E } from '../data/emoji'
-import { useMe } from '../api/queries'
+import { useBindEmail, useMe } from '../api/queries'
 import { USE_MOCKS } from '../api'
 import { useAuth } from '../auth/AuthProvider'
 import { copyText, rub } from '../lib/format'
@@ -39,9 +39,10 @@ function ProfileHeader() {
   )
 }
 
-// TODO: привязка почты — в database.dbml нет поля email, ждём эндпоинт от бэкенда
-function EmailSheet({ open, onClose, bindEmail }: { open: boolean; onClose(): void; bindEmail(v: string): void }) {
+// почта уходит в PUT /me/email, см. docs/api.md
+function EmailSheet({ open, onClose }: { open: boolean; onClose(): void }) {
   const toast = useToast()
+  const bind = useBindEmail()
   const [value, setValue] = useState('')
   const valid = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(value)
   return (
@@ -57,13 +58,20 @@ function EmailSheet({ open, onClose, bindEmail }: { open: boolean; onClose(): vo
       <div className="sheet-actions">
         <Button
           stretched
-          disabled={!valid}
-          onClick={() => {
-            bindEmail(value)
-            haptic.notify('success')
-            toast('Почта привязана', E.mail)
-            onClose()
-          }}
+          disabled={!valid || bind.isPending}
+          onClick={() =>
+            bind.mutate(value, {
+              onSuccess: () => {
+                haptic.notify('success')
+                toast('Почта привязана', E.mail)
+                onClose()
+              },
+              onError: (e) => {
+                haptic.notify('error')
+                toast(e.message || 'Не удалось привязать почту', E.warning)
+              },
+            })
+          }
         >
           Привязать
         </Button>
@@ -77,8 +85,7 @@ export function ProfilePage() {
   const { logout } = useAuth()
   const toast = useToast()
   const [emailOpen, setEmailOpen] = useState(false)
-  const [localEmail, setLocalEmail] = useState<string | null>(null)
-  const email = me?.email ?? localEmail
+  const email = me?.email
 
   const copy = async (v: string | number, label: string) => {
     await copyText(String(v))
@@ -93,9 +100,7 @@ export function ProfilePage() {
       <div className="balance-card">
         <div>
           <div className="balance-label">Баланс</div>
-          <div className="balance-value is-small">
-            {me ? <AnimatedNumber value={me.balance} format={rub} from={0} duration={900} /> : '…'}
-          </div>
+          <div className="balance-value is-small">{me ? <AnimatedNumber value={me.balance} format={rub} from={0} duration={900} /> : '…'}</div>
         </div>
         <Link to="/topup" className="btn btn-primary btn-m" onClick={() => haptic.tap()}>
           Пополнить
@@ -151,7 +156,7 @@ export function ProfilePage() {
 
       <p className="app-version">VPNHub · v0.2{USE_MOCKS ? ' · демо-данные' : ''}</p>
 
-      <EmailSheet open={emailOpen} onClose={() => setEmailOpen(false)} bindEmail={setLocalEmail} />
+      <EmailSheet open={emailOpen} onClose={() => setEmailOpen(false)} />
     </Page>
   )
 }

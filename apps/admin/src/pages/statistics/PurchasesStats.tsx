@@ -9,15 +9,12 @@ import { TimeSeriesCard, type Series } from './charts/TimeSeriesCard'
 import { inPeriod, prevPeriod, PREV_HINT, useStatsPeriod } from './period'
 import { PER, StatsFrame } from './StatsFrame'
 
-/** Виды покупок в фиксированном порядке — у каждого свой цвет во всех графиках */
+/** Виды покупок в фиксированном порядке, у каждого свой цвет во всех графиках */
 const KINDS: PurchaseKind[] = ['VPN_FIRST_PURCHASE', 'VPN_RENEWAL', 'VPN_EXTENSION', 'VPN_AUTORENEWAL', 'DEVICE_SLOTS', 'VPN_PURCHASE']
 const slotOf = (k: PurchaseKind) => (KINDS.indexOf(k) + 1) as Slot
 const slotsWord = (n: number) => `${num(n)} ${plural(n, ['слот', 'слота', 'слотов'])}`
 
-/*
- * Покупки: доли видов по количеству, сумма по каждому виду во времени
- * и распределение количества покупок по видам с выбранным шагом.
- */
+// Покупки: доли видов, сумма по видам во времени и количество покупок по видам.
 export default function PurchasesStats() {
   const s = useStatsPeriod()
   const q = usePurchasesStats(s.query)
