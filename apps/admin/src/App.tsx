@@ -1,6 +1,6 @@
 import { lazy, Suspense } from 'react'
-import { Link, Route, Routes, useLocation } from 'react-router-dom'
-import { RequireAdmin } from './auth/AuthProvider'
+import { Link, Navigate, Route, Routes, useLocation } from 'react-router-dom'
+import { RequireAdmin, useAuth } from './auth/AuthProvider'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { Layout } from './components/Layout'
 import { StateView } from './components/ui'
@@ -43,6 +43,18 @@ function NotFound() {
 function Page() {
   const { pathname } = useLocation()
   const section = pathname.split('/')[1]
+  const { isSupport } = useAuth()
+  // поддержке открыт только раздел «Пользователи», остальные адреса ведут туда
+  if (isSupport)
+    return (
+      <ErrorBoundary key={section}>
+        <Routes>
+          <Route path="users" element={<UsersPage />} />
+          <Route path="users/:id" element={<UserPage />} />
+          <Route path="*" element={<Navigate to="/users" replace />} />
+        </Routes>
+      </ErrorBoundary>
+    )
   return (
     <ErrorBoundary key={section}>
       <Suspense fallback={<Loading />}>

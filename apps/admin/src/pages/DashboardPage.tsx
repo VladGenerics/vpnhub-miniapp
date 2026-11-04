@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { PROVIDER_LABEL, type AdminInvoiceRow, type AdminUserRow } from '@vpnhub/shared'
 import { useDashboard, useInvoices } from '../api/queries'
-import { InvoiceBadge, SubBadge, UserFlags } from '../components/badges'
+import { InvoiceBadge, UserFlags } from '../components/badges'
 import { DataTable, type Column } from '../components/DataTable'
 import { Icon } from '../components/Icon'
 import { MiniBars } from '../components/MiniBars'
@@ -11,19 +11,35 @@ import { dateTime, num, percent, relative, rub, rubCompact, toDateInput } from '
 import { useStaleCutoff } from '../lib/invoices'
 
 const userCols: Column<AdminUserRow>[] = [
-  { key: 'id', title: 'ID', render: (u) => <span className="mono">{u.id}</span> },
-  { key: 'tg', title: 'Telegram ID', render: (u) => <span className="mono">{u.tg_user_id}</span> },
+  // на обзоре две таблицы рядом: ID и Telegram ID в одной ячейке, подписку смотрят уже в карточке
+  {
+    key: 'id',
+    title: 'ID',
+    render: (u) => (
+      <span className="cell-stack">
+        <span className="mono">#{u.id}</span>
+        <small className="mono muted">{u.tg_user_id}</small>
+      </span>
+    ),
+  },
   { key: 'reg', title: 'Регистрация', render: (u) => <span title={dateTime(u.registered_at)}>{relative(u.registered_at)}</span> },
-  { key: 'flags', title: 'Признаки', render: (u) => <UserFlags user={u} /> },
-  { key: 'sub', title: 'Подписка', render: (u) => <SubBadge status={u.subscription_status} expires={u.subscription_expires_at} /> },
+  { key: 'flags', title: 'Признаки', render: (u) => <UserFlags user={u} max={2} /> },
 ]
 
 const invoiceCols: Column<AdminInvoiceRow>[] = [
-  { key: 'id', title: 'Счёт', render: (i) => <span className="mono">#{i.id}</span> },
+  {
+    key: 'id',
+    title: 'Счёт',
+    render: (i) => (
+      <span className="cell-stack" title={dateTime(i.created_at)}>
+        <span className="mono">#{i.id}</span>
+        <small className="muted">{relative(i.created_at)}</small>
+      </span>
+    ),
+  },
   { key: 'amount', title: 'Сумма', num: true, render: (i) => rub(i.amount) },
   { key: 'provider', title: 'Способ', render: (i) => PROVIDER_LABEL[i.provider] },
   { key: 'status', title: 'Статус', render: (i) => <InvoiceBadge status={i.status} created={i.created_at} /> },
-  { key: 'created', title: 'Создан', render: (i) => <span title={dateTime(i.created_at)}>{relative(i.created_at)}</span> },
 ]
 
 export function DashboardPage() {

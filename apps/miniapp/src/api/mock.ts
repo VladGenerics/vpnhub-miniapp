@@ -182,10 +182,18 @@ export const mockApi: UserApi = {
       expires_at: iso(base + days * DAY),
       url: 'https://sub.vpnhub.app/s/8Kf2xQ9mZt4pLw7R',
       auto_renewal: subscription?.auto_renewal ?? { is_enabled: true, days: 30 },
-      // продление с тем же числом устройств не отвязывает их
-      slots: subscription?.slots.length === devices ? subscription.slots : Array.from({ length: devices }, (_, i) => emptySlot(i + 1)),
+      slots: Array.from({ length: devices }, (_, i) => emptySlot(i + 1)),
     }
     return delay(subscription, 500)
+  },
+
+  async renew(days) {
+    const sub = requireSub()
+    const { total } = quote(tariffs, sub.slots.length, days)
+    if (total > me.balance) throw new Error('Недостаточно средств на балансе')
+    me = { ...me, balance: me.balance - total }
+    sub.expires_at = iso(Math.max(Date.now(), +new Date(sub.expires_at)) + days * DAY)
+    return delay({ ...sub }, 500)
   },
 
   async setAutoRenewal(v) {

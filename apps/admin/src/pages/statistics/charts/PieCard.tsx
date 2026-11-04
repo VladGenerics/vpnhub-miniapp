@@ -24,6 +24,8 @@ export function PieCard({
   centerLabel,
   fetching,
   className,
+  onPick,
+  pickHint,
 }: {
   title: ReactNode
   sub?: ReactNode
@@ -32,6 +34,10 @@ export function PieCard({
   centerLabel: string
   fetching?: boolean
   className?: string
+  /** Клик по доле, например открыть счета этого способа оплаты */
+  onPick?(key: string): void
+  /** Подсказка к клику в тултипе: «счета ЮKassa за период» */
+  pickHint?: string
 }) {
   const theme = useResolvedTheme()
   // при смене темы перечитываем цвета фона и сетки
@@ -41,11 +47,14 @@ export function PieCard({
   const { hidden, toggle } = useHidden()
   const visible = useMemo(() => items.filter((i) => !hidden.has(i.key) && i.value > 0), [items, hidden])
   const sum = visible.reduce((s, i) => s + i.value, 0)
+  const pick = useRef(onPick)
+  pick.current = onPick
 
   useLayoutEffect(() => {
     if (!ref.current) return
     const c = echarts.init(ref.current)
     chart.current = c
+    c.on('click', (p) => pick.current?.((p.data as { key: string }).key))
     const ro = new ResizeObserver(() => c.resize())
     ro.observe(ref.current)
     return () => {
@@ -72,7 +81,8 @@ export function PieCard({
           },
           extraCssText: 'border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.14);z-index:15;',
           formatter: (p: { name: string; value: number; color: string }) =>
-            `<b>${format(p.value)}</b> <span style="color:${ch.hint}">· ${percent(p.value, sum)}</span><div style="color:${ch.hint}">${p.name.replace(/[<>&]/g, '')}</div>`,
+            `<b>${format(p.value)}</b> <span style="color:${ch.hint}">· ${percent(p.value, sum)}</span><div style="color:${ch.hint}">${p.name.replace(/[<>&]/g, '')}</div>` +
+            (onPick && pickHint ? `<div style="color:${ch.hint};font-size:12px;margin-top:4px">Нажмите — ${pickHint}</div>` : ''),
         },
         series: [
           {
@@ -88,7 +98,9 @@ export function PieCard({
               borderRadius: 4,
             },
             emphasis: { scale: true, scaleSize: 4 },
+            cursor: onPick ? 'pointer' : 'default',
             data: visible.map((i) => ({
+              key: i.key,
               name: i.name,
               value: i.value,
               itemStyle: { color: seriesColor(i.slot, theme) },
@@ -98,7 +110,7 @@ export function PieCard({
       },
       { notMerge: true },
     )
-  }, [visible, theme, skin, format, sum])
+  }, [visible, theme, skin, format, sum, !!onPick, pickHint])
 
   return (
     <Card className={`chart-card ${className ?? ''}`} title={title} sub={sub}>

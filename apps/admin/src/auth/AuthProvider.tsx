@@ -43,6 +43,8 @@ interface AuthState {
   profile: Profile | null
   /** Может менять данные. Поддержка только смотрит */
   canEdit: boolean
+  /** Поддержка: видит только раздел «Пользователи» */
+  isSupport: boolean
   login(token: string, user: TelegramAuthData): void
   logout(): void
 }
@@ -82,6 +84,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       me: me.data,
       profile,
       canEdit: me.data?.role === 'OWNER' || me.data?.role === 'ADMIN',
+      isSupport: me.data?.role === 'SUPPORT_AGENT',
       login,
       logout,
     }),

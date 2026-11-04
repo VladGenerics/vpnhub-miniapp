@@ -28,6 +28,8 @@ export interface UserApi {
   createInvoice(req: CreateInvoiceRequest): Promise<Invoice>
   getInvoice(id: number): Promise<Invoice>
   purchase(req: PurchaseRequest): Promise<Subscription>
+  /** Продление активной подписки заранее. Устройства остаются, дни прибавляются к сроку */
+  renew(days: number): Promise<Subscription>
   setAutoRenewal(v: AutoRenewal): Promise<AutoRenewal>
   releaseSlot(id: number): Promise<void>
   deleteSlot(id: number): Promise<void>
@@ -53,6 +55,12 @@ const httpApi: UserApi = {
   createInvoice: (req) => http('POST', '/invoices', req),
   getInvoice: (id) => http('GET', `/invoices/${id}`),
   purchase: (req) => http('POST', '/subscription/purchase', req),
+  // отдельной ручки нет: покупка на активную подписку и есть продление. Будет своя — поменять здесь
+  renew: async (days) => {
+    const sub = await httpApi.getSubscription()
+    if (!sub) throw new ApiError(404, 'Подписка не найдена')
+    return http('POST', '/subscription/purchase', { days, devices: sub.slots.length })
+  },
   setAutoRenewal: (v) => http('PUT', '/subscription/auto-renewal', v),
   releaseSlot: (id) => http('POST', `/subscription/slots/${id}/release`),
   deleteSlot: (id) => http('DELETE', `/subscription/slots/${id}`),

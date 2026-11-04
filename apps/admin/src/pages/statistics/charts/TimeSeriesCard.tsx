@@ -26,7 +26,7 @@ function visibleBand(el: HTMLElement): [number, number] {
   const top = Math.max(box.top, document.querySelector('.topbar')?.getBoundingClientRect().bottom ?? 0)
   return [top - box.top, Math.min(box.bottom, window.innerHeight) - box.top]
 }
-import { chrome, inkOn, seriesColor, type Slot } from './palette'
+import { chrome, seriesColor, type Slot } from './palette'
 
 export interface Series {
   key: string
@@ -63,7 +63,7 @@ export function LegendPills({
             key={s.key}
             type="button"
             className={`legend-pill ${off ? 'is-off' : ''}`}
-            style={{ ['--c' as string]: c, ['--ink' as string]: inkOn(c) }}
+            style={{ ['--c' as string]: c }}
             aria-pressed={!off}
             disabled={lock}
             title={lock ? 'Хотя бы одна серия должна остаться' : undefined}

@@ -98,6 +98,8 @@ export default function DepositsStats() {
                 centerLabel="за период"
                 format={rubCompact}
                 fetching={q.isFetching}
+                pickHint="оплаченные счета этим способом за период"
+                onPick={(pr) => navigate(`/invoices?status=PAID&by=paid&provider=${pr}&from=${toDateInput(period.from)}&to=${toDateInput(period.to - 1)}`)}
                 items={PROVIDERS.map((pr, i) => ({
                   key: pr,
                   name: PROVIDER_LABEL[pr],
@@ -111,6 +113,8 @@ export default function DepositsStats() {
                 centerLabel="оплат"
                 format={num}
                 fetching={q.isFetching}
+                pickHint="оплаченные счета этим способом за период"
+                onPick={(pr) => navigate(`/invoices?status=PAID&by=paid&provider=${pr}&from=${toDateInput(period.from)}&to=${toDateInput(period.to - 1)}`)}
                 items={PROVIDERS.map((pr, i) => ({
                   key: pr,
                   name: PROVIDER_LABEL[pr],

@@ -77,6 +77,17 @@ export function usePurchase() {
   })
 }
 
+export function useRenew() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (days: number) => api.renew(days),
+    onSuccess: (sub) => {
+      qc.setQueryData(keys.subscription, sub)
+      qc.invalidateQueries({ queryKey: keys.me })
+    },
+  })
+}
+
 export function useSetAutoRenewal() {
   const qc = useQueryClient()
   return useMutation({

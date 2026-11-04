@@ -1,4 +1,5 @@
 import type { Granularity } from '@vpnhub/shared'
+import { DateInput } from '../../components/DateInput'
 import { Segmented } from '../../components/Segmented'
 import { fromDateInput, toDateInput } from '../../lib/format'
 import { GRANULARITIES, PRESETS, presetPeriod, step, type Period } from './period'
@@ -23,6 +24,7 @@ export function PeriodBar({
   const lastDay = period.to - 1
   const min = toDateInput(bounds.from)
   const max = toDateInput(bounds.to - 1)
+  const range: [string, string] = [toDateInput(period.from), toDateInput(lastDay)]
 
   const setFrom = (v: string) => {
     if (!v) return
@@ -54,25 +56,9 @@ export function PeriodBar({
           ))}
         </div>
         <div className="period-dates">
-          <input
-            className="input"
-            type="date"
-            aria-label="Начало периода"
-            min={min}
-            max={max}
-            value={toDateInput(period.from)}
-            onChange={(e) => setFrom(e.target.value)}
-          />
+          <DateInput label="Начало периода" min={min} max={max} value={toDateInput(period.from)} range={range} onChange={setFrom} />
           <span className="muted">—</span>
-          <input
-            className="input"
-            type="date"
-            aria-label="Конец периода"
-            min={min}
-            max={max}
-            value={toDateInput(lastDay)}
-            onChange={(e) => setTo(e.target.value)}
-          />
+          <DateInput label="Конец периода" min={min} max={max} value={toDateInput(lastDay)} range={range} onChange={setTo} />
         </div>
       </div>
     </div>

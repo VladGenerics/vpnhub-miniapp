@@ -1,4 +1,4 @@
-import { INVOICE_STATUS_LABEL, ROLE_LABEL, type AdminUserRow, type InvoiceStatus, type SubscriptionStatus, type UserRole } from '@vpnhub/shared'
+import { INVOICE_STATUS_LABEL, ROLE_LABEL, type AdminUserRow, type InvoiceStatus, type SubscriptionStatus } from '@vpnhub/shared'
 import { isStale, waited } from '../lib/invoices'
 import { dateNum } from '../lib/format'
 import { Badge, type Tone } from './ui'
@@ -33,28 +33,38 @@ export function InvoiceBadge({ status, created }: { status: InvoiceStatus; creat
   )
 }
 
-export function RoleBadge({ role }: { role: UserRole }) {
-  if (role === 'USER') return null
-  return <Badge tone="accent">{ROLE_LABEL[role]}</Badge>
-}
-
-/** Признаки пользователя: бот, заблокировал бота, Premium, пробный период */
+/** Признаки пользователя: роль, бот, заблокировал бота, Premium, пробный период.
+ *  max — сколько значков показать, остальные уходят в «+N» с подсказкой (в таблицах, чтобы колонка не разъезжалась) */
 export function UserFlags({
   user,
   trial = true,
+  max,
 }: {
   user: Pick<AdminUserRow, 'is_bot' | 'is_blocked_bot' | 'is_premium' | 'has_used_trial_subscription' | 'role'>
   trial?: boolean
+  max?: number
 }) {
-  const any = user.is_bot || user.is_blocked_bot || user.is_premium || (trial && user.has_used_trial_subscription) || user.role !== 'USER'
-  if (!any) return <span className="muted">—</span>
+  const flags: { label: string; tone?: Tone }[] = []
+  if (user.role !== 'USER') flags.push({ label: ROLE_LABEL[user.role], tone: 'accent' })
+  if (user.is_bot) flags.push({ label: 'Бот', tone: 'danger' })
+  if (user.is_blocked_bot) flags.push({ label: 'Заблокировал', tone: 'warn' })
+  if (user.is_premium) flags.push({ label: 'Premium', tone: 'accent' })
+  if (trial && user.has_used_trial_subscription) flags.push({ label: 'Пробный' })
+  if (!flags.length) return <span className="muted">—</span>
+  const shown = max && flags.length > max ? flags.slice(0, max - 1) : flags
+  const rest = flags.slice(shown.length)
   return (
     <span className="badges">
-      <RoleBadge role={user.role} />
-      {user.is_bot && <Badge tone="danger">Бот</Badge>}
-      {user.is_blocked_bot && <Badge tone="warn">Заблокировал</Badge>}
-      {user.is_premium && <Badge tone="accent">Premium</Badge>}
-      {trial && user.has_used_trial_subscription && <Badge>Пробный</Badge>}
+      {shown.map((f) => (
+        <Badge key={f.label} tone={f.tone}>
+          {f.label}
+        </Badge>
+      ))}
+      {rest.length > 0 && (
+        <span title={rest.map((f) => f.label).join(', ')}>
+          <Badge>+{rest.length}</Badge>
+        </span>
+      )}
     </span>
   )
 }

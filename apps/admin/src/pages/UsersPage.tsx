@@ -47,7 +47,7 @@ const columns: Column<AdminUserRow>[] = [
     num: true,
     render: (u) => (u.referrals_count ? num(u.referrals_count) : <span className="muted">0</span>),
   },
-  { key: 'flags', title: 'Признаки', render: (u) => <UserFlags user={u} /> },
+  { key: 'flags', title: 'Признаки', render: (u) => <UserFlags user={u} max={2} /> },
 ]
 
 export function UsersPage() {
@@ -80,7 +80,9 @@ export function UsersPage() {
             ))}
           </select>
           <div className="toolbar-right" aria-live="polite">
-            {isFetching && data ? <span className="spinner" style={{ width: 14, height: 14 }} /> : data && `Найдено: ${num(data.total)}`}
+            {/* при загрузке оставляем прошлое число и ставим спиннер рядом, чтобы фильтры не сдвигались */}
+            {isFetching && data && <span className="spinner" style={{ width: 14, height: 14 }} />}
+            {data && `Найдено: ${num(data.total)}`}
           </div>
         </div>
         {error && !data ? (

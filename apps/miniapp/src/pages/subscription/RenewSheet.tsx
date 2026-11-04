@@ -7,18 +7,18 @@ import { Lottie } from '../../components/Lottie'
 import { Button, Chips, Stepper } from '../../components/Controls'
 import { useToast } from '../../components/Toast'
 import { E } from '../../data/emoji'
-import { useMe, usePurchase, useTariffs } from '../../api/queries'
+import { useMe, useRenew, useTariffs } from '../../api/queries'
 import { date, days, devicesWord, rub } from '../../lib/format'
 import { haptic } from '../../lib/telegram'
 
 const PRESETS = [7, 14, 30, 90]
 const DAY = 86_400_000
 
-/** Продление заранее, вручную. Покупка на активную подписку прибавляет дни к текущему сроку (docs/api.md) */
+/** Продление заранее, без автопродления: дни прибавляются к текущему сроку, деньги списываются сразу */
 export function RenewSheet({ sub, open, onClose }: { sub: Subscription; open: boolean; onClose(): void }) {
   const { data: me } = useMe()
   const { data: tariffs } = useTariffs()
-  const purchase = usePurchase()
+  const renew = useRenew()
   const toast = useToast()
   const [dayCount, setDayCount] = useState(30)
 
@@ -30,24 +30,23 @@ export function RenewSheet({ sub, open, onClose }: { sub: Subscription; open: bo
   const q = tariffs ? quote(tariffs, slots, dayCount) : null
   const balance = me?.balance ?? 0
   const lacking = q ? Math.max(0, q.total - balance) : 0
+  // общая доля скидки: за устройства и персональная/общая перемножаются
+  const discount = q ? 1 - (1 - q.deviceDiscount) * (1 - q.discount) : 0
   const base = Math.max(Date.now(), +new Date(sub.expires_at))
   const newUntil = new Date(base + dayCount * DAY).toISOString()
 
   const submit = () =>
-    purchase.mutate(
-      { days: dayCount, devices: slots },
-      {
-        onSuccess: (s) => {
-          haptic.notify('success')
-          toast(`Продлено до ${date(s.expires_at)}`, E.party)
-          onClose()
-        },
-        onError: (e) => {
-          haptic.notify('error')
-          toast(e.message || 'Не удалось продлить', E.warning)
-        },
+    renew.mutate(dayCount, {
+      onSuccess: (s) => {
+        haptic.notify('success')
+        toast(`Продлено до ${date(s.expires_at)}`, E.party)
+        onClose()
       },
-    )
+      onError: (e) => {
+        haptic.notify('error')
+        toast(e.message || 'Не удалось продлить', E.warning)
+      },
+    })
 
   return (
     <Sheet open={open} onClose={onClose}>
@@ -84,7 +83,9 @@ export function RenewSheet({ sub, open, onClose }: { sub: Subscription; open: bo
             <div className="calc-total">
               <AnimatedNumber value={q.total} format={rub} duration={450} />
             </div>
-            <div className="calc-hint">подписка будет до {date(newUntil)}</div>
+            <div className="calc-hint">
+              {discount > 0 && `скидка ${Math.round(discount * 100)} % · `}подписка будет до {date(newUntil)}
+            </div>
           </div>
         </>
       )}
@@ -93,18 +94,28 @@ export function RenewSheet({ sub, open, onClose }: { sub: Subscription; open: bo
         <div className="notice">
           <Lottie name={E.warning} size={26} />
           <span>
-            На балансе {rub(balance)}, не хватает {rub(lacking)}.{' '}
-            <Link to="/topup" className="link" onClick={onClose}>
-              Пополнить
-            </Link>
+            На балансе {rub(balance)}, не хватает {rub(lacking)}
           </span>
         </div>
       )}
 
       <div className="sheet-actions">
-        <Button stretched onClick={submit} disabled={!q || lacking > 0 || purchase.isPending}>
-          {purchase.isPending ? 'Продлеваем…' : q ? `Продлить за ${rub(q.total)}` : 'Продлить'}
-        </Button>
+        {lacking > 0 ? (
+          <Link
+            to="/topup"
+            className="btn btn-primary btn-l is-stretched"
+            onClick={() => {
+              haptic.tap()
+              onClose()
+            }}
+          >
+            Пополнить на {rub(Math.ceil(lacking))}
+          </Link>
+        ) : (
+          <Button stretched onClick={submit} disabled={!q || renew.isPending}>
+            {renew.isPending ? 'Продлеваем…' : q ? `Продлить за ${rub(q.total)}` : 'Продлить'}
+          </Button>
+        )}
       </div>
     </Sheet>
   )

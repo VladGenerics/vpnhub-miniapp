@@ -119,6 +119,7 @@ function LedgerTable({ id }: { id: number }) {
 }
 
 function InvoicesTable({ id }: { id: number }) {
+  const { isSupport } = useAuth()
   const [page, setPage] = useState(1)
   const { data, error, refetch } = useInvoices({ user_id: id, page, page_size: PAGE_SIZE, sort: 'created_at', order: 'desc' })
   if (error && !data) return <ErrorView error={error} onRetry={refetch} />
@@ -126,7 +127,7 @@ function InvoicesTable({ id }: { id: number }) {
     <>
       <DataTable columns={invoiceCols} rows={data?.items} rowKey={(i) => i.id} loading={!data} skeletonRows={5} empty="Счетов нет" />
       {!!data?.total && <Pagination page={page} pageSize={PAGE_SIZE} total={data.total} onPage={setPage} />}
-      {!!data?.total && (
+      {!!data?.total && !isSupport && (
         // там есть фильтры по статусу и способу оплаты, ID руками вводить не нужно
         <div className="pagination">
           <Link className="link link-more" to={`/invoices?user_id=${id}`}>

@@ -103,6 +103,16 @@ body {
   overscroll-behavior-y: none;
 }
 
+/* мигающая линия курсора — только в полях ввода, а не на любом тексте (режим навигации курсором в браузере, F7) */
+body {
+  caret-color: transparent;
+}
+input,
+textarea,
+[contenteditable='true'] {
+  caret-color: auto;
+}
+
 body.no-scroll {
   overflow: hidden;
 }

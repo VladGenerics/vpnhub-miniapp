@@ -7,9 +7,9 @@ import { Icon } from './Icon'
 import type { IconName } from './icons'
 import { Button } from './ui'
 
-export const NAV: { to: string; label: string; icon: IconName }[] = [
+export const NAV: { to: string; label: string; icon: IconName; support?: boolean }[] = [
   { to: '/', label: 'Обзор', icon: 'dashboard' },
-  { to: '/users', label: 'Пользователи', icon: 'users' },
+  { to: '/users', label: 'Пользователи', icon: 'users', support: true },
   { to: '/invoices', label: 'Счета', icon: 'receipt' },
   { to: '/payment-methods', label: 'Платёжные системы', icon: 'card' },
   { to: '/statistics', label: 'Статистика', icon: 'chart' },
@@ -34,7 +34,8 @@ function Avatar({ name, photo }: { name: string; photo?: string }) {
 }
 
 export function Layout() {
-  const { me, profile, logout } = useAuth()
+  const { me, profile, logout, isSupport } = useAuth()
+  const nav = isSupport ? NAV.filter((n) => n.support) : NAV
   const { pathname, search } = useLocation()
   const [open, setOpen] = useState(false)
 
@@ -94,7 +95,7 @@ export function Layout() {
           <small>admin</small>
         </div>
         <nav className="side-nav">
-          {NAV.map((n) => (
+          {nav.map((n) => (
             <NavLink
               key={n.to}
               to={n === section ? sectionListPath(n.to) : sectionPath(n.to)}

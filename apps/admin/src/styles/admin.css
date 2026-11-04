@@ -78,6 +78,16 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* мигающая линия курсора — только в полях ввода, а не на любом тексте (режим навигации курсором в браузере, F7) */
+body {
+  caret-color: transparent;
+}
+input,
+textarea,
+[contenteditable='true'] {
+  caret-color: auto;
+}
+
 body.no-scroll {
   overflow: hidden;
 }
@@ -880,6 +890,16 @@ p {
 .table .badges {
   flex-wrap: nowrap;
 }
+/* две строки в одной ячейке: номер и подпись под ним */
+.cell-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  line-height: 1.25;
+}
+.cell-stack small {
+  font-size: 12px;
+}
 
 /* ============ Таблицы ============ */
 .toolbar {
@@ -897,22 +917,206 @@ p {
   gap: 6px;
   max-width: 100%;
 }
-.date-range .input {
+.date-range .date-input {
   width: 148px;
 }
+/* ============ Выбор даты ============ */
+.date-input {
+  position: relative;
+}
+.date-input-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  text-align: left;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+.date-input-btn .icon {
+  flex: none;
+  color: var(--hint);
+  transition: color 0.15s;
+}
+.date-input-btn:hover {
+  border-color: color-mix(in oklab, var(--border), var(--text) 18%);
+}
+.date-input-btn:hover .icon,
+.date-input-btn.is-open .icon {
+  color: var(--accent-text);
+}
+.date-input-btn.is-open {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+.cal {
+  position: absolute;
+  z-index: 30;
+  top: calc(100% + 6px);
+  left: 0;
+  width: 288px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--shadow-l);
+  transform-origin: top left;
+  animation: cal-in 0.16s var(--ease);
+}
+.cal.is-end {
+  right: 0;
+  left: auto;
+  transform-origin: top right;
+}
+@keyframes cal-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
+}
+.cal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.cal-head b {
+  font-size: 14px;
+  font-weight: 600;
+}
+.cal-nav {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  color: var(--hint);
+  transition:
+    background 0.15s,
+    color 0.15s;
+}
+.cal-nav:hover:not(:disabled) {
+  background: var(--hover);
+  color: var(--text);
+}
+.cal-nav:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  row-gap: 2px;
+}
+.cal-week {
+  padding: 4px 0 6px;
+  color: var(--hint);
+  font-size: 11px;
+  font-weight: 600;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+.cal-day {
+  position: relative;
+  display: grid;
+  place-items: center;
+  height: 36px;
+  line-height: 1;
+  text-align: center;
+  border-radius: 9px;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  transition:
+    background 0.12s,
+    color 0.12s;
+}
+.cal-day:hover:not(:disabled):not(.is-selected) {
+  background: var(--hover);
+}
+.cal-day.is-out {
+  color: var(--hint);
+  opacity: 0.55;
+}
+.cal-day:disabled {
+  color: var(--hint);
+  opacity: 0.3;
+  cursor: default;
+}
+.cal-day.in-range {
+  border-radius: 0;
+  background: var(--accent-soft);
+}
+.cal-day.range-start {
+  border-radius: 9px 0 0 9px;
+}
+.cal-day.range-end {
+  border-radius: 0 9px 9px 0;
+}
+.cal-day.range-start.range-end {
+  border-radius: 9px;
+}
+.cal-day.is-today:not(.is-selected) {
+  color: var(--accent-text);
+  font-weight: 700;
+}
+.cal-day.is-today::after {
+  content: '';
+  position: absolute;
+  bottom: 5px;
+  left: 50%;
+  width: 4px;
+  height: 4px;
+  margin-left: -2px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.cal-day.is-selected {
+  border-radius: 9px;
+  background: var(--accent);
+  color: var(--on-accent);
+  font-weight: 600;
+}
+.cal-day:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+.cal-foot {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 8px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+  font-size: 13px;
+}
+.cal-foot .link:disabled {
+  opacity: 0.4;
+  cursor: default;
+  text-decoration: none;
+}
+
 .date-range .input-clear {
   position: static;
 }
+/* место под крестик держим всегда, чтобы фильтры не прыгали при выборе даты */
+.date-range .input-clear.is-hidden {
+  visibility: hidden;
+}
 .toolbar .search {
-  flex: 1 1 260px;
-  max-width: 420px;
+  /* не растягивается на свободное место: иначе дёргается, когда меняется ширина «Найдено» */
+  flex: 0 1 420px;
+  min-width: 220px;
 }
 .toolbar .select {
   width: auto;
   min-width: 150px;
 }
 .toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   margin-left: auto;
+  white-space: nowrap;
   color: var(--hint);
   font-size: 13px;
 }
@@ -929,7 +1133,7 @@ p {
 }
 .table th,
 .table td {
-  padding: 11px 16px;
+  padding: 11px 12px;
   text-align: left;
   white-space: nowrap;
   border-bottom: 1px solid var(--border);
@@ -1387,8 +1591,10 @@ p {
   align-items: center;
   gap: 6px;
 }
-.period-dates .input {
+.period-dates .date-input {
   width: 148px;
+}
+.period-dates .date-input-btn {
   height: 34px;
 }
 
@@ -1417,11 +1623,12 @@ p {
   gap: 6px;
   height: 30px;
   padding: 0 12px 0 8px;
-  border: 1.5px solid var(--c);
+  /* подпись у всех белая; заливку чуть притемняем, чтобы белый читался и на жёлтом */
+  --fill: color-mix(in oklab, var(--c) 78%, #000);
+  border: 1.5px solid var(--fill);
   border-radius: 999px;
-  background: var(--c);
-  /* подпись на заливке — белая или тёмная по контрасту с цветом серии */
-  color: var(--ink, #fff);
+  background: var(--fill);
+  color: #fff;
   font-size: 13px;
   font-weight: 600;
   transition:
@@ -1727,8 +1934,10 @@ p {
   .modal-actions .btn {
     width: 100%;
   }
-  .period-dates .input {
-    width: 100%;
+  .period-dates .date-input {
+    flex: 1;
+    width: auto;
+    min-width: 0;
   }
   .period-dates {
     flex: 1 1 100%;
@@ -1736,7 +1945,7 @@ p {
   .date-range {
     flex: 1 1 100%;
   }
-  .date-range .input {
+  .date-range .date-input {
     flex: 1;
     width: auto;
     min-width: 0;
