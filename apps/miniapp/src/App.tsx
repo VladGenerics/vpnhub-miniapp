@@ -16,7 +16,7 @@ import { ErrorBoundary } from './components/ErrorBoundary'
 import { applyTelegramChrome, getColorScheme, isTelegram, tg } from './lib/telegram'
 import { preloadEmoji } from './components/Lottie'
 import { E } from './data/emoji'
-import { currentBg, emojiFolder, type PaletteId } from './lib/palette'
+import { currentBg, emojiSource, type PaletteId } from './lib/palette'
 import { useApp, type ThemeMode } from './store/AppStore'
 import { useIsWide } from './hooks/useMediaQuery'
 
@@ -75,7 +75,7 @@ function useRouteAnimation(pathname: string) {
 export default function App() {
   const { pathname } = useLocation()
   const routeAnim = useRouteAnimation(pathname)
-  const { palette, themeMode, sidebarCollapsed } = useApp()
+  const { palette, accent, themeMode, sidebarCollapsed } = useApp()
   const wide = useIsWide()
   useTheme(palette, themeMode)
 
@@ -84,8 +84,8 @@ export default function App() {
   }, [pathname])
 
   useEffect(() => {
-    preloadEmoji(emojiFolder(palette), E.renewTile, E.walletTile, E.dollarTile, E.link, E.mail, E.bulbTile, E.questionTile)
-  }, [palette])
+    preloadEmoji(emojiSource(palette, accent), E.renewTile, E.walletTile, E.dollarTile, E.link, E.mail, E.bulbTile, E.questionTile)
+  }, [palette, accent])
 
   // заглушка платёжки для счетов на тестовых данных, без входа
   if (USE_MOCKS && pathname === '/test-pay') {

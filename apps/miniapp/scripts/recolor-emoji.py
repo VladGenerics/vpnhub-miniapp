@@ -1,8 +1,7 @@
 """Перекрашивает зелёные оттенки в Lottie-эмодзи в голубой.
 
 Оригиналы (как скачаны из паков) лежат в emoji-src/, результат - в public/emoji/,
-оригинальные зелёные (для темы «Неон») - в public/emoji-original/,
-серые (для своего цвета: подходят к любому акценту) - в public/emoji-mono/.
+а оригинальные зелёные (для темы «Неон») - в public/emoji-original/.
 На выходе .lottie (dotLottie), он в 15-20 раз легче json.
 Запуск:  python3 apps/miniapp/scripts/recolor-emoji.py            (голубой)
          python3 apps/miniapp/scripts/recolor-emoji.py --original (скопировать как есть)
@@ -12,22 +11,14 @@ import colorsys, json, pathlib, shutil, sys, zipfile
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 SRC, DST = ROOT / 'emoji-src', ROOT / 'public' / 'emoji'
 DST_ORIG = ROOT / 'public' / 'emoji-original'
-DST_MONO = ROOT / 'public' / 'emoji-mono'
 TARGET_HUE = 203 / 360   # голубой, ~#2ea6ff
 GREEN = (70 / 360, 175 / 360)
-
-
-MONO = False  # True - зелёное в серое, иначе в голубой
 
 
 def shift(r, g, b):
     h, l, s = colorsys.rgb_to_hls(r, g, b)
     if s < 0.18 or not (GREEN[0] <= h <= GREEN[1]):
         return r, g, b
-    if MONO:
-        # серый с лёгкой холодной ноткой, светлота сжата к середине: читается и на тёмной плитке, и на белом фоне
-        l = min(0.74, max(0.36, 0.56 + (l - 0.5) * 0.6))
-        return colorsys.hls_to_rgb(220 / 360, l, 0.06)
     # сохраняем относительный сдвиг внутри зелёного диапазона
     h = TARGET_HUE + (h - 120 / 360) * 0.5
     return colorsys.hls_to_rgb(h % 1, l, s)
@@ -116,26 +107,20 @@ def main():
         except (OSError, ValueError) as e:
             sys.exit(f'не прочитался {f.name}: {e}')
         orig = json.loads(json.dumps(data))
-        mono = json.loads(json.dumps(data))
         if not original:
-            global MONO
-            MONO = False
             walk(data)
-            MONO = True
-            walk(mono)
-        jobs.append((f.stem, orig, data, mono))
+        jobs.append((f.stem, orig, data))
     # пишем во временные папки и подменяем готовые целиком
-    for dst in (DST, DST_ORIG, DST_MONO):
+    for dst in (DST, DST_ORIG):
         tmp = dst.with_name(dst.name + '.tmp')
         shutil.rmtree(tmp, ignore_errors=True)
         tmp.mkdir(parents=True)
-        for name, orig, data, mono in jobs:
+        for name, orig, data in jobs:
             # в emoji-original - цвета пака как есть, для темы «Неон»
-            out = orig if dst is DST_ORIG else mono if dst is DST_MONO else data
-            write_lottie(tmp / f'{name}.lottie', name, out)
+            write_lottie(tmp / f'{name}.lottie', name, orig if dst is DST_ORIG else data)
         shutil.rmtree(dst, ignore_errors=True)
         tmp.rename(dst)
-    print('done', 'original' if original else 'recolored', '+ emoji-original + emoji-mono')
+    print('done', 'original' if original else 'recolored', '+ emoji-original')
 
 
 if __name__ == '__main__':

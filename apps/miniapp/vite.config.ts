@@ -19,7 +19,7 @@ function pruneEmoji(): Plugin {
         ...[...src.matchAll(/\bT\((\d+)\)/g)].map((m) => `toxicemojismini_${pad(m[1])}.lottie`),
       ])
       if (used.size < 10) throw new Error('prune-emoji: не нашёл эмодзи в src/data/emoji.ts, формат поменялся?')
-      for (const dir of ['emoji', 'emoji-original', 'emoji-mono']) {
+      for (const dir of ['emoji', 'emoji-original']) {
         const path = join(outDir, dir)
         for (const f of readdirSync(path)) if (!used.has(f)) rmSync(join(path, f))
       }

@@ -261,10 +261,6 @@ p {
   border-radius: 50%;
   background: radial-gradient(circle, var(--accent-glow) 0%, transparent 62%);
 }
-/* у своего цвета эмодзи серые, и свечение под ними нейтральное, а не цвета акцента */
-[data-palette='custom'] .hero-emoji::before {
-  background: radial-gradient(circle, rgba(130, 140, 160, 0.18) 0%, transparent 62%);
-}
 
 .hero-device {
   margin: 4px 0 16px;

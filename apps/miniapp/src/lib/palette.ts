@@ -1,6 +1,6 @@
 // Цветовые палитры кабинета, переключаются в «Оформлении» (/ui)
 
-// emoji - папка с эмодзи: голубые (перекрашенные) или оригинальные зелёные, у своего цвета - серые (emojiFolder)
+// emoji - папка с эмодзи: голубые (перекрашенные) или оригинальные зелёные. У своего цвета - в цвет акцента (emojiSource)
 export const PALETTES = [
   { id: 'graphite', title: 'Графит', swatch: ['#0e0f11', '#3d9bff'], emoji: 'emoji' },
   { id: 'telegram', title: 'Telegram', swatch: ['#17212b', '#2aabee'], emoji: 'emoji' },
@@ -140,9 +140,18 @@ function customCss(hex: string) {
 }
 
 /** Зелёный акцент - оригинальные зелёные эмодзи, остальные - перекрашенные */
-/** Набор эмодзи палитры. У своего цвета акцент любой, поэтому эмодзи серые: подходят к любому цвету кнопок */
-export function emojiFolder(id: PaletteId) {
-  return id === 'custom' ? 'emoji-mono' : PALETTES.find((p) => p.id === id)!.emoji
+/**
+ * Откуда брать эмодзи. У готовых палитр свой набор, у своего цвета - родные зелёные,
+ * которые Lottie перекрашивает в оттенок акцента (tint «оттенок,насыщенность», пусто - как есть).
+ * Оттенок шагом 5°, чтобы соседние цвета делили кэш
+ */
+export function emojiSource(id: PaletteId, accent?: string): { folder: string; tint: string } {
+  if (id !== 'custom') return { folder: PALETTES.find((p) => p.id === id)!.emoji, tint: '' }
+  const [h, s] = hexToHsl(accent ?? DEFAULT_ACCENT)
+  // зелёный акцент - родные эмодзи как есть
+  if (s > 25 && h >= 70 && h <= 170) return { folder: 'emoji-original', tint: '' }
+  // серый акцент - эмодзи тоже уходят в серый
+  return { folder: 'emoji-original', tint: `${(Math.round(h / 5) * 5) % 360},${Math.round(Math.min(1, s / 60) * 10) / 10}` }
 }
 
 export function applyPalette(id: PaletteId, accent: string, animate = false) {

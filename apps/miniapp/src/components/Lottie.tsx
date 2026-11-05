@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import type { AnimationItem } from 'lottie-web/build/player/lottie_light'
 import { strFromU8, unzipSync } from 'fflate'
-import { emojiFolder } from '../lib/palette'
+import { emojiSource } from '../lib/palette'
+import { recolorEmoji } from '../lib/recolorEmoji'
 import { useApp } from '../store/AppStore'
 
 // Эмодзи лежат в формате .lottie (dotLottie): zip с manifest.json и animations/<id>.json.
@@ -48,10 +49,41 @@ function load(path: string) {
   return p
 }
 
-export function preloadEmoji(folder: string, ...names: string[]) {
+// перекрашенные под свой цвет: файл качается один раз, перекраска на каждый оттенок.
+// Держим только последний оттенок, старые варианты больше не нужны
+const tinted = new Map<string, Promise<unknown>>()
+let lastTint = ''
+
+function loadTinted(path: string, tint: string) {
+  if (!tint) return load(path)
+  if (tint !== lastTint) {
+    tinted.clear()
+    lastTint = tint
+  }
+  let p = tinted.get(path)
+  if (!p) {
+    const [hue, sat] = tint.split(',').map(Number)
+    p = load(path).then((data) => recolorEmoji(structuredClone(data), hue, sat))
+    p.catch(() => tinted.delete(path))
+    tinted.set(path, p)
+  }
+  return p
+}
+
+export function preloadEmoji({ folder, tint }: { folder: string; tint: string }, ...names: string[]) {
   // предзагрузка не обязана удаться: при ошибке плеер попробует загрузиться ещё раз при показе эмодзи
   loadPlayer().catch(() => {})
-  names.forEach((n) => load(`${folder}/${n}`))
+  names.forEach((n) => loadTinted(`${folder}/${n}`, tint).catch(() => {}))
+}
+
+/** Пока тянут ползунок цвета, эмодзи не пересоздаём на каждый шаг, ждём паузу */
+function useSettled(value: string, ms = 250) {
+  const [v, setV] = useState(value)
+  useEffect(() => {
+    const t = setTimeout(() => setV(value), ms)
+    return () => clearTimeout(t)
+  }, [value, ms])
+  return v
 }
 
 // Создание анимации тяжёлое (парсинг сотен КБ), поэтому разносим его по кадрам
@@ -95,7 +127,10 @@ interface Props {
 }
 
 export function Lottie({ name, size = 28, className }: Props) {
-  const folder = emojiFolder(useApp().palette)
+  const { palette, accent } = useApp()
+  const src = emojiSource(palette, accent)
+  const folder = src.folder
+  const tint = useSettled(src.tint)
   const box = useRef<HTMLDivElement>(null)
   const anim = useRef<AnimationItem | null>(null)
   const inView = useRef(true)
@@ -119,7 +154,7 @@ export function Lottie({ name, size = 28, className }: Props) {
   useEffect(() => {
     let disposed = false
     setReady(false)
-    Promise.all([load(`${folder}/${name}`), loadPlayer()])
+    Promise.all([loadTinted(`${folder}/${name}`, tint), loadPlayer()])
       .then(([data, lottie]) =>
         schedule(() => {
           if (disposed || !box.current) return
@@ -146,7 +181,7 @@ export function Lottie({ name, size = 28, className }: Props) {
       anim.current?.destroy()
       anim.current = null
     }
-  }, [name, folder])
+  }, [name, folder, tint])
 
   return <div ref={box} className={`lottie ${ready ? 'is-ready' : ''} ${className ?? ''}`} style={{ width: size, height: size }} aria-hidden />
 }
