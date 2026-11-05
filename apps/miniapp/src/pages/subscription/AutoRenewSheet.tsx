@@ -30,8 +30,9 @@ export function AutoRenewSheet({ sub, open, onClose }: { sub: Subscription; open
 
   const slots = sub.slots.length
   const q = tariffs ? quote(tariffs, slots, dayCount) : null
-  const balance = me?.balance ?? 0
-  const lacking = enabled && q ? Math.max(0, q.total - balance) : 0
+  // неизвестный баланс - не ноль, предупреждение о нехватке только по настоящему балансу
+  const balance = me?.balance
+  const lacking = enabled && q && balance !== undefined ? Math.max(0, q.total - balance) : 0
 
   const submit = () =>
     save.mutate(
@@ -67,7 +68,8 @@ export function AutoRenewSheet({ sub, open, onClose }: { sub: Subscription; open
         </div>
       </div>
 
-      <div className={`renew-config ${enabled ? '' : 'is-disabled'}`}>
+      {/* выключено - настройки недоступны и с клавиатуры, не только мышью */}
+      <div className={`renew-config ${enabled ? '' : 'is-disabled'}`} inert={!enabled}>
         <h3 className="section-title">Количество дней</h3>
         <div className="section-card">
           <div className="plan-row">
@@ -104,7 +106,7 @@ export function AutoRenewSheet({ sub, open, onClose }: { sub: Subscription; open
           <div className="notice">
             <Lottie name={E.warning} size={26} />
             <span>
-              На балансе {rub(balance)}. Пополните ещё на {rub(lacking)}, чтобы продление прошло успешно
+              На балансе {rub(balance ?? 0)}. Пополните ещё на {rub(lacking)}, чтобы продление прошло успешно
             </span>
           </div>
         )}

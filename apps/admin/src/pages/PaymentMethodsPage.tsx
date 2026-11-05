@@ -27,10 +27,21 @@ function MethodRow({ m, canEdit }: { m: PaymentMethod; canEdit: boolean }) {
   const minErr = !(min.value >= 0) ? 'Укажите сумму' : null
   const dirty = name.trim() !== m.name || min.value !== m.min_amount
   const busy = update.isPending
+  // isPending обновится только после перерисовки, а второй Enter приходит раньше: держим флаг синхронно
+  const sending = useRef(false)
 
   const cancel = () => {
     setName(m.name)
     min.reset()
+  }
+
+  const send = (patch: PaymentMethodPatch, done: (r: PaymentMethod) => void) => {
+    if (sending.current) return
+    sending.current = true
+    update
+      .mutateAsync({ id: m.id, patch })
+      .then(done, (e) => toast((e as Error).message, 'error'))
+      .finally(() => (sending.current = false))
   }
 
   const save = () => {
@@ -38,26 +49,14 @@ function MethodRow({ m, canEdit }: { m: PaymentMethod; canEdit: boolean }) {
     const patch: PaymentMethodPatch = {}
     if (name.trim() !== m.name) patch.name = name.trim()
     if (min.value !== m.min_amount) patch.min_amount = min.value
-    update.mutate(
-      { id: m.id, patch },
-      {
-        onSuccess: (r) => {
-          setName(r.name)
-          toast('Изменения сохранены')
-        },
-        onError: (e) => toast((e as Error).message, 'error'),
-      },
-    )
+    send(patch, (r) => {
+      setName(r.name)
+      toast('Изменения сохранены')
+    })
   }
 
   const toggle = (is_active: boolean) =>
-    update.mutate(
-      { id: m.id, patch: { is_active } },
-      {
-        onSuccess: () => toast(is_active ? `«${m.name}» включена` : `«${m.name}» выключена — пользователи её не увидят`),
-        onError: (e) => toast((e as Error).message, 'error'),
-      },
-    )
+    send({ is_active }, () => toast(is_active ? `«${m.name}» включена` : `«${m.name}» выключена — пользователи её не увидят`))
 
   const onKey = (e: KeyboardEvent) => {
     if (e.key === 'Enter') save()

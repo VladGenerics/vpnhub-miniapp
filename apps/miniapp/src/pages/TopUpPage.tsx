@@ -13,12 +13,28 @@ import { E } from '../data/emoji'
 import { PROVIDER_LOOK, TOPUP_PRESETS } from '../data/content'
 import { useCreateInvoice, useInvoice, useMe, usePaymentMethods, useUnpaidInvoices } from '../api/queries'
 import { rub } from '../lib/format'
-import { haptic, isTelegram, openPayment } from '../lib/telegram'
+import { haptic, isTelegram, openPayment, safeExternalUrl } from '../lib/telegram'
 
 const MAX = 100_000
 
 /** Ссылка на оплату. В Telegram открываем его средствами, в браузере - обычная ссылка в новой вкладке */
-function PayLink({ url, className, children }: { url: string; className: string; children: ReactNode }) {
+function PayLink({ url: raw, className, children, onOpen }: { url: string; className: string; children: ReactNode; onOpen?(): void }) {
+  const toast = useToast()
+  // адрес приходит из API: не https (javascript:, data: и т. п.) не открываем
+  const url = safeExternalUrl(raw)
+  if (!url)
+    return (
+      <button
+        type="button"
+        className={className}
+        onClick={() => {
+          haptic.notify('error')
+          toast('Ссылка на оплату некорректна, напишите в поддержку', E.warning)
+        }}
+      >
+        {children}
+      </button>
+    )
   return (
     <a
       className={className}
@@ -27,6 +43,7 @@ function PayLink({ url, className, children }: { url: string; className: string;
       rel="noopener noreferrer"
       onClick={(e) => {
         haptic.tap()
+        onOpen?.()
         if (!isTelegram) return
         e.preventDefault()
         openPayment(url)
@@ -38,11 +55,19 @@ function PayLink({ url, className, children }: { url: string; className: string;
 }
 
 /** Окно счёта: ссылка на оплату, ручная проверка и ожидание статуса */
-function InvoiceSheet({ invoiceId, onClose }: { invoiceId: number | null; onClose(): void }) {
+function InvoiceSheet({ invoiceId, onClose, onWatch }: { invoiceId: number | null; onClose(): void; onWatch(id: number): void }) {
   const { data: inv, refetch, isFetching, error } = useInvoice(invoiceId)
   const { data: me } = useMe()
   const toast = useToast()
   const [checking, setChecking] = useState(false)
+  // «Проверить оплату» имеет смысл только после перехода к оплате, до этого кнопка лишь путает
+  const [opened, setOpened] = useState(false)
+  useEffect(() => setOpened(false), [invoiceId])
+  // закрыли окно после перехода к оплате, а деньги ещё не дошли: счёт продолжает проверяться в фоне
+  const close = () => {
+    if (opened && inv?.status === 'UNPAID') onWatch(inv.id)
+    onClose()
+  }
 
   useEffect(() => {
     if (inv?.status === 'PAID') haptic.notify('success')
@@ -66,7 +91,7 @@ function InvoiceSheet({ invoiceId, onClose }: { invoiceId: number | null; onClos
   )
 
   return (
-    <Sheet open={invoiceId !== null} onClose={onClose} expandable={false}>
+    <Sheet open={invoiceId !== null} onClose={close} expandable={false}>
       {!inv && error ? (
         <>
           {head(
@@ -78,7 +103,7 @@ function InvoiceSheet({ invoiceId, onClose }: { invoiceId: number | null; onClos
             <Button stretched onClick={() => refetch()} disabled={isFetching}>
               {isFetching ? 'Загрузка...' : 'Повторить'}
             </Button>
-            <Button stretched variant="ghost" onClick={onClose}>
+            <Button stretched variant="ghost" onClick={close}>
               Вернуться
             </Button>
           </div>
@@ -88,11 +113,15 @@ function InvoiceSheet({ invoiceId, onClose }: { invoiceId: number | null; onClos
           {head(
             E.walletTile,
             inv ? `Счёт на ${rub(inv.amount)}` : 'Счёт',
-            inv?.pay_url ? 'Оплатите счёт на странице платёжной системы. Баланс пополнится сам, или нажмите «Проверить оплату»' : 'Готовим ссылку на оплату...',
+            !inv?.pay_url
+              ? 'Готовим ссылку на оплату...'
+              : opened
+                ? 'Оплатили? Баланс пополнится сам через несколько секунд, или нажмите «Проверить оплату»'
+                : 'Оплата откроется на странице платёжной системы',
           )}
           <div className="sheet-actions">
             {inv?.pay_url ? (
-              <PayLink url={inv.pay_url} className="btn btn-primary btn-l is-stretched">
+              <PayLink url={inv.pay_url} className="btn btn-primary btn-l is-stretched" onOpen={() => setOpened(true)}>
                 Перейти к оплате
               </PayLink>
             ) : (
@@ -100,10 +129,12 @@ function InvoiceSheet({ invoiceId, onClose }: { invoiceId: number | null; onClos
                 <span className="spinner" /> Готовим ссылку
               </Button>
             )}
-            <Button stretched variant="secondary" onClick={check} disabled={!inv || checking}>
-              {checking || (isFetching && !inv) ? 'Проверяем...' : 'Проверить оплату'}
-            </Button>
-            <Button stretched variant="ghost" onClick={onClose}>
+            {opened && (
+              <Button stretched variant="secondary" onClick={check} disabled={!inv || checking}>
+                {checking ? 'Проверяем...' : 'Проверить оплату'}
+              </Button>
+            )}
+            <Button stretched variant="ghost" onClick={close}>
               Вернуться
             </Button>
           </div>
@@ -147,16 +178,52 @@ function shortTime(iso: string) {
 const UNPAID_VISIBLE = 3
 
 /** Неоплаченные счета: нажатие ведёт на pay_url */
-function UnpaidInvoices({ methods }: { methods?: PaymentMethod[] }) {
-  const { data: list } = useUnpaidInvoices()
+/**
+ * Счёт, который открыли на оплату, но окно счёта уже закрыто (оплата из списка или «Вернуться» до зачисления):
+ * опрашиваем его часто, как окно счёта, а не ждём общий опрос списка. useInvoice сам обновит баланс и список
+ */
+function useWatchInvoice() {
+  const [watchId, setWatchId] = useState<number | null>(null)
+  const { data: watched, refetch } = useInvoice(watchId)
+  const toast = useToast()
+  // в фоне таймер опроса стоит: вернулись со страницы оплаты - проверяем счёт сразу
+  useEffect(() => {
+    if (watchId === null) return
+    const onVisible = () => document.visibilityState === 'visible' && refetch()
+    document.addEventListener('visibilitychange', onVisible)
+    return () => document.removeEventListener('visibilitychange', onVisible)
+  }, [watchId, refetch])
+  useEffect(() => {
+    if (!watched || watched.status === 'UNPAID') return
+    if (watched.status === 'PAID') {
+      haptic.notify('success')
+      toast(`Баланс пополнен на ${rub(watched.amount)}`, E.party)
+    }
+    setWatchId(null)
+  }, [watched?.status])
+  return setWatchId
+}
+
+function UnpaidInvoices({ methods, onWatch }: { methods?: PaymentMethod[]; onWatch(id: number): void }) {
+  const { data: list, error, refetch, isFetching } = useUnpaidInvoices()
   const [expanded, setExpanded] = useState(false)
+  // вернулись из вкладки или приложения оплаты - проверяем сразу, не дожидаясь таймера
+  useEffect(() => {
+    const onVisible = () => document.visibilityState === 'visible' && refetch()
+    document.addEventListener('visibilitychange', onVisible)
+    return () => document.removeEventListener('visibilitychange', onVisible)
+  }, [refetch])
+  // первая загрузка не удалась - это не «счетов нет»: показываем ошибку с повтором
+  if (error && !list) return <LoadError text="Не удалось загрузить неоплаченные счета" onRetry={() => refetch()} busy={isFetching} />
   if (!list?.length) return null
   const hidden = list.length - UNPAID_VISIBLE
   const shown = expanded || hidden <= 0 ? list : list.slice(0, UNPAID_VISIBLE)
   const name = (inv: Invoice) => methods?.find((m) => m.provider === inv.provider)?.name ?? inv.provider
   return (
     <Section title="Неоплаченные счета" footer="Нажмите на счёт, чтобы перейти к оплате">
-      {shown.map((inv) => {
+      {shown.map((inv, i) => {
+        // строки из «Показать ещё» появляются плавно, без общей пружины: иначе текст подпрыгивает
+        const more = i >= UNPAID_VISIBLE ? ' is-more' : ''
         const inner = (
           <>
             <div className="cell-icon">
@@ -175,11 +242,11 @@ function UnpaidInvoices({ methods }: { methods?: PaymentMethod[] }) {
           </>
         )
         return inv.pay_url ? (
-          <PayLink key={inv.id} url={inv.pay_url} className="cell tone-default is-interactive">
+          <PayLink key={inv.id} url={inv.pay_url} className={`cell tone-default is-interactive${more}`} onOpen={() => onWatch(inv.id)}>
             {inner}
           </PayLink>
         ) : (
-          <div key={inv.id} className="cell tone-default">
+          <div key={inv.id} className={`cell tone-default${more}`}>
             {inner}
           </div>
         )
@@ -214,6 +281,7 @@ export function TopUpPage() {
   const [raw, setRaw] = useState(() => initialAmount(sp.get('amount')))
   const [providerId, setProviderId] = useState<number | null>(null)
   const [invoice, setInvoice] = useState<Invoice | null>(null)
+  const watch = useWatchInvoice()
 
   const method: PaymentMethod | undefined = methods?.find((m) => m.id === providerId) ?? methods?.[0]
   const min = method?.min_amount ?? 0
@@ -257,7 +325,8 @@ export function TopUpPage() {
               inputMode="numeric"
               value={raw}
               placeholder="0"
-              onChange={(e) => setRaw(e.target.value.replace(/\D/g, '').slice(0, 6))}
+              // только цифры и без ведущих нулей: «0111» превращается в «111», а не висит в поле
+              onChange={(e) => setRaw(e.target.value.replace(/\D/g, '').replace(/^0+/, '').slice(0, 6))}
               aria-label="Сумма пополнения"
             />
           </span>
@@ -268,7 +337,7 @@ export function TopUpPage() {
         </div>
       </Section>
 
-      <UnpaidInvoices methods={methods} />
+      <UnpaidInvoices methods={methods} onWatch={watch} />
 
       <Section title="Способ оплаты">
         {methods?.map((m) => {
@@ -285,16 +354,19 @@ export function TopUpPage() {
             />
           )
         }) ?? (methodsError ? null : <div className="skeleton is-card" />)}
+        {methods?.length === 0 && (
+          <Cell icon={<Lottie name={E.warning} size={36} />} title="Способы оплаты временно недоступны" subtitle="Попробуйте позже или напишите в поддержку" />
+        )}
       </Section>
       {methodsError && !methods && <LoadError text="Не удалось загрузить способы оплаты" onRetry={() => refetchMethods()} busy={methodsFetching} />}
 
       <div className="sticky-cta">
         <Button stretched disabled={!valid || create.isPending} onClick={pay}>
-          {create.isPending ? 'Создаём счёт…' : valid ? `Пополнить на ${rub(amount)}` : 'Введите сумму'}
+          {create.isPending ? 'Создаём счёт…' : methods?.length === 0 ? 'Оплата недоступна' : valid ? `Пополнить на ${rub(amount)}` : 'Введите сумму'}
         </Button>
       </div>
 
-      <InvoiceSheet invoiceId={invoice?.id ?? null} onClose={() => setInvoice(null)} />
+      <InvoiceSheet invoiceId={invoice?.id ?? null} onClose={() => setInvoice(null)} onWatch={watch} />
     </Page>
   )
 }

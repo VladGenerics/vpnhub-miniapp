@@ -1,8 +1,10 @@
 import { useCallback, type ReactNode } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { LuChevronLeft } from 'react-icons/lu'
 import { isTelegram, useTelegramBackButton } from '../lib/telegram'
+import { useIsWide } from '../hooks/useMediaQuery'
 import { Lottie } from './Lottie'
+import { SIDEBAR_PAGES } from './Sidebar'
 
 // Назад по истории приложения. Если страницу открыли напрямую (ссылкой, после входа), идём на главную,
 // а не уходим с сайта. history.length не подходит, он считает и чужие страницы вкладки.
@@ -12,8 +14,12 @@ export function useGoBack() {
 }
 
 // Обёртка страницы. Для вложенных (back) в Telegram показываем родную кнопку «Назад», в браузере - свою.
-export function Page({ back, children, className }: { back?: boolean; children: ReactNode; className?: string }) {
+// При боковой панели «Информация», «Помощь» и «Оформление» - разделы меню, «Назад» там лишний
+export function Page({ back: nested, children, className }: { back?: boolean; children: ReactNode; className?: string }) {
   const goBack = useGoBack()
+  const wide = useIsWide()
+  const { pathname } = useLocation()
+  const back = nested && !(wide && SIDEBAR_PAGES.includes(pathname))
   useTelegramBackButton(back ? goBack : null)
 
   return (

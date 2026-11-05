@@ -74,9 +74,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   useEffect(() => {
-    setUnauthorizedHandler(logout)
+    // initData Telegram сам не обновится, выход тут не поможет: /admin/me покажет ошибку с повтором
+    setUnauthorizedHandler((via) => via === 'token' && logout())
     return () => setUnauthorizedHandler(null)
   }, [logout])
+
+  // вход или выход в соседней вкладке: берём её токен и профиль, кэш прежнего аккаунта сбрасываем
+  useEffect(() => {
+    const onStorage = (e: StorageEvent) => {
+      if (e.key !== authToken.key && e.key !== null) return
+      const next = authToken.get()
+      setToken((prev) => {
+        if (prev !== next) {
+          queryClient.clear()
+          setProfile(readProfile())
+        }
+        return next
+      })
+    }
+    window.addEventListener('storage', onStorage)
+    return () => window.removeEventListener('storage', onStorage)
+  }, [])
 
   const value = useMemo<AuthState>(
     () => ({
@@ -123,5 +141,7 @@ export function RequireAdmin({ children, denied }: { children: ReactNode; denied
         <ErrorView error={me.error} onRetry={() => me.refetch()} />
       </div>
     )
+  // в панель только с подтверждённой ролью сотрудника, без профиля - отказ, а не открытая админка
+  if (!me.data || !STAFF_ROLES.includes(me.data.role)) return denied
   return children
 }

@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import { useEffect, type ReactNode } from 'react'
 import type { SortOrder } from '@vpnhub/shared'
 import { num } from '../lib/format'
 import { Icon } from './Icon'
@@ -137,8 +137,12 @@ export function Pagination({
   onPage(p: number): void
   onPageSize?(s: number): void
 }) {
+  const pages = total === undefined ? 1 : Math.max(1, Math.ceil(total / pageSize))
+  // страница из адреса больше последней (записей стало меньше, ссылка устарела) - переходим на последнюю
+  useEffect(() => {
+    if (total !== undefined && page > pages) onPage(pages)
+  }, [total, page, pages])
   if (total === undefined) return <div className="pagination">&nbsp;</div>
-  const pages = Math.max(1, Math.ceil(total / pageSize))
   const from = total ? (page - 1) * pageSize + 1 : 0
   const to = Math.min(total, page * pageSize)
   return (

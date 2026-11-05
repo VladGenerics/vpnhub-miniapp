@@ -2,6 +2,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import { QueryClientProvider } from '@tanstack/react-query'
+import { reloadOnStaleChunks } from '@vpnhub/shared'
 import App from './App'
 import { queryClient } from './api/queries'
 import { AuthProvider } from './auth/AuthProvider'
@@ -9,6 +10,7 @@ import { ToastProvider } from './components/Toast'
 import { BackgroundErrors } from './components/BackgroundErrors'
 import './styles/admin.css'
 
+reloadOnStaleChunks()
 // внутри Telegram панель разворачивается на весь экран
 const tg = (window as unknown as { Telegram?: { WebApp?: { ready(): void; expand(): void; initData?: string } } }).Telegram?.WebApp
 if (tg?.initData) {

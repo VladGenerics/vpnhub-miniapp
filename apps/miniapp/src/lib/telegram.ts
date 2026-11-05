@@ -27,6 +27,7 @@ interface TgWebApp {
   version: string
   ready(): void
   expand(): void
+  close(): void
   isVersionAtLeast(v: string): boolean
   setHeaderColor(c: string): void
   setBackgroundColor(c: string): void
@@ -82,15 +83,19 @@ export function getColorScheme(): 'light' | 'dark' {
 
 export function applyTelegramChrome(bg: string) {
   if (!isTelegram || !tg) return
-  try {
-    if (tg.isVersionAtLeast('6.1')) {
-      tg.setHeaderColor(bg)
-      tg.setBackgroundColor(bg)
+  // каждый вызов отдельно: ошибка одного не должна отменять остальные.
+  // Шапка принимает произвольный hex только с 6.9, раньше - лишь имена цветов темы Telegram
+  const run = (fn: () => void) => {
+    try {
+      fn()
+    } catch {
+      /* старые клиенты */
     }
-    if (tg.isVersionAtLeast('7.10')) tg.setBottomBarColor?.(bg)
-  } catch {
-    /* старые клиенты */
   }
+  if (tg.isVersionAtLeast('6.9')) run(() => tg!.setHeaderColor(bg))
+  else if (tg.isVersionAtLeast('6.1')) run(() => tg!.setHeaderColor('bg_color'))
+  if (tg.isVersionAtLeast('6.1')) run(() => tg!.setBackgroundColor(bg))
+  if (tg.isVersionAtLeast('7.10')) run(() => tg!.setBottomBarColor?.(bg))
 }
 
 export function initTelegram() {
@@ -128,9 +133,37 @@ export function useTelegramBackButton(onBack: (() => void) | null) {
   }, [!!onBack])
 }
 
-export function openSupport(url: string) {
-  if (isTelegram && tg) tg.openTelegramLink(url)
-  else window.open(url, '_blank', 'noopener')
+/**
+ * Внешняя ссылка из API (оплата, поддержка) или null, если ей нельзя доверять.
+ * Пускаем только https, а http - лишь на свой же сайт (заглушка оплаты в тестовых данных).
+ * tg://resolve?domain=name переводим в https://t.me/name.
+ */
+export function safeExternalUrl(raw: string | null | undefined): string | null {
+  if (!raw) return null
+  let url: URL
+  try {
+    url = new URL(raw.trim())
+  } catch {
+    return null
+  }
+  if (url.protocol === 'tg:') {
+    const domain = url.hostname === 'resolve' ? url.searchParams.get('domain') : null
+    return domain && /^\w{4,32}$/.test(domain) ? `https://t.me/${domain}` : null
+  }
+  if (url.protocol === 'https:') return url.href
+  if (url.protocol === 'http:' && url.origin === location.origin) return url.href
+  return null
+}
+
+/** Ссылки t.me Telegram открывает у себя, остальные - во внешнем браузере */
+export function openSupport(raw: string) {
+  const url = safeExternalUrl(raw)
+  if (!url) return false
+  if (isTelegram && tg) {
+    if (url.startsWith('https://t.me/')) tg.openTelegramLink(url)
+    else tg.openLink(url)
+  } else window.open(url, '_blank', 'noopener')
+  return true
 }
 
 // Открывает оплату счёта: Telegram Stars (t.me/$...) - родным окном, ссылки t.me - внутри Telegram,

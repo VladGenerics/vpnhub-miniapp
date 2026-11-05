@@ -2,6 +2,11 @@ import { useCallback, useMemo } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import type { SortOrder } from '@vpnhub/shared'
 
+const pageFrom = (raw: string | null) => {
+  const n = Math.floor(Number(raw))
+  return Number.isSafeInteger(n) && n >= 1 && n <= 1_000_000 ? n : 1
+}
+
 /** Размеры страницы, которые предлагает таблица. Другое значение из адреса заменяем на значение по умолчанию */
 const PAGE_SIZES = [10, 20, 50, 100]
 
@@ -14,7 +19,8 @@ export function useListParams<F extends string>(defaults: { sort: string; order:
     const f = {} as Record<F, string | undefined>
     for (const k of filters) f[k] = sp.get(k) || undefined
     return {
-      page: Math.max(1, Math.floor(Number(sp.get('page'))) || 1),
+      // мусор и огромные числа в адресе (page=abc, page=Infinity) - первая страница
+      page: pageFrom(sp.get('page')),
       page_size: PAGE_SIZES.includes(Number(sp.get('size'))) ? Number(sp.get('size')) : defaults.page_size || 20,
       sort: sp.get('sort') || defaults.sort,
       order: (sp.get('order') === 'asc' ? 'asc' : sp.get('order') === 'desc' ? 'desc' : defaults.order) as SortOrder,

@@ -49,7 +49,8 @@ function load(path: string) {
 }
 
 export function preloadEmoji(folder: string, ...names: string[]) {
-  loadPlayer()
+  // предзагрузка не обязана удаться: при ошибке плеер попробует загрузиться ещё раз при показе эмодзи
+  loadPlayer().catch(() => {})
   names.forEach((n) => load(`${folder}/${n}`))
 }
 

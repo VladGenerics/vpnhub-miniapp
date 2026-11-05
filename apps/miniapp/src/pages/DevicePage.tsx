@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { Navigate, useParams } from 'react-router-dom'
 import { Page, useGoBack } from '../components/Page'
 import { Section, Cell } from '../components/List'
@@ -22,6 +22,10 @@ export function DevicePage() {
   const goBack = useGoBack()
   const toast = useToast()
   const [confirm, setConfirm] = useState(false)
+  // освобождение и удаление одного слота взаимоисключающие, и каждое - один раз:
+  // флаг в ref ставится синхронно, до перерисовки, поэтому ловит и быстрый двойной клик
+  const busyRef = useRef(false)
+  const busy = release.isPending || remove.isPending
 
   if (isPending)
     return (
@@ -46,26 +50,32 @@ export function DevicePage() {
     toast(e.message || 'Не удалось выполнить действие', E.warning)
   }
 
+  const once = (run: () => Promise<unknown>) => {
+    if (busyRef.current) return
+    busyRef.current = true
+    run()
+      .catch(() => {})
+      .finally(() => (busyRef.current = false))
+  }
+
   const doRelease = () =>
-    release.mutate(slot.id, {
-      onSuccess: () => {
+    once(() =>
+      release.mutateAsync(slot.id).then(() => {
         haptic.notify('success')
         toast('Слот освобождён', E.sponge)
         goBack()
-      },
-      onError,
-    })
+      }, onError),
+    )
 
   const doRemove = () =>
-    remove.mutate(slot.id, {
-      onSuccess: () => {
+    once(() =>
+      remove.mutateAsync(slot.id).then(() => {
         haptic.notify('warning')
         setConfirm(false)
         toast('Слот удалён', E.check)
         goBack()
-      },
-      onError,
-    })
+      }, onError),
+    )
 
   return (
     <Page back>
@@ -88,7 +98,10 @@ export function DevicePage() {
           <button
             className="kv-row is-column"
             onClick={async () => {
-              await copyText(slot.agent!)
+              if (!(await copyText(slot.agent!))) {
+                haptic.notify('error')
+                return toast('Не удалось скопировать, выделите и скопируйте вручную', E.warning)
+              }
               haptic.notify('success')
               toast('User-Agent скопирован', E.check)
             }}
@@ -100,13 +113,13 @@ export function DevicePage() {
       </Section>
 
       <Section footer="Устройство отключится, а слот можно будет занять другим устройством">
-        <Cell tone="accent" icon={<Lottie name={E.sponge} size={30} />} title="Освободить слот" onClick={doRelease} />
+        <Cell tone="accent" icon={<Lottie name={E.sponge} size={30} />} title="Освободить слот" onClick={doRelease} disabled={busy} />
       </Section>
 
       {/* без слотов подписка теряет смысл, последний можно только освободить */}
       {(active?.slots.length ?? 0) > 1 && (
         <Section>
-          <Cell tone="danger" icon={<Lottie name={E.warning} size={30} />} title="Удалить слот" onClick={() => setConfirm(true)} />
+          <Cell tone="danger" icon={<Lottie name={E.warning} size={30} />} title="Удалить слот" onClick={() => setConfirm(true)} disabled={busy} />
         </Section>
       )}
 
@@ -117,7 +130,7 @@ export function DevicePage() {
           <p>⚠ Это действие безвозвратно удалит текущий занятый слот из вашей подписки</p>
         </div>
         <div className="sheet-actions">
-          <Button variant="danger" stretched onClick={doRemove} disabled={remove.isPending}>
+          <Button variant="danger" stretched onClick={doRemove} disabled={busy}>
             Подтвердить удаление
           </Button>
           <Button variant="ghost" stretched onClick={() => setConfirm(false)}>

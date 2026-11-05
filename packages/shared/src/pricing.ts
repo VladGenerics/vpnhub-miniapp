@@ -14,8 +14,10 @@ function stepFor<T>(rules: T[], key: (r: T) => number, value: number): T | undef
     .at(-1)
 }
 
-export function pricePerDeviceDay(t: Tariffs, days: number): number {
-  return stepFor(t.prices, (p) => p.min_days, days)?.price_per_day ?? t.prices[0]?.price_per_day ?? 0
+/** Цена дня за устройство или null, если тарифа нет: без цены оформлять нельзя, а не «за 0 ₽» */
+export function pricePerDeviceDay(t: Tariffs, days: number): number | null {
+  const price = stepFor(t.prices, (p) => p.min_days, days)?.price_per_day ?? [...t.prices].sort((a, b) => a.min_days - b.min_days)[0]?.price_per_day
+  return typeof price === 'number' && Number.isFinite(price) && price > 0 ? price : null
 }
 
 export function deviceDiscount(t: Tariffs, devices: number): number {
@@ -35,8 +37,10 @@ export interface Quote {
   total: number
 }
 
-export function quote(t: Tariffs, devices: number, days: number): Quote {
+/** Расчёт цены или null, если для такого срока нет цены в тарифах */
+export function quote(t: Tariffs, devices: number, days: number): Quote | null {
   const pricePerDay = pricePerDeviceDay(t, days)
+  if (pricePerDay === null) return null
   const base = pricePerDay * devices * days
   const dd = deviceDiscount(t, devices)
   const disc = activeDiscount(t)

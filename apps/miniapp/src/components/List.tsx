@@ -23,9 +23,11 @@ interface CellProps {
   chevron?: boolean
   tone?: 'default' | 'accent' | 'danger'
   multiline?: boolean
+  /** Действие уже выполняется: кнопка не нажимается повторно */
+  disabled?: boolean
 }
 
-export function Cell({ icon, title, subtitle, after, to, onClick, chevron, tone = 'default', multiline }: CellProps) {
+export function Cell({ icon, title, subtitle, after, to, onClick, chevron, tone = 'default', multiline, disabled }: CellProps) {
   const interactive = !!(to || onClick)
   const inner = (
     <>
@@ -51,7 +53,7 @@ export function Cell({ icon, title, subtitle, after, to, onClick, chevron, tone 
     )
   if (onClick)
     return (
-      <button className={cls} onClick={tap}>
+      <button className={cls} onClick={tap} disabled={disabled} aria-busy={disabled || undefined}>
         {inner}
       </button>
     )

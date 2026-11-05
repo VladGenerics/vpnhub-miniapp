@@ -1803,6 +1803,16 @@ p {
 .section-card > :nth-child(n + 6) {
   animation-delay: 0.28s;
 }
+/* строки, раскрытые кнопкой «Показать ещё»: только проявление, без сдвига и задержки */
+.section-card > .is-more {
+  animation: cell-more-in 0.22s ease-out backwards;
+  animation-delay: 0s;
+}
+@keyframes cell-more-in {
+  from {
+    opacity: 0;
+  }
+}
 
 .tabs-pane.is-active .section-card > * {
   animation-name: cell-in-tab;
@@ -1921,32 +1931,32 @@ p {
 .icon-btn,
 .copy-btn,
 .stepper button,
-.chip,
 .sheet-close {
   transition:
     background 0.2s,
     color 0.2s,
     transform 0.3s var(--spring);
 }
+.chip {
+  transition:
+    background 0.2s,
+    color 0.2s,
+    transform 0.15s ease;
+}
 .icon-btn:active,
 .copy-btn:active,
 .stepper button:active:not(:disabled),
-.chip:active,
 .sheet-close:active {
   transform: scale(0.86);
+}
+/* пресеты широкие: сильное сжатие и пружина на них выглядят как прыжок, хватает лёгкого нажатия */
+.chip:active {
+  transform: scale(0.97);
 }
 .url-row:active .copy-btn {
   transform: scale(0.86) rotate(-8deg);
 }
 
-.chip.is-active {
-  animation: chip-pop 0.45s var(--spring-bouncy);
-}
-@keyframes chip-pop {
-  0% {
-    transform: scale(0.9);
-  }
-}
 
 .stepper-value .anum,
 .anum {

@@ -135,7 +135,9 @@ const isNumeric = (q: string) => /^\d+$/.test(q)
 
 function truncate(ms: number, g: Granularity) {
   const d = new Date(ms)
-  if (g === 'hour') d.setMinutes(0, 0, 0)
+  // час: вычитаем прошедшее внутри часа, а не setMinutes(0) - в повторный час при переводе на зимнее
+  // время setMinutes перескакивает в первое вхождение этого часа
+  if (g === 'hour') return ms - (d.getMinutes() * 60_000 + d.getSeconds() * 1000 + d.getMilliseconds())
   else {
     d.setHours(0, 0, 0, 0)
     if (g !== 'day') d.setDate(1)
@@ -145,9 +147,10 @@ function truncate(ms: number, g: Granularity) {
 }
 
 function next(ms: number, g: Granularity) {
+  // час в миллисекундах: setHours пропустил бы повторный час при переводе часов
+  if (g === 'hour') return ms + 36e5
   const d = new Date(ms)
-  if (g === 'hour') d.setHours(d.getHours() + 1)
-  else if (g === 'day') d.setDate(d.getDate() + 1)
+  if (g === 'day') d.setDate(d.getDate() + 1)
   else if (g === 'month') d.setMonth(d.getMonth() + 1)
   else d.setFullYear(d.getFullYear() + 1)
   return d.getTime()
@@ -380,6 +383,8 @@ export const mockApi: AdminApi = {
     if (p.status) list = list.filter((i) => i.status === p.status)
     if (p.provider) list = list.filter((i) => i.provider === p.provider)
     if (p.user_id) list = list.filter((i) => i.user_id === Number(p.user_id))
+    // по дате оплаты - только оплаченные, даже без границ периода (как в docs/api.md)
+    if (p.date_by === 'paid') list = list.filter((i) => i.paid_at !== null)
     if (p.from || p.to) {
       const from = p.from ? Date.parse(p.from) : -Infinity
       const to = p.to ? Date.parse(p.to) : Infinity

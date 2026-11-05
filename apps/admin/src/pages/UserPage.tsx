@@ -153,7 +153,8 @@ function BalanceModal({ user, direction, onClose }: { user: AdminUserDetails; di
     amount.reset()
     setComment('')
     setTouched(false)
-    adjust.reset()
+    // идущую операцию не отцепляем: она завершится и покажет итог, даже если окно уже закрыто
+    if (!adjust.isPending) adjust.reset()
     onClose()
   }
 
@@ -176,18 +177,20 @@ function BalanceModal({ user, direction, onClose }: { user: AdminUserDetails; di
     setTouched(true)
     if (!(v > 0) || v > MAX_ADJUST || (!add && v > user.balance)) return
     sending.current = true
-    adjust.mutate(
-      { direction: add ? 'IN' : 'OUT', amount: v, comment: comment.trim() || undefined },
-      {
-        onSuccess: () => {
-          toast(add ? `Начислено ${rub(v)}` : `Списано ${rub(v)}`)
-          close()
-        },
-        onSettled: () => {
-          sending.current = false
-        },
-      },
-    )
+    // mutateAsync, а не mutate с колбэками: колбэки вызова теряются после reset() при закрытии окна,
+    // и флаг отправки остался бы поднятым навсегда. Обещание доходит до конца в любом случае
+    adjust
+      .mutateAsync({ direction: add ? 'IN' : 'OUT', amount: v, comment: comment.trim() || undefined })
+      .then(() => {
+        toast(add ? `Начислено ${rub(v)}` : `Списано ${rub(v)}`)
+        close()
+      })
+      .catch(() => {
+        /* ошибка показывается в окне через adjust.error */
+      })
+      .finally(() => {
+        sending.current = false
+      })
   }
 
   return (

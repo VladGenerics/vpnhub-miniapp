@@ -12,7 +12,6 @@ import type {
   Tariffs,
 } from '@vpnhub/shared'
 import { ApiError, http } from './http'
-import { mockApi } from './mock'
 
 /** Все запросы кабинета. Описание - docs/api.md */
 export interface UserApi {
@@ -72,4 +71,18 @@ const httpApi: UserApi = {
 /** Тестовые данные вместо API: VITE_USE_MOCKS=true, или локальная разработка без VITE_API_URL. В боевой сборке только явно */
 export const USE_MOCKS = import.meta.env.VITE_USE_MOCKS === 'true' || (import.meta.env.DEV && !import.meta.env.VITE_API_URL)
 
-export const api: UserApi = USE_MOCKS ? mockApi : httpApi
+// тестовый бэкенд - отдельный чанк: в боевую сборку он не попадает и не исполняется
+function lazyMock(): UserApi {
+  let loaded: Promise<UserApi> | null = null
+  const load = () => (loaded ??= import('./mock').then((m) => m.mockApi))
+  return new Proxy({} as UserApi, {
+    get:
+      (_, key: keyof UserApi) =>
+      async (...args: unknown[]) => {
+        const api = await load()
+        return (api[key] as (...a: unknown[]) => unknown)(...args)
+      },
+  })
+}
+
+export const api: UserApi = USE_MOCKS ? lazyMock() : httpApi

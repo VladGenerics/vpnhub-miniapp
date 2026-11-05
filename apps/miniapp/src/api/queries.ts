@@ -1,9 +1,10 @@
 import { QueryClient, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type { AutoRenewal, CreateInvoiceRequest, Invoice, PurchaseRequest, Subscription } from '@vpnhub/shared'
+import { required, shouldRetry } from '@vpnhub/shared'
 import { api } from './index'
 
 const isClientError = (err: unknown) => {
-  const status = (err as { status?: number }).status ?? 0
+  const status = (err as { status?: number } | null)?.status ?? 0
   return status >= 400 && status < 500
 }
 
@@ -12,11 +13,20 @@ export const queryClient = new QueryClient({
     queries: {
       staleTime: 30_000,
       // 4xx повторять нет смысла, повторяем только обрыв сети и 5xx
-      retry: (count, err) => count < 1 && !isClientError(err),
+      retry: shouldRetry,
       refetchOnWindowFocus: true,
     },
   },
 })
+
+/**
+ * Кладёт ответ мутации в кэш. Сначала отменяем идущее чтение того же ключа:
+ * иначе GET, начатый до мутации, вернётся позже и затрёт свежие данные старыми
+ */
+async function setFresh<T>(qc: QueryClient, queryKey: readonly unknown[], data: T | ((old: T | undefined) => T | undefined)) {
+  await qc.cancelQueries({ queryKey })
+  qc.setQueryData<T>(queryKey, data)
+}
 
 export const keys = {
   me: ['me'] as const,
@@ -28,11 +38,12 @@ export const keys = {
   unpaidInvoices: ['invoices', 'UNPAID'] as const,
 }
 
-export const useMe = () => useQuery({ queryKey: keys.me, queryFn: api.getMe })
+export const useMe = () => useQuery({ queryKey: keys.me, queryFn: () => api.getMe().then(required) })
 export const useSubscription = () => useQuery({ queryKey: keys.subscription, queryFn: api.getSubscription })
-export const useTariffs = () => useQuery({ queryKey: keys.tariffs, queryFn: api.getTariffs, staleTime: 5 * 60_000 })
-export const usePaymentMethods = () => useQuery({ queryKey: keys.paymentMethods, queryFn: api.getPaymentMethods })
-export const useSettings = (enabled = true) => useQuery({ queryKey: keys.settings, queryFn: api.getSettings, staleTime: 5 * 60_000, enabled })
+export const useTariffs = () => useQuery({ queryKey: keys.tariffs, queryFn: () => api.getTariffs().then(required), staleTime: 5 * 60_000 })
+export const usePaymentMethods = () => useQuery({ queryKey: keys.paymentMethods, queryFn: () => api.getPaymentMethods().then(required) })
+export const useSettings = (enabled = true) =>
+  useQuery({ queryKey: keys.settings, queryFn: () => api.getSettings().then(required), staleTime: 5 * 60_000, enabled })
 
 /** Активная подписка или null */
 export function useActiveSubscription() {
@@ -47,14 +58,15 @@ export function useInvoice(id: number | null) {
     queryKey: keys.invoice(id ?? 0),
     enabled: id !== null,
     queryFn: async () => {
-      const inv = await api.getInvoice(id!)
+      const inv = required(await api.getInvoice(id!))
       if (inv.status !== 'UNPAID') {
         qc.invalidateQueries({ queryKey: keys.unpaidInvoices })
         if (inv.status === 'PAID') qc.invalidateQueries({ queryKey: keys.me })
       }
       return inv
     },
-    refetchInterval: (q) => (q.state.data?.status === 'UNPAID' || !q.state.data ? 3000 : false),
+    // счёт не найден или чужой (4xx) - опрос бесполезен, остаётся ручная проверка
+    refetchInterval: (q) => (isClientError(q.state.error) ? false : q.state.data?.status === 'UNPAID' || !q.state.data ? 3000 : false),
   })
 }
 
@@ -65,7 +77,7 @@ export function useUnpaidInvoices() {
     queryKey: keys.unpaidInvoices,
     queryFn: async () => {
       const prev = qc.getQueryData<Invoice[]>(keys.unpaidInvoices)
-      const list = await api.getUnpaidInvoices()
+      const list = required(await api.getUnpaidInvoices())
       // счёт пропал из списка - его оплатили или он истёк, баланс мог измениться
       if (prev?.some((p) => !list.some((n) => n.id === p.id))) qc.invalidateQueries({ queryKey: keys.me })
       return list
@@ -78,7 +90,7 @@ export function useBindEmail() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (email: string) => api.bindEmail(email),
-    onSuccess: (me) => qc.setQueryData(keys.me, me),
+    onSuccess: (me) => setFresh(qc, keys.me, me),
   })
 }
 
@@ -97,8 +109,8 @@ export function usePurchase() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (req: PurchaseRequest) => api.purchase(req),
-    onSuccess: (sub) => {
-      qc.setQueryData(keys.subscription, sub)
+    onSuccess: async (sub) => {
+      await setFresh(qc, keys.subscription, sub)
       qc.invalidateQueries({ queryKey: keys.me })
     },
   })
@@ -108,8 +120,8 @@ export function useRenew() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (days: number) => api.renew(days),
-    onSuccess: (sub) => {
-      qc.setQueryData(keys.subscription, sub)
+    onSuccess: async (sub) => {
+      await setFresh(qc, keys.subscription, sub)
       qc.invalidateQueries({ queryKey: keys.me })
     },
   })
@@ -119,7 +131,7 @@ export function useSetAutoRenewal() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (v: AutoRenewal) => api.setAutoRenewal(v),
-    onSuccess: (auto_renewal) => qc.setQueryData<Subscription | null>(keys.subscription, (s) => (s ? { ...s, auto_renewal } : s)),
+    onSuccess: (auto_renewal) => setFresh<Subscription | null>(qc, keys.subscription, (s) => (s ? { ...s, auto_renewal } : s)),
   })
 }
 

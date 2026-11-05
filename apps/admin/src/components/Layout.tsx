@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { ROLE_LABEL } from '@vpnhub/shared'
 import { useAuth } from '../auth/AuthProvider'
@@ -37,6 +37,9 @@ export function Layout() {
   const nav = isSupport ? NAV.filter((n) => n.support) : NAV
   const { pathname, search } = useLocation()
   const [open, setOpen] = useState(false)
+  // на телефоне закрытое меню уехало за край: без inert Tab ходил бы по невидимым ссылкам
+  const [narrow, setNarrow] = useState(() => !matchMedia('(min-width: 641px)').matches)
+  const sideRef = useRef<HTMLElement>(null)
 
   const section = NAV.find((n) => (n.to === '/' ? pathname === '/' : pathname.startsWith(n.to)))
   if (section) {
@@ -53,18 +56,39 @@ export function Layout() {
   useEffect(() => setOpen(false), [pathname])
   useEffect(() => {
     const wide = matchMedia('(min-width: 641px)')
-    const onChange = () => wide.matches && setOpen(false)
+    const onChange = () => {
+      setNarrow(!wide.matches)
+      if (wide.matches) setOpen(false)
+    }
     wide.addEventListener('change', onChange)
     return () => wide.removeEventListener('change', onChange)
   }, [])
+  // открытое меню на телефоне ведёт себя как окно: фокус внутрь, Tab по кругу внутри, после закрытия - на кнопку меню
   useEffect(() => {
     if (!open) return
     document.body.classList.add('no-scroll')
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false)
+    const side = sideRef.current
+    side?.querySelector<HTMLElement>('a, button')?.focus()
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpen(false)
+      if (e.key !== 'Tab' || !side) return
+      const items = [...side.querySelectorAll<HTMLElement>('a[href], button:not([disabled])')]
+      if (!items.length) return
+      const first = items[0]
+      const last = items[items.length - 1]
+      if (e.shiftKey && (document.activeElement === first || !side.contains(document.activeElement))) {
+        e.preventDefault()
+        last.focus()
+      } else if (!e.shiftKey && (document.activeElement === last || !side.contains(document.activeElement))) {
+        e.preventDefault()
+        first.focus()
+      }
+    }
     window.addEventListener('keydown', onKey)
     return () => {
       document.body.classList.remove('no-scroll')
       window.removeEventListener('keydown', onKey)
+      document.querySelector<HTMLElement>('.menu-btn')?.focus({ preventScroll: true })
     }
   }, [open])
 
@@ -87,7 +111,7 @@ export function Layout() {
 
   return (
     <div className="layout">
-      <aside className={`side ${open ? 'is-open' : ''}`} id="side-nav" aria-label="Разделы">
+      <aside ref={sideRef} className={`side ${open ? 'is-open' : ''}`} id="side-nav" aria-label="Разделы" inert={narrow && !open}>
         <div className="side-brand">
           <img src={`${import.meta.env.BASE_URL}favicon.svg`} alt="" />
           <span className="side-brand-name">VPNHub</span>

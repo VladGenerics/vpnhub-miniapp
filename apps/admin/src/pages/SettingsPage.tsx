@@ -18,12 +18,14 @@ function normalizeLink(v: string) {
   return t
 }
 
-/** Ссылка поддержки: https://t.me/..., любая https-ссылка или tg:// */
+/** Ссылка поддержки: https://t.me/..., любая https-ссылка или tg://resolve?domain=... Кабинет открывает только такие */
 function linkError(v: string) {
   if (!v.trim()) return 'Укажите ссылку'
   try {
     const u = new URL(normalizeLink(v))
-    if (!['https:', 'http:', 'tg:'].includes(u.protocol)) return 'Ссылка должна начинаться с https:// или tg://'
+    if (u.protocol === 'tg:')
+      return u.hostname === 'resolve' && /^\w{4,32}$/.test(u.searchParams.get('domain') ?? '') ? null : 'Для tg:// нужен вид tg://resolve?domain=имя'
+    if (u.protocol !== 'https:') return 'Ссылка должна начинаться с https://'
     return null
   } catch {
     return 'Это не похоже на ссылку. Пример: https://t.me/vpnhub_support'

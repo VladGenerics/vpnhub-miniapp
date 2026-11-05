@@ -29,8 +29,11 @@ function pruneEmoji(): Plugin {
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
+  // версия для строки в профиле - из package.json, чтобы не править её руками при релизе
+  const version = JSON.parse(readFileSync('package.json', 'utf8')).version as string
   return {
     plugins: [react(), pruneEmoji()],
+    define: { __APP_VERSION__: JSON.stringify(version) },
     build: {
       rolldownOptions: {
         output: {

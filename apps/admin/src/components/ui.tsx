@@ -239,8 +239,8 @@ export function CopyButton({ value, label = 'Значение' }: { value: strin
       title="Скопировать"
       onClick={async (e) => {
         e.stopPropagation()
-        await copyText(String(value))
-        toast(`${label} скопирован`)
+        if (await copyText(String(value))) toast(`${label} скопирован`)
+        else toast('Не удалось скопировать, выделите и скопируйте вручную', 'error')
       }}
     >
       <Icon name="copy" size={14} />

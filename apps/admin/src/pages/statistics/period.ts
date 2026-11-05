@@ -13,7 +13,9 @@ const HOUR_HISTORY_DAYS = 31
 
 export function truncate(ms: number, g: Granularity) {
   const d = new Date(ms)
-  if (g === 'hour') d.setMinutes(0, 0, 0)
+  // час: вычитаем прошедшее внутри часа, а не setMinutes(0) - в повторный час при переводе на зимнее
+  // время setMinutes перескакивает в первое вхождение этого часа
+  if (g === 'hour') return ms - (d.getMinutes() * 60_000 + d.getSeconds() * 1000 + d.getMilliseconds())
   else {
     d.setHours(0, 0, 0, 0)
     if (g !== 'day') d.setDate(1)

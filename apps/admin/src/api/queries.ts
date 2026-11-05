@@ -10,14 +10,15 @@ import type {
   StatsQuery,
   UsersParams,
 } from '@vpnhub/shared'
+import { required, shouldRetry } from '@vpnhub/shared'
 import { api } from './index'
 
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 30_000,
-      // 401/403/404 повторять нет смысла
-      retry: (count, err) => count < 1 && ![401, 403, 404].includes((err as { status?: number }).status ?? 0),
+      // как в кабинете: повторяем обрыв сети и 5xx, 4xx повтором не исправить
+      retry: shouldRetry,
       refetchOnWindowFocus: true,
     },
   },
@@ -40,13 +41,15 @@ export const keys = {
   stats: (kind: string, q: StatsQuery) => ['stats', kind, q] as const,
 }
 
-export const useAdminMe = (enabled: boolean) => useQuery({ queryKey: keys.me, queryFn: api.getMe, enabled, staleTime: 5 * 60_000 })
+export const useAdminMe = (enabled: boolean) => useQuery({ queryKey: keys.me, queryFn: () => api.getMe().then(required), enabled, staleTime: 5 * 60_000 })
 
-export const useDashboard = () => useQuery({ queryKey: keys.dashboard, queryFn: () => api.getDashboard(TZ), refetchInterval: 60_000 })
+export const useDashboard = () => useQuery({ queryKey: keys.dashboard, queryFn: () => api.getDashboard(TZ).then(required), refetchInterval: 60_000 })
 
 // пока грузится следующая страница, показываем предыдущую, чтобы таблица не прыгала
-export const useUsers = (p: UsersParams) => useQuery({ queryKey: keys.users(p), queryFn: () => api.getUsers(p), placeholderData: keepPreviousData })
-export const useUser = (id: number) => useQuery({ queryKey: keys.user(id), queryFn: () => api.getUser(id), enabled: Number.isInteger(id) && id > 0 })
+export const useUsers = (p: UsersParams) =>
+  useQuery({ queryKey: keys.users(p), queryFn: () => api.getUsers(p).then(required), placeholderData: keepPreviousData })
+export const useUser = (id: number) =>
+  useQuery({ queryKey: keys.user(id), queryFn: () => api.getUser(id).then(required), enabled: Number.isInteger(id) && id > 0 })
 // прошлую страницу показываем только для того же пользователя, иначе в карточке B мелькнёт история A
 const samePlaceholder =
   (same: (prevKey: readonly unknown[]) => boolean) =>
@@ -54,19 +57,19 @@ const samePlaceholder =
     prevQuery && same(prevQuery.queryKey) ? prev : undefined
 
 export const useReferrals = (id: number, p: ListParams) =>
-  useQuery({ queryKey: keys.referrals(id, p), queryFn: () => api.getUserReferrals(id, p), placeholderData: samePlaceholder((k) => k[1] === id) })
+  useQuery({ queryKey: keys.referrals(id, p), queryFn: () => api.getUserReferrals(id, p).then(required), placeholderData: samePlaceholder((k) => k[1] === id) })
 export const useLedger = (id: number, p: ListParams) =>
-  useQuery({ queryKey: keys.ledger(id, p), queryFn: () => api.getUserLedger(id, p), placeholderData: samePlaceholder((k) => k[1] === id) })
+  useQuery({ queryKey: keys.ledger(id, p), queryFn: () => api.getUserLedger(id, p).then(required), placeholderData: samePlaceholder((k) => k[1] === id) })
 export const useInvoices = (p: InvoicesParams) =>
   useQuery({
     queryKey: keys.invoices(p),
-    queryFn: () => api.getInvoices(p),
+    queryFn: () => api.getInvoices(p).then(required),
     // в общем списке счетов предыдущую страницу держим всегда, во вкладке пользователя - только для него же
     placeholderData: p.user_id ? samePlaceholder((k) => (k[1] as InvoicesParams | undefined)?.user_id === p.user_id) : keepPreviousData,
   })
 
-export const usePaymentMethods = () => useQuery({ queryKey: keys.paymentMethods, queryFn: api.getPaymentMethods })
-export const useSettings = () => useQuery({ queryKey: keys.settings, queryFn: api.getSettings })
+export const usePaymentMethods = () => useQuery({ queryKey: keys.paymentMethods, queryFn: () => api.getPaymentMethods().then(required) })
+export const useSettings = () => useQuery({ queryKey: keys.settings, queryFn: () => api.getSettings().then(required) })
 
 export function useAdjustBalance(id: number) {
   const qc = useQueryClient()
@@ -99,13 +102,21 @@ export function useUpdateSettings() {
 
 // --- статистика ---
 
-export const useStatsRange = () => useQuery({ queryKey: keys.statsRange, queryFn: api.getStatsRange, staleTime: 10 * 60_000 })
+export const useStatsRange = () => useQuery({ queryKey: keys.statsRange, queryFn: () => api.getStatsRange().then(required), staleTime: 10 * 60_000 })
 
-const statsOptions = { staleTime: 60_000, placeholderData: keepPreviousData } as const
+// пока грузится новый период, держим прежний график, но только с тем же шагом: дневные точки
+// под подписью «по часам» дали бы неверные средние и KPI
+const sameGranularity = <T>(prev: T | undefined, prevQuery?: { queryKey: readonly unknown[] }, g?: string) =>
+  (prevQuery?.queryKey[2] as StatsQuery | undefined)?.granularity === g ? prev : undefined
+const statsOptions = (q: StatsQuery | null) =>
+  ({
+    staleTime: 60_000,
+    placeholderData: <T>(prev: T | undefined, prevQuery?: { queryKey: readonly unknown[] }) => sameGranularity(prev, prevQuery, q?.granularity),
+  }) as const
 
 export const useUsersStats = (q: StatsQuery | null) =>
-  useQuery({ queryKey: keys.stats('users', q!), queryFn: () => api.getUsersStats(q!), enabled: !!q, ...statsOptions })
+  useQuery({ queryKey: keys.stats('users', q!), queryFn: () => api.getUsersStats(q!).then(required), enabled: !!q, ...statsOptions(q) })
 export const useDepositsStats = (q: StatsQuery | null) =>
-  useQuery({ queryKey: keys.stats('deposits', q!), queryFn: () => api.getDepositsStats(q!), enabled: !!q, ...statsOptions })
+  useQuery({ queryKey: keys.stats('deposits', q!), queryFn: () => api.getDepositsStats(q!).then(required), enabled: !!q, ...statsOptions(q) })
 export const usePurchasesStats = (q: StatsQuery | null) =>
-  useQuery({ queryKey: keys.stats('purchases', q!), queryFn: () => api.getPurchasesStats(q!), enabled: !!q, ...statsOptions })
+  useQuery({ queryKey: keys.stats('purchases', q!), queryFn: () => api.getPurchasesStats(q!).then(required), enabled: !!q, ...statsOptions(q) })

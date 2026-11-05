@@ -14,6 +14,9 @@ const EXTRA = [
   { to: '/ui', label: 'Оформление', emoji: E.gearTile },
 ]
 
+/** Страницы, которые при боковой панели - свои пункты меню, а не вложенные в «Профиль» */
+export const SIDEBAR_PAGES = EXTRA.map((e) => e.to)
+
 // Боковая панель слева на широком экране: меню, ссылки и профиль. Сворачивается до иконок, состояние запоминается.
 export function Sidebar() {
   const { pathname } = useLocation()

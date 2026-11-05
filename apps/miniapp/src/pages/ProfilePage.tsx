@@ -85,7 +85,10 @@ export function ProfilePage() {
   const email = me?.email
 
   const copy = async (v: string | number, label: string) => {
-    await copyText(String(v))
+    if (!(await copyText(String(v)))) {
+      haptic.notify('error')
+      return toast('Не удалось скопировать, выделите и скопируйте вручную', E.warning)
+    }
     haptic.notify('success')
     toast(`${label} скопирован`, E.check)
   }
@@ -163,7 +166,7 @@ export function ProfilePage() {
         </Section>
       )}
 
-      <p className="app-version">VPNHub · v0.2</p>
+      <p className="app-version">VPNHub · v{__APP_VERSION__}</p>
 
       <EmailSheet open={emailOpen} onClose={() => setEmailOpen(false)} />
     </Page>

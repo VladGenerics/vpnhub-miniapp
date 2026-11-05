@@ -4,6 +4,7 @@ import { quote, type Subscription } from '@vpnhub/shared'
 import { AnimatedNumber } from '../../components/AnimatedNumber'
 import { Sheet } from '../../components/Sheet'
 import { Lottie } from '../../components/Lottie'
+import { LoadError } from '../../components/LoadError'
 import { Button, Chips, Stepper } from '../../components/Controls'
 import { useToast } from '../../components/Toast'
 import { E } from '../../data/emoji'
@@ -16,8 +17,8 @@ const DAY = 86_400_000
 
 /** Продление заранее, без автопродления: дни прибавляются к текущему сроку, деньги списываются сразу */
 export function RenewSheet({ sub, open, onClose }: { sub: Subscription; open: boolean; onClose(): void }) {
-  const { data: me } = useMe()
-  const { data: tariffs } = useTariffs()
+  const { data: me, error: meError, refetch: refetchMe, isFetching: meFetching } = useMe()
+  const { data: tariffs, error: tariffsError, refetch: refetchTariffs, isFetching: tariffsFetching } = useTariffs()
   const renew = useRenew()
   const toast = useToast()
   const [dayCount, setDayCount] = useState(30)
@@ -28,8 +29,9 @@ export function RenewSheet({ sub, open, onClose }: { sub: Subscription; open: bo
 
   const slots = sub.slots.length
   const q = tariffs ? quote(tariffs, slots, dayCount) : null
-  const balance = me?.balance ?? 0
-  const lacking = q ? Math.max(0, q.total - balance) : 0
+  // неизвестный баланс - не ноль: пока он не загрузился, доплату не считаем и продлить не даём
+  const balance = me?.balance
+  const lacking = q && balance !== undefined ? Math.max(0, q.total - balance) : 0
   // общая доля скидки: за устройства и персональная/общая перемножаются
   const discount = q ? 1 - (1 - q.deviceDiscount) * (1 - q.discount) : 0
   const base = Math.max(Date.now(), +new Date(sub.expires_at))
@@ -90,7 +92,11 @@ export function RenewSheet({ sub, open, onClose }: { sub: Subscription; open: bo
         </>
       )}
 
-      {lacking > 0 && (
+      {tariffsError && !tariffs && <LoadError text="Не удалось загрузить цены" onRetry={() => refetchTariffs()} busy={tariffsFetching} />}
+      {tariffs && !q && <LoadError text="Тариф на этот срок пока недоступен" onRetry={() => refetchTariffs()} busy={tariffsFetching} />}
+      {meError && !me && <LoadError text="Не удалось загрузить баланс" onRetry={() => refetchMe()} busy={meFetching} />}
+
+      {lacking > 0 && balance !== undefined && (
         <div className="notice">
           <Lottie name={E.warning} size={26} />
           <span>
@@ -112,7 +118,7 @@ export function RenewSheet({ sub, open, onClose }: { sub: Subscription; open: bo
             Пополнить на {rub(Math.ceil(lacking))}
           </Link>
         ) : (
-          <Button stretched onClick={submit} disabled={!q || renew.isPending}>
+          <Button stretched onClick={submit} disabled={!q || balance === undefined || renew.isPending}>
             {renew.isPending ? 'Продлеваем...' : q ? `Продлить за ${rub(q.total)}` : 'Продлить'}
           </Button>
         )}

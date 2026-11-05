@@ -21,8 +21,9 @@ import { RenewSheet } from './RenewSheet'
 function useRenewal(sub: Subscription) {
   const { data: me } = useMe()
   const { data: tariffs } = useTariffs()
-  if (!me || !tariffs) return null
-  const cost = quote(tariffs, sub.slots.length, sub.auto_renewal.days).total
+  const q = tariffs ? quote(tariffs, sub.slots.length, sub.auto_renewal.days) : null
+  if (!me || !q) return null
+  const cost = q.total
   return { cost, balance: me.balance, lacking: Math.max(0, cost - me.balance) }
 }
 
@@ -98,7 +99,10 @@ export function MainTab({ sub }: { sub: Subscription }) {
 
   const copy = async () => {
     if (!sub.url) return
-    await copyText(sub.url)
+    if (!(await copyText(sub.url))) {
+      haptic.notify('error')
+      return toast('Не удалось скопировать, выделите и скопируйте вручную', E.warning)
+    }
     haptic.notify('success')
     setCopied(true)
     toast('Ссылка скопирована', E.link)
@@ -141,11 +145,11 @@ export function MainTab({ sub }: { sub: Subscription }) {
           chevron
         />
         <Cell icon={<Lottie name={E.walletTile} size={32} />} title="Пополнить баланс" subtitle={me ? `На балансе ${rub(me.balance)}` : ' '} to="/topup" />
-        {tariffs && (
+        {tariffs && quote(tariffs, 1, 1) && (
           <Cell
             icon={<Lottie name={E.dollarTile} size={32} />}
             title="Тариф"
-            after={<span className="muted">{rub(quote(tariffs, 1, 1).pricePerDay)} / сутки за устройство</span>}
+            after={<span className="muted">{rub(quote(tariffs, 1, 1)!.pricePerDay)} / сутки за устройство</span>}
           />
         )}
       </Section>

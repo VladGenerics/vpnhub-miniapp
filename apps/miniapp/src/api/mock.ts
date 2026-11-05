@@ -140,6 +140,13 @@ function syncInvoice(inv: Invoice) {
   }
 }
 
+/** Цена как на бэкенде: без тарифа покупка отклоняется */
+function mustQuote(...args: Parameters<typeof quote>) {
+  const q = quote(...args)
+  if (!q) throw new Error('Тариф недоступен, попробуйте позже')
+  return q.total
+}
+
 function requireSub(): Subscription {
   if (!subscription) throw new Error('Подписки нет')
   return subscription
@@ -159,7 +166,7 @@ export const mockApi: UserApi = {
     // истекла: продлеваем с баланса, если хватает, иначе отключаем
     if (subscription?.status === 'ACTIVE' && +new Date(subscription.expires_at) <= Date.now()) {
       const { is_enabled, days } = subscription.auto_renewal
-      const { total } = quote(tariffs, subscription.slots.length, days)
+      const total = mustQuote(tariffs, subscription.slots.length, days)
       if (is_enabled && total <= me.balance) {
         me = { ...me, balance: me.balance - total }
         subscription.expires_at = iso(Date.now() + days * DAY)
@@ -192,7 +199,7 @@ export const mockApi: UserApi = {
   },
 
   async purchase({ days, devices }) {
-    const { total } = quote(tariffs, devices, days)
+    const total = mustQuote(tariffs, devices, days)
     if (total > me.balance) throw new Error('Недостаточно средств на балансе')
     me = { ...me, balance: me.balance - total }
     const base = subscription && +new Date(subscription.expires_at) > Date.now() ? +new Date(subscription.expires_at) : Date.now()
@@ -213,7 +220,7 @@ export const mockApi: UserApi = {
 
   async renew(days) {
     const sub = requireSub()
-    const { total } = quote(tariffs, sub.slots.length, days)
+    const total = mustQuote(tariffs, sub.slots.length, days)
     if (total > me.balance) throw new Error('Недостаточно средств на балансе')
     me = { ...me, balance: me.balance - total }
     sub.expires_at = iso(Math.max(Date.now(), +new Date(sub.expires_at)) + days * DAY)

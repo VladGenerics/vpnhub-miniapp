@@ -26,9 +26,11 @@ export function countdown(ms: number) {
   return d > 0 ? `${days(d)} ${hms}` : hms
 }
 
-export async function copyText(text: string) {
+/** Копирует текст. false - не получилось (старый WebView, запрет браузера): «Скопировано» показывать нельзя */
+export async function copyText(text: string): Promise<boolean> {
   try {
     await navigator.clipboard.writeText(text)
+    return true
   } catch {
     const ta = document.createElement('textarea')
     ta.value = text
@@ -36,7 +38,34 @@ export async function copyText(text: string) {
     ta.style.opacity = '0'
     document.body.appendChild(ta)
     ta.select()
-    document.execCommand('copy')
+    let ok = false
+    try {
+      ok = document.execCommand('copy')
+    } catch {
+      ok = false
+    }
     ta.remove()
+    return ok
   }
+}
+
+/**
+ * После релиза старые файлы страниц удаляются, и открытая вкладка не может их подгрузить:
+ * вместо экрана ошибки один раз перезагружаемся на новую версию. Повторно в течение минуты
+ * не перезагружаем, чтобы при настоящей поломке не уйти в цикл
+ */
+export function reloadOnStaleChunks() {
+  window.addEventListener('vite:preloadError', (e) => {
+    const key = 'vpnhub.reloaded-at'
+    let last = 0
+    try {
+      last = Number(sessionStorage.getItem(key)) || 0
+      if (Date.now() - last < 60_000) return
+      sessionStorage.setItem(key, String(Date.now()))
+    } catch {
+      return
+    }
+    e.preventDefault()
+    location.reload()
+  })
 }

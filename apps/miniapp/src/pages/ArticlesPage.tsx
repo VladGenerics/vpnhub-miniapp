@@ -49,7 +49,7 @@ export function SupportBlock() {
         <div className="cell-title">Не нашли ответ?</div>
         <div className="cell-subtitle">Поддержка отвечает в течение 15 минут</div>
       </div>
-      <Button size="m" onClick={() => openSupport(settings?.support_link || SUPPORT_URL)}>
+      <Button size="m" onClick={() => openSupport(settings?.support_link || SUPPORT_URL) || openSupport(SUPPORT_URL)}>
         Написать
       </Button>
     </div>

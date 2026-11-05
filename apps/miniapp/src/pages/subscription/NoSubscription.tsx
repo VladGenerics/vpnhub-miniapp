@@ -46,7 +46,7 @@ const FEATURES = [
 ]
 
 export function NoSubscription() {
-  const { data: me } = useMe()
+  const { data: me, error: meError, refetch: refetchMe, isFetching: meFetching } = useMe()
   const { data: tariffs, error: tariffsError, refetch: refetchTariffs, isFetching: tariffsFetching } = useTariffs()
   const purchase = usePurchase()
   const toast = useToast()
@@ -54,8 +54,11 @@ export function NoSubscription() {
   const [devices, setDevices] = useState(3)
   const [period, setPeriod] = useState(30)
   const q = tariffs ? quote(tariffs, devices, period) : null
-  const balance = me?.balance ?? 0
-  const enough = q ? q.total <= balance : false
+  // баланс неизвестен (не загрузился) - это не ноль: доплату не считаем, кнопку не включаем
+  const balance = me?.balance
+  const enough = q && balance !== undefined ? q.total <= balance : false
+  const lacking = q && balance !== undefined && !enough ? Math.ceil(q.total - balance) : 0
+  const noPrice = !!tariffs && !q
 
   const subscribe = () =>
     purchase.mutate(
@@ -104,22 +107,24 @@ export function NoSubscription() {
         </div>
       </Section>
       {tariffsError && !tariffs && <LoadError text="Не удалось загрузить цены" onRetry={() => refetchTariffs()} busy={tariffsFetching} />}
+      {noPrice && <LoadError text="Тариф на этот срок пока недоступен" onRetry={() => refetchTariffs()} busy={tariffsFetching} />}
+      {meError && !me && <LoadError text="Не удалось загрузить баланс" onRetry={() => refetchMe()} busy={meFetching} />}
 
       <div className="sticky-cta">
         <div className="sticky-cta-meta">
           <span>
-            Баланс: <b>{rub(balance)}</b>
+            Баланс: <b>{balance !== undefined ? rub(balance) : '...'}</b>
           </span>
           <Link to="/topup" className="link" onClick={() => haptic.tap()}>
             Пополнить
           </Link>
         </div>
-        {q && !enough ? (
-          <Link to={`/topup?amount=${Math.ceil(q.total - balance)}`} className="btn btn-primary btn-l is-stretched" onClick={() => haptic.tap()}>
-            Пополнить на {rub(Math.ceil(q.total - balance))}
+        {lacking > 0 ? (
+          <Link to={`/topup?amount=${lacking}`} className="btn btn-primary btn-l is-stretched" onClick={() => haptic.tap()}>
+            Пополнить на {rub(lacking)}
           </Link>
         ) : (
-          <Button stretched onClick={subscribe} disabled={!q || purchase.isPending}>
+          <Button stretched onClick={subscribe} disabled={!q || !enough || purchase.isPending}>
             Оформить за <AnimatedNumber value={q?.total ?? 0} format={rub} duration={400} />
           </Button>
         )}

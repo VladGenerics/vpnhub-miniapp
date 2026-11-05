@@ -16,14 +16,24 @@ export function PageSkeleton() {
 }
 
 /** Ошибка загрузки с повтором */
-export function PageError({ onRetry }: { onRetry(): void }) {
+export function PageError({
+  onRetry,
+  title = 'Не удалось загрузить',
+  text = 'Проверьте подключение к интернету и попробуйте ещё раз',
+  action = 'Повторить',
+}: {
+  onRetry(): void
+  title?: string
+  text?: string
+  action?: string
+}) {
   return (
     <div className="hero">
       <Lottie name={E.warning} size={96} />
-      <h1 className="hero-title">Не удалось загрузить</h1>
-      <p className="hero-subtitle">Проверьте подключение к интернету и попробуйте ещё раз</p>
+      <h1 className="hero-title">{title}</h1>
+      <p className="hero-subtitle">{text}</p>
       <div style={{ marginTop: 20 }}>
-        <Button onClick={onRetry}>Повторить</Button>
+        <Button onClick={onRetry}>{action}</Button>
       </div>
     </div>
   )

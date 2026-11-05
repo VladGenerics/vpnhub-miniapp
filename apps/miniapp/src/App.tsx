@@ -22,7 +22,12 @@ import { useIsWide } from './hooks/useMediaQuery'
 
 // витрины /ui и /emoji служебные, грузим их отдельно
 const UiKitPage = lazy(() => import('./pages/UiKitPage').then((m) => ({ default: m.UiKitPage })))
-const TestPayPage = lazy(() => import('./pages/TestPayPage').then((m) => ({ default: m.TestPayPage })))
+// заглушка оплаты нужна только тестовым данным. Условие повторено здесь, а не взято из api: так сборщик
+// вычисляет его на месте и выкидывает чанк из боевой сборки
+const TestPayPage =
+  import.meta.env.VITE_USE_MOCKS === 'true' || (import.meta.env.DEV && !import.meta.env.VITE_API_URL)
+    ? lazy(() => import('./pages/TestPayPage').then((m) => ({ default: m.TestPayPage })))
+    : () => null
 // галерея эмодзи только для разработки, в прод-сборку не попадает
 const EmojiGalleryPage = import.meta.env.DEV ? lazy(() => import('./pages/EmojiGalleryPage').then((m) => ({ default: m.EmojiGalleryPage }))) : () => null
 
