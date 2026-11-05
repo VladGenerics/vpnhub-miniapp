@@ -6,6 +6,7 @@ import App from './App'
 import { queryClient } from './api/queries'
 import { AuthProvider } from './auth/AuthProvider'
 import { ToastProvider } from './components/Toast'
+import { BackgroundErrors } from './components/BackgroundErrors'
 import './styles/admin.css'
 
 // внутри Telegram панель разворачивается на весь экран
@@ -22,6 +23,7 @@ createRoot(document.getElementById('root')!).render(
       <BrowserRouter basename={import.meta.env.BASE_URL.replace(/\/$/, '') || undefined}>
         <AuthProvider>
           <ToastProvider>
+            <BackgroundErrors />
             <App />
           </ToastProvider>
         </AuthProvider>

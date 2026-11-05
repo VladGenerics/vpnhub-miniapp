@@ -17,7 +17,7 @@ const slotOf = (i: number) => (i + 1) as Slot
 /** Подпись к клику по столбцу: за какой отрезок откроются счета */
 const PICK: Record<Granularity, string> = { hour: 'этот день', day: 'день', month: 'месяц', year: 'год' }
 
-// Пополнения — оплаченные счета по времени оплаты: накопительная сумма за всё время
+// Пополнения - оплаченные счета по времени оплаты: накопительная сумма за всё время
 // (стартует с total_before) и разбивка по способам оплаты.
 export default function DepositsStats() {
   const s = useStatsPeriod()

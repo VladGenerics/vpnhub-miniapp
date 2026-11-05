@@ -1,14 +1,10 @@
 import { useState } from 'react'
-import { useQueryClient } from '@tanstack/react-query'
-import { USE_MOCKS } from '../api'
-import { mockControls } from '../api/mock'
-import { keys, useActiveSubscription, useMe } from '../api/queries'
 import { AnimatedNumber } from '../components/AnimatedNumber'
 import { Button, Chips, Stepper, Switch } from '../components/Controls'
 import { DeviceIcon } from '../components/DeviceIcon'
 import { Cell, Section } from '../components/List'
 import { Lottie } from '../components/Lottie'
-import { Page } from '../components/Page'
+import { Hero, Page } from '../components/Page'
 import { PalettePicker } from '../components/PalettePicker'
 import { Segmented } from '../components/Segmented'
 import { Sheet } from '../components/Sheet'
@@ -57,7 +53,7 @@ function Controls() {
   return (
     <>
       <Section title="Кнопки">
-        <div className="ui-demo">
+        <div className="ui-sample">
           <div className="ui-row">
             <Button size="m">Основная</Button>
             <Button size="m" variant="secondary">
@@ -125,7 +121,7 @@ function Inputs() {
   const [sum, setSum] = useState('500')
   return (
     <Section title="Поля ввода">
-      <div className="ui-demo">
+      <div className="ui-sample">
         <label className="text-input">
           <input placeholder="Текстовое поле" value={text} onChange={(e) => setText(e.target.value)} />
         </label>
@@ -150,7 +146,7 @@ function States() {
   const [num, setNum] = useState(450)
   return (
     <Section title="Состояния">
-      <div className="ui-demo">
+      <div className="ui-sample">
         <div className="status-card">
           <div className="status-top">
             <span className="status-pill">
@@ -210,6 +206,9 @@ function Overlays() {
           <Button stretched onClick={() => setOpen(false)}>
             Понятно
           </Button>
+          <Button stretched variant="ghost" onClick={() => setOpen(false)}>
+            Назад
+          </Button>
         </div>
       </Sheet>
     </Section>
@@ -226,7 +225,7 @@ function Lists() {
         <Cell tone="danger" icon={<Lottie name={E.warning} size={30} />} title="Опасное действие" onClick={() => {}} />
       </Section>
       <Section title="Иконки устройств">
-        <div className="ui-demo ui-row">
+        <div className="ui-sample ui-row">
           {PLATFORMS.map((p) => (
             <span key={p} className="ui-device">
               <DeviceIcon platform={p} />
@@ -242,77 +241,24 @@ function Lists() {
   )
 }
 
-/** Переключатели демо-данных, только когда нет бэкенда */
-function DemoData() {
-  const qc = useQueryClient()
-  const { active } = useActiveSubscription()
-  const { data: me } = useMe()
-  const toast = useToast()
-  const refresh = () => {
-    qc.invalidateQueries({ queryKey: keys.subscription })
-    qc.invalidateQueries({ queryKey: keys.me })
-  }
-  return (
-    <Section title="Демо-данные" footer="Этот блок виден только в демо-режиме без бэкенда">
-      <Cell
-        icon={<Lottie name={E.gearTile} size={32} />}
-        title="Подписка оформлена"
-        after={
-          <Switch
-            checked={!!active}
-            onChange={(v) => {
-              mockControls.setHasSubscription(v)
-              refresh()
-            }}
-            label="Подписка оформлена"
-          />
-        }
-      />
-      <Cell
-        icon={<Lottie name={E.renewTile} size={32} />}
-        title="Закончить подписку через 10 секунд"
-        subtitle="Проверка таймера и автопродления"
-        onClick={() => {
-          mockControls.expireIn(10)
-          refresh()
-          toast('Подписка закончится через 10 секунд', E.check)
-        }}
-        chevron={false}
-      />
-      <div className="plan-row is-column">
-        <div className="cell-title">Баланс{me ? `: ${rub(me.balance)}` : ''}</div>
-        <Chips
-          items={[0, 100, 450, 5000]}
-          value={me?.balance ?? null}
-          onChange={(v) => {
-            mockControls.setBalance(v)
-            refresh()
-          }}
-          render={(v) => rub(v)}
-        />
-      </div>
-    </Section>
-  )
-}
+// витрина компонентов нужна только при разработке, клиент видит тему и палитру
+const SHOWCASE = import.meta.env.DEV
 
-/** Тестовая страница: компоненты и цветовой профиль */
+/** Оформление: тема и палитра. При разработке - ещё все компоненты */
 export function UiKitPage() {
   return (
     <Page back>
-      <header className="hero">
-        <div className="hero-emoji" style={{ width: 96, height: 96 }}>
-          <Lottie name={E.gearTile} size={96} />
-        </div>
-        <h1 className="hero-title">Оформление</h1>
-        <p className="hero-subtitle">Цветовой профиль и компоненты интерфейса</p>
-      </header>
+      <Hero emoji={E.gearTile} title="Оформление" subtitle="Тема и цвета приложения" size={96} />
       <ColorProfile />
-      {USE_MOCKS && <DemoData />}
-      <Controls />
-      <Inputs />
-      <States />
-      <Overlays />
-      <Lists />
+      {SHOWCASE && (
+        <>
+          <Controls />
+          <Inputs />
+          <States />
+          <Overlays />
+          <Lists />
+        </>
+      )}
     </Page>
   )
 }

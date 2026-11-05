@@ -3,7 +3,7 @@ import { useDebounced } from '../hooks/useDebounced'
 import { Icon } from './Icon'
 
 // Поиск по мере ввода, запрос уходит через 350 мс после последней буквы.
-// value — то, что сейчас в адресе, при «Назад» поле подхватывает его.
+// value - то, что сейчас в адресе, при «Назад» поле подхватывает его.
 export function SearchInput({ value, onChange, placeholder, label }: { value: string; onChange(v: string): void; placeholder: string; label: string }) {
   const [text, setText] = useState(value)
   const debounced = useDebounced(text.trim())

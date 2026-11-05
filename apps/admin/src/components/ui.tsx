@@ -2,7 +2,7 @@ import { useEffect, useId, useRef, useState, type ButtonHTMLAttributes, type Rea
 import { Link } from 'react-router-dom'
 import { copyText } from '../lib/format'
 import { Icon } from './Icon'
-import type { IconName } from './icons'
+import type { IconName } from './Icon'
 import { useToast } from './Toast'
 
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {

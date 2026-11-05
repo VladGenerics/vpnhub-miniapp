@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode, type PointerEvent } from 'react'
 import { createPortal } from 'react-dom'
+import { LuX } from 'react-icons/lu'
 import { useIsDesktop } from '../hooks/useMediaQuery'
 import { haptic } from '../lib/telegram'
 
@@ -12,8 +13,9 @@ interface Props {
 }
 
 const CLOSE_MS = 260
+const FOCUSABLE = 'a[href], button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex]:not([tabindex="-1"])'
 
-// На телефоне — шторка снизу (вверх разворачивается, вниз закрывается), на ПК — обычная модалка
+// На телефоне - шторка снизу (вверх разворачивается, вниз закрывается), на ПК - обычная модалка
 export function Sheet({ open, onClose, children, expandable = true }: Props) {
   const isDesktop = useIsDesktop()
   const [mounted, setMounted] = useState(open)
@@ -23,6 +25,7 @@ export function Sheet({ open, onClose, children, expandable = true }: Props) {
   const start = useRef<{ y: number; t: number } | null>(null)
   const closeRef = useRef(onClose)
   closeRef.current = onClose
+  const sheetRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (open) {
@@ -41,12 +44,32 @@ export function Sheet({ open, onClose, children, expandable = true }: Props) {
 
   useEffect(() => {
     if (!mounted) return
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && closeRef.current()
+    // фокус уходит в окно и не выпадает из него по Tab, после закрытия возвращается туда, где был.
+    // Фокусируем само окно, а не первое поле: на телефоне иначе сразу вылезет клавиатура
+    const back = document.activeElement as HTMLElement | null
+    sheetRef.current?.focus({ preventScroll: true })
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') return closeRef.current()
+      if (e.key !== 'Tab' || !sheetRef.current) return
+      const items = [...sheetRef.current.querySelectorAll<HTMLElement>(FOCUSABLE)].filter((el) => el.offsetParent !== null)
+      if (!items.length) return e.preventDefault()
+      const first = items[0]
+      const last = items[items.length - 1]
+      const inside = sheetRef.current.contains(document.activeElement)
+      if (e.shiftKey && (!inside || document.activeElement === first || document.activeElement === sheetRef.current)) {
+        e.preventDefault()
+        last.focus()
+      } else if (!e.shiftKey && (!inside || document.activeElement === last)) {
+        e.preventDefault()
+        first.focus()
+      }
+    }
     document.addEventListener('keydown', onKey)
     document.body.classList.add('no-scroll')
     return () => {
       document.removeEventListener('keydown', onKey)
       document.body.classList.remove('no-scroll')
+      if (back?.isConnected) back.focus({ preventScroll: true })
     }
   }, [mounted])
 
@@ -85,12 +108,10 @@ export function Sheet({ open, onClose, children, expandable = true }: Props) {
   return createPortal(
     <div className={`sheet-root ${isDesktop ? 'is-modal' : 'is-sheet'} ${closing ? 'is-closing' : ''}`}>
       <div className="sheet-backdrop" onClick={onClose} />
-      <div className={`sheet ${expanded ? 'is-expanded' : ''}`} style={style} role="dialog" aria-modal="true">
+      <div ref={sheetRef} tabIndex={-1} className={`sheet ${expanded ? 'is-expanded' : ''}`} style={style} role="dialog" aria-modal="true">
         {isDesktop ? (
           <button className="sheet-close" onClick={onClose} aria-label="Закрыть">
-            <svg width="14" height="14" viewBox="0 0 14 14">
-              <path d="M1 1l12 12M13 1L1 13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-            </svg>
+            <LuX size={18} />
           </button>
         ) : (
           <div className="sheet-grip" onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp}>

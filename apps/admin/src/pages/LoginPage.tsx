@@ -1,37 +1,21 @@
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { useMutation } from '@tanstack/react-query'
-import { preloadTelegramLogin, ROLE_LABEL, telegramLoginPopup, type TelegramAuthData, type UserRole } from '@vpnhub/shared'
-import { api, DEMO_ROLE_KEY, USE_MOCKS } from '../api'
+import { FaTelegramPlane } from 'react-icons/fa'
+import { preloadTelegramLogin, telegramLoginPopup, type TelegramAuthData } from '@vpnhub/shared'
+import { api, USE_MOCKS } from '../api'
 import { useAuth } from '../auth/AuthProvider'
-import { Segmented } from '../components/Segmented'
 import { Button } from '../components/ui'
 
 const BOT_ID = Number(import.meta.env.VITE_TG_BOT_ID) || 0
-
-const TelegramPlane = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden>
-    <path
-      d="M20.7 4.3L3.6 10.9c-1.2.5-1.1 1.2-.2 1.5l4.4 1.4 1.7 5.2c.2.6.4.8.8.8.4 0 .6-.2.9-.5l2.1-2.1 4.4 3.3c.8.4 1.4.2 1.6-.8l2.9-13.6c.3-1.2-.4-1.7-1.5-1.3zM8.5 13.4l9.3-5.9c.4-.3.8-.1.5.2l-7.6 6.9-.3 3.2-1.9-4.4z"
-      fill="currentColor"
-    />
-  </svg>
-)
-
-type DemoRole = Extract<UserRole, 'OWNER' | 'ADMIN' | 'SUPPORT_AGENT'>
-const DEMO_ROLES: { value: DemoRole; label: string }[] = [
-  { value: 'OWNER', label: ROLE_LABEL.OWNER },
-  { value: 'ADMIN', label: 'Админ' },
-  { value: 'SUPPORT_AGENT', label: ROLE_LABEL.SUPPORT_AGENT },
-]
 
 export function LoginPage() {
   const { isAuthed, login } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
   const from = (location.state as { from?: string } | null)?.from ?? '/'
-  const demo = USE_MOCKS && !BOT_ID
-  const [role, setRole] = useState<DemoRole>('OWNER')
+  // на тестовых данных без бота окно Telegram не открываем
+  const mockLogin = USE_MOCKS && !BOT_ID
 
   useEffect(() => {
     if (BOT_ID) preloadTelegramLogin()
@@ -40,16 +24,11 @@ export function LoginPage() {
   const auth = useMutation({
     mutationFn: async () => {
       let data: TelegramAuthData | null
-      if (demo) {
-        try {
-          localStorage.setItem(DEMO_ROLE_KEY, role)
-        } catch {
-          /* без хранилища демо войдёт владельцем */
-        }
+      if (mockLogin) {
         data = {
           id: 5_000_000_001,
-          first_name: 'Демо',
-          last_name: ROLE_LABEL[role],
+          first_name: 'Тест',
+          last_name: 'Админ',
           username: 'vpnhub_admin',
           auth_date: Math.floor(Date.now() / 1000),
           hash: 'mock',
@@ -82,18 +61,9 @@ export function LoginPage() {
           </p>
         </div>
 
-        {demo && (
-          <div className="stack" style={{ gap: 10 }}>
-            <div className="notice is-accent" style={{ textAlign: 'left' }}>
-              Демо-режим: данные сгенерированы, изменения живут до перезагрузки страницы. Выберите роль, чтобы посмотреть права.
-            </div>
-            <Segmented<DemoRole> options={DEMO_ROLES} value={role} onChange={setRole} label="Роль демо-входа" />
-          </div>
-        )}
-
         <Button className="btn-telegram" wide loading={auth.isPending} onClick={() => auth.mutate()}>
-          {!auth.isPending && <TelegramPlane />}
-          {demo ? 'Войти в демо' : 'Войти через Telegram'}
+          {!auth.isPending && <FaTelegramPlane size={20} />}
+          Войти через Telegram
         </Button>
 
         {auth.error && (

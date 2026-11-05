@@ -22,14 +22,14 @@ export const rubCompact = (n: number) => (Math.abs(n) >= 10_000 ? `${compact(n)}
 /** Доля в процентах: 0.1234 → «12,3 %» */
 export const percent = (part: number, total: number) => (total > 0 ? `${((part / total) * 100).toLocaleString('ru-RU', { maximumFractionDigits: 1 })} %` : '—')
 
-/** 01.11.2026 — для полей и подписей */
+/** 01.11.2026 - для полей и подписей */
 export const dateNum = (d: Date | string | number) => new Date(d).toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' })
 
 /** 1 ноя 2026 */
 export const dateShort = (d: Date | string | number) =>
   new Date(d).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short', year: 'numeric' }).replace(' г.', '').replace('.', '')
 
-/** yyyy-mm-dd в локальном времени — значение для <input type="date"> */
+/** yyyy-mm-dd в локальном времени - значение для <input type="date"> */
 export function toDateInput(ms: number) {
   const d = new Date(ms)
   const p = (n: number) => String(n).padStart(2, '0')

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import { quote, type Subscription } from '@vpnhub/shared'
+import { LuCheck, LuCopy, LuQrCode } from 'react-icons/lu'
 import { Lottie } from '../../components/Lottie'
 import { Button } from '../../components/Controls'
 import { Section, Cell } from '../../components/List'
@@ -114,24 +115,7 @@ export function MainTab({ sub }: { sub: Subscription }) {
               <Lottie name={E.link} size={30} />
               <span className="url-text">{sub.url.replace('https://', '')}</span>
               <span className={`copy-btn ${copied ? 'is-done' : ''}`} aria-label={copied ? 'Скопировано' : 'Скопировать'}>
-                {copied ? (
-                  <svg key="done" width="18" height="18" viewBox="0 0 24 24" aria-hidden>
-                    <path
-                      className="copy-check"
-                      d="M5 12.5l4.5 4.5L19 7.5"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2.4"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                ) : (
-                  <svg key="copy" width="18" height="18" viewBox="0 0 24 24" aria-hidden>
-                    <rect x="8" y="8" width="12" height="12" rx="3" fill="none" stroke="currentColor" strokeWidth="2" />
-                    <path d="M16 8V6a2 2 0 00-2-2H6a2 2 0 00-2 2v8a2 2 0 002 2h2" fill="none" stroke="currentColor" strokeWidth="2" />
-                  </svg>
-                )}
+                {copied ? <LuCheck key="done" className="copy-check" size={18} strokeWidth={2.6} /> : <LuCopy key="copy" size={18} />}
               </span>
             </button>
             <button
@@ -142,12 +126,7 @@ export function MainTab({ sub }: { sub: Subscription }) {
               }}
               aria-label="Показать QR-код"
             >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-                <rect x="3" y="3" width="7" height="7" rx="1.5" />
-                <rect x="14" y="3" width="7" height="7" rx="1.5" />
-                <rect x="3" y="14" width="7" height="7" rx="1.5" />
-                <path d="M14 14h3v3h-3zM20 14v.01M14 20v.01M17 17h3v3" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
+              <LuQrCode size={18} />
             </button>
           </div>
         </Section>
@@ -185,6 +164,9 @@ export function MainTab({ sub }: { sub: Subscription }) {
           <div className="sheet-actions">
             <Button stretched onClick={copy}>
               {copied ? 'Скопировано' : 'Скопировать ссылку'}
+            </Button>
+            <Button stretched variant="ghost" onClick={() => setQrOpen(false)}>
+              Назад
             </Button>
           </div>
         </Sheet>

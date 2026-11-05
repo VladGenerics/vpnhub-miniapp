@@ -1,5 +1,5 @@
-import { useState, type KeyboardEvent } from 'react'
-import { PROVIDER_LABEL, type PaymentMethod } from '@vpnhub/shared'
+import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
+import { PROVIDER_LABEL, type PaymentMethod, type PaymentMethodPatch } from '@vpnhub/shared'
 import { usePaymentMethods, useUpdatePaymentMethod } from '../api/queries'
 import { useAuth } from '../auth/AuthProvider'
 import { useToast } from '../components/Toast'
@@ -14,6 +14,15 @@ function MethodRow({ m, canEdit }: { m: PaymentMethod; canEdit: boolean }) {
   const update = useUpdatePaymentMethod()
   const toast = useToast()
 
+  // нетронутые поля подтягивают свежие данные с сервера, чтобы не отправить старые
+  const base = useRef(m)
+  useEffect(() => {
+    const prev = base.current
+    base.current = m
+    if (name.trim() === prev.name) setName(m.name)
+    if (min.value === prev.min_amount) min.reset()
+  }, [m])
+
   const nameErr = !name.trim() ? 'Введите название' : null
   const minErr = !(min.value >= 0) ? 'Укажите сумму' : null
   const dirty = name.trim() !== m.name || min.value !== m.min_amount
@@ -26,8 +35,11 @@ function MethodRow({ m, canEdit }: { m: PaymentMethod; canEdit: boolean }) {
 
   const save = () => {
     if (!dirty || nameErr || minErr) return
+    const patch: PaymentMethodPatch = {}
+    if (name.trim() !== m.name) patch.name = name.trim()
+    if (min.value !== m.min_amount) patch.min_amount = min.value
     update.mutate(
-      { id: m.id, patch: { name: name.trim(), min_amount: min.value } },
+      { id: m.id, patch },
       {
         onSuccess: (r) => {
           setName(r.name)

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import {
   LEDGER_TYPE_LABEL,
@@ -169,15 +169,22 @@ function BalanceModal({ user, direction, onClose }: { user: AdminUserDetails; di
           : null
   const after = v > 0 ? user.balance + (add ? v : -v) : null
 
+  // повторный Enter или двойной клик не должны отправить вторую операцию
+  const sending = useRef(false)
   const submit = () => {
+    if (sending.current || adjust.isPending) return
     setTouched(true)
     if (!(v > 0) || v > MAX_ADJUST || (!add && v > user.balance)) return
+    sending.current = true
     adjust.mutate(
       { direction: add ? 'IN' : 'OUT', amount: v, comment: comment.trim() || undefined },
       {
         onSuccess: () => {
           toast(add ? `Начислено ${rub(v)}` : `Списано ${rub(v)}`)
           close()
+        },
+        onSettled: () => {
+          sending.current = false
         },
       },
     )
@@ -258,7 +265,7 @@ export function UserPage() {
   const [modal, setModal] = useState<LedgerDirection | null>(null)
   const tab = (['referrals', 'ledger', 'invoices'].includes(sp.get('tab') ?? '') ? sp.get('tab') : 'referrals') as Tab
 
-  // «Назад» ведёт туда, откуда пришли. Если карточку открыли по прямой ссылке — к списку с теми же фильтрами
+  // «Назад» ведёт туда, откуда пришли. Если карточку открыли по прямой ссылке - к списку с теми же фильтрами
   const fromNav = (location.state as { fromNav?: boolean } | null)?.fromNav
   const back = () => (location.key !== 'default' && !fromNav ? navigate(-1) : navigate(sectionListPath('/users')))
 
@@ -518,13 +525,14 @@ export function UserPage() {
               label="История пользователя"
             />
           </div>
-          {tab === 'referrals' && <ReferralsTable id={id} />}
-          {tab === 'ledger' && <LedgerTable id={id} />}
-          {tab === 'invoices' && <InvoicesTable id={id} />}
+          {/* key сбрасывает страницу и сортировку при переходе к другому пользователю */}
+          {tab === 'referrals' && <ReferralsTable key={id} id={id} />}
+          {tab === 'ledger' && <LedgerTable key={id} id={id} />}
+          {tab === 'invoices' && <InvoicesTable key={id} id={id} />}
         </Card>
       </div>
 
-      {u && canEdit && <BalanceModal user={u} direction={modal} onClose={() => setModal(null)} />}
+      {u && canEdit && <BalanceModal key={u.id} user={u} direction={modal} onClose={() => setModal(null)} />}
     </>
   )
 }

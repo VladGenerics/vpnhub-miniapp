@@ -47,12 +47,12 @@ export function DashboardPage() {
   const navigate = useNavigate()
   // день под курсором общий для обоих графиков, чтобы сравнивать одну дату
   const [day, setDay] = useState<number | null>(null)
-  // зависшие — неоплаченные дольше часа, обычным списком счетов
+  // зависшие - неоплаченные дольше часа, обычным списком счетов
   const cutoff = useStaleCutoff()
   const stale = useInvoices({ status: 'UNPAID', to: new Date(cutoff).toISOString(), page: 1, page_size: 1, sort: 'created_at', order: 'desc' }).data?.total
   const today = toDateInput(Date.now())
   const monthAgo = toDateInput(new Date(new Date().setDate(new Date().getDate() - 29)).getTime())
-  /** Клик по дню пополнений — оплаченные счета этого дня */
+  /** Клик по дню пополнений - оплаченные счета этого дня */
   const openDay = (t: string) => {
     const d = toDateInput(Date.parse(t))
     navigate(`/invoices?status=PAID&by=paid&from=${d}&to=${d}`)

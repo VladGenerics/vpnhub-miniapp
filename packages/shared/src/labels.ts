@@ -1,4 +1,4 @@
-import type { InvoiceStatus, LedgerEntryType, PaymentProvider, PurchaseKind, SubscriptionStatus, UserRole } from './types'
+import type { InvoiceStatus, LedgerEntryType, PaymentProvider, PurchaseKind, UserRole } from './types'
 
 // Подписи статусов и типов для интерфейса
 
@@ -7,12 +7,6 @@ export const ROLE_LABEL: Record<UserRole, string> = {
   ADMIN: 'Администратор',
   OWNER: 'Владелец',
   SUPPORT_AGENT: 'Поддержка',
-}
-
-export const SUBSCRIPTION_STATUS_LABEL: Record<SubscriptionStatus, string> = {
-  ACTIVE: 'Активна',
-  DISABLED: 'Отключена',
-  NOT_FOUND: 'Нет подписки',
 }
 
 export const INVOICE_STATUS_LABEL: Record<InvoiceStatus, string> = {

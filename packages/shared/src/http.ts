@@ -1,5 +1,5 @@
 // HTTP-клиент для кабинета и админки.
-// В Telegram шлём `Authorization: tma <initData>`, в браузере — `Bearer <token>` после входа.
+// В Telegram шлём `Authorization: tma <initData>`, в браузере - `Bearer <token>` после входа.
 
 export class ApiError extends Error {
   constructor(
@@ -33,7 +33,7 @@ export function toQuery(params?: object): string {
   return s ? `?${s}` : ''
 }
 
-// FastAPI отдаёт detail строкой, а ошибки валидации — списком [{ loc, msg }]
+// FastAPI отдаёт detail строкой, а ошибки валидации - списком [{ loc, msg }]
 function errorText(data: unknown, status: number): string {
   const d = data as { detail?: unknown; message?: unknown } | undefined
   if (typeof d?.detail === 'string') return d.detail
@@ -94,9 +94,20 @@ export function createHttpClient({ baseUrl, tokenKey, getInitData, timeout = 30_
       clearTimeout(timer)
     }
 
-    const data = res.status === 204 ? undefined : await res.json().catch(() => undefined)
-    // сбрасываем только свой токен; initData Telegram пришлёт заново при следующем открытии
-    if (res.status === 401 && token) {
+    // пустой ответ - норма (204, «подписки нет»), а не-JSON с кодом 200 - почти всегда index.html вместо API:
+    // запрос ушёл не туда (VITE_API_URL или прокси /api). Молча вернуть undefined нельзя
+    const text = res.status === 204 ? '' : await res.text().catch(() => '')
+    let data: unknown
+    if (text) {
+      try {
+        data = JSON.parse(text)
+      } catch {
+        if (res.ok) throw new ApiError(res.status, 'Сервер ответил не JSON. Проверьте адрес API (VITE_API_URL) и прокси /api')
+      }
+    }
+    // сбрасываем только свой токен и только если его не успели сменить: поздний 401 старой сессии
+    // не должен выкинуть пользователя, который уже вошёл заново. initData Telegram пришлёт заново сам
+    if (res.status === 401 && token && authToken.get() === token) {
       authToken.set(null)
       onUnauthorized?.()
     }

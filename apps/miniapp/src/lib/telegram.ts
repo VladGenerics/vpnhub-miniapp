@@ -52,7 +52,7 @@ export const isTelegram = !!tg?.initData
 
 const WEB_USER_KEY = 'vpnhub.user'
 
-// Профиль Telegram: в мини-аппе из initData, в браузере — сохранённый при входе
+// Профиль Telegram: в мини-аппе из initData, в браузере - сохранённый при входе
 // (имя и фото бэкенд не хранит).
 export function getTgUser(): TgUser | undefined {
   if (isTelegram) return tg?.initDataUnsafe.user
@@ -133,8 +133,8 @@ export function openSupport(url: string) {
   else window.open(url, '_blank', 'noopener')
 }
 
-// Открывает оплату счёта: Telegram Stars (t.me/$…) — родным окном, ссылки t.me — внутри Telegram,
-// остальное — во внешнем браузере.
+// Открывает оплату счёта: Telegram Stars (t.me/$...) - родным окном, ссылки t.me - внутри Telegram,
+// остальное - во внешнем браузере.
 export function openPayment(url: string) {
   if (isTelegram && tg) {
     if (/^https:\/\/t\.me\/(\$|invoice\/)/.test(url) && tg.openInvoice && tg.isVersionAtLeast('6.1')) tg.openInvoice(url)

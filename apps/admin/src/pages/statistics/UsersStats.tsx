@@ -8,7 +8,7 @@ import { inPeriod, prevPeriod, PREV_HINT, useStatsPeriod } from './period'
 import { AVG, PER, StatsFrame } from './StatsFrame'
 
 // Пользователи: рост и новые за интервал по датам регистрации. Когда человек заблокировал бота
-// или стал ботом, в базе не хранится, поэтому эти категории — только в круговых, по текущим флагам.
+// или стал ботом, в базе не хранится, поэтому эти категории - только в круговых, по текущим флагам.
 export default function UsersStats() {
   const s = useStatsPeriod()
   const q = useUsersStats(s.query)

@@ -24,4 +24,6 @@ def call(method, **params):
 
 
 res = call('setChatMenuButton', menu_button={'type': 'web_app', 'text': 'VPNHub', 'web_app': {'url': url}})
-print('готово' if res.get('ok') else f'ошибка: {res.get("description")}')
+if not res.get('ok'):
+    sys.exit(f'ошибка: {res.get("description")}')
+print('готово')

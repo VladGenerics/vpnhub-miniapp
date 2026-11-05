@@ -30,7 +30,8 @@ export function AnimatedNumber({
     let raf = 0
     const tick = (t: number) => {
       const p = Math.min(1, (t - t0) / duration)
-      const v = Math.round(start + (value - start) * easeOut(p))
+      // в пути - целые рубли, чтобы цифры не мельтешили, в конце - точное значение с копейками
+      const v = p >= 1 ? value : Math.round(start + (value - start) * easeOut(p))
       current.current = v
       setShown(v)
       if (p < 1) raf = requestAnimationFrame(tick)

@@ -1,5 +1,6 @@
 import { useCallback, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { LuChevronLeft } from 'react-icons/lu'
 import { isTelegram, useTelegramBackButton } from '../lib/telegram'
 import { Lottie } from './Lottie'
 
@@ -10,7 +11,7 @@ export function useGoBack() {
   return useCallback(() => ((window.history.state?.idx ?? 0) > 0 ? navigate(-1) : navigate('/', { replace: true })), [navigate])
 }
 
-// Обёртка страницы. Для вложенных (back) в Telegram показываем родную кнопку «Назад», в браузере — свою.
+// Обёртка страницы. Для вложенных (back) в Telegram показываем родную кнопку «Назад», в браузере - свою.
 export function Page({ back, children, className }: { back?: boolean; children: ReactNode; className?: string }) {
   const goBack = useGoBack()
   useTelegramBackButton(back ? goBack : null)
@@ -19,9 +20,7 @@ export function Page({ back, children, className }: { back?: boolean; children: 
     <main className={`page ${back ? 'is-nested' : 'has-nav'} ${className ?? ''}`}>
       {back && !isTelegram && (
         <button className="web-back" onClick={goBack}>
-          <svg width="10" height="16" viewBox="0 0 10 16" aria-hidden>
-            <path d="M8 2L2 8l6 6" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
+          <LuChevronLeft size={20} />
           Назад
         </button>
       )}

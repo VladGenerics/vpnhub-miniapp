@@ -1,25 +1,19 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { LuCopy } from 'react-icons/lu'
 import { AnimatedNumber } from '../components/AnimatedNumber'
 import { Page } from '../components/Page'
 import { Section, Cell } from '../components/List'
 import { Lottie } from '../components/Lottie'
+import { LoadError } from '../components/LoadError'
 import { Button } from '../components/Controls'
 import { Sheet } from '../components/Sheet'
 import { useToast } from '../components/Toast'
 import { E } from '../data/emoji'
 import { useBindEmail, useMe } from '../api/queries'
-import { USE_MOCKS } from '../api'
 import { useAuth } from '../auth/AuthProvider'
 import { copyText, rub } from '../lib/format'
 import { getTgUser, haptic, isTelegram } from '../lib/telegram'
-
-const CopyIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden>
-    <rect x="8" y="8" width="12" height="12" rx="3" fill="none" stroke="currentColor" strokeWidth="2" />
-    <path d="M16 8V6a2 2 0 00-2-2H6a2 2 0 00-2 2v8a2 2 0 002 2h2" fill="none" stroke="currentColor" strokeWidth="2" />
-  </svg>
-)
 
 function ProfileHeader() {
   const u = getTgUser()
@@ -50,7 +44,7 @@ function EmailSheet({ open, onClose }: { open: boolean; onClose(): void }) {
       <div className="sheet-head">
         <Lottie name={E.mail} size={80} />
         <h2>Привязка почты</h2>
-        <p>Почта нужна для входа с сайта и восстановления доступа к подписке</p>
+        <p>На неё придут чеки об оплате и важные письма о подписке</p>
       </div>
       <label className="text-input">
         <input type="email" placeholder="you@example.com" value={value} onChange={(e) => setValue(e.target.value.trim())} autoComplete="email" />
@@ -75,13 +69,16 @@ function EmailSheet({ open, onClose }: { open: boolean; onClose(): void }) {
         >
           Привязать
         </Button>
+        <Button stretched variant="ghost" onClick={onClose}>
+          Назад
+        </Button>
       </div>
     </Sheet>
   )
 }
 
 export function ProfilePage() {
-  const { data: me } = useMe()
+  const { data: me, error: meError, refetch: refetchMe, isFetching: meFetching } = useMe()
   const { logout } = useAuth()
   const toast = useToast()
   const [emailOpen, setEmailOpen] = useState(false)
@@ -100,12 +97,16 @@ export function ProfilePage() {
       <div className="balance-card">
         <div>
           <div className="balance-label">Баланс</div>
-          <div className="balance-value is-small">{me ? <AnimatedNumber value={me.balance} format={rub} from={0} duration={900} /> : '…'}</div>
+          <div className="balance-value is-small">
+            {me ? <AnimatedNumber value={me.balance} format={rub} from={0} duration={900} /> : meError ? '—' : '...'}
+          </div>
         </div>
         <Link to="/topup" className="btn btn-primary btn-m" onClick={() => haptic.tap()}>
           Пополнить
         </Link>
       </div>
+
+      {meError && !me && <LoadError text="Не удалось загрузить профиль" onRetry={() => refetchMe()} busy={meFetching} />}
 
       <Section title="Аккаунт">
         <Cell
@@ -126,7 +127,11 @@ export function ProfilePage() {
               icon={<Lottie name={E.vCircle} size={32} />}
               title="Ваш ID"
               subtitle={String(me.id)}
-              after={<span className="icon-btn">{<CopyIcon />}</span>}
+              after={
+                <span className="icon-btn">
+                  <LuCopy size={18} />
+                </span>
+              }
               onClick={() => copy(me.id, 'ID')}
               chevron={false}
             />
@@ -134,7 +139,11 @@ export function ProfilePage() {
               icon={<Lottie name={E.megaphoneTile} size={32} />}
               title="Telegram ID"
               subtitle={String(me.tg_user_id)}
-              after={<span className="icon-btn">{<CopyIcon />}</span>}
+              after={
+                <span className="icon-btn">
+                  <LuCopy size={18} />
+                </span>
+              }
               onClick={() => copy(me.tg_user_id, 'Telegram ID')}
               chevron={false}
             />
@@ -145,7 +154,7 @@ export function ProfilePage() {
       <Section>
         <Cell icon={<Lottie name={E.bulbTile} size={32} />} title="Информация" subtitle="Ответы на частые вопросы" to="/info" />
         <Cell icon={<Lottie name={E.questionTile} size={32} />} title="Помощь" subtitle="Если что-то не работает" to="/help" />
-        <Cell icon={<Lottie name={E.gearTile} size={32} />} title="Оформление" subtitle="Тема и компоненты" to="/ui" />
+        <Cell icon={<Lottie name={E.gearTile} size={32} />} title="Оформление" subtitle="Тема и палитра" to="/ui" />
       </Section>
 
       {!isTelegram && (
@@ -154,7 +163,7 @@ export function ProfilePage() {
         </Section>
       )}
 
-      <p className="app-version">VPNHub · v0.2{USE_MOCKS ? ' · демо-данные' : ''}</p>
+      <p className="app-version">VPNHub · v0.2</p>
 
       <EmailSheet open={emailOpen} onClose={() => setEmailOpen(false)} />
     </Page>

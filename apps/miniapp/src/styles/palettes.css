@@ -1,8 +1,9 @@
 /*
  * Варианты цветовой палитры для согласования с заказчиком.
- * Базовые токены — в global.css, здесь переопределения. По умолчанию «Графит».
+ * Базовые токены - в global.css, здесь переопределения. По умолчанию «Графит».
  * Переключение: <html data-palette="..."> (см. src/lib/palette.ts).
- * Эмодзи: в «Графите» и «Telegram» — перекрашенные в голубой, в «Неоне» — оригинальные из пака.
+ * custom - свой цвет: акцентные токены считаются из выбранного цвета и пишутся в <style id="custom-palette">.
+ * Эмодзи: в «Графите» и «Telegram» - перекрашенные в голубой, в «Неоне» - оригинальные из пака.
  */
 
 /* ---------- Telegram: фирменный #2AABEE на графитово-синем ---------- */
@@ -30,6 +31,8 @@
   --toast-bg: rgba(38, 50, 64, 0.97);
 }
 [data-theme='light'][data-palette='telegram'] {
+  --card-hover: #f4f6f9;
+  --hint: #7d8b99;
   --bg: #eff1f5;
   --sheet-bg: #f1f3f6;
   --chip: #e9edf2;
@@ -44,8 +47,9 @@
   --accent-glow-soft: rgba(36, 129, 204, 0.1);
 }
 
-/* ---------- Неон: фирменный лайм пака VHub (#55fe09), эмодзи — оригинальные ---------- */
+/* ---------- Неон: фирменный лайм пака VHub (#55fe09), эмодзи - оригинальные ---------- */
 [data-theme='dark'][data-palette='neon'] {
+  --text: #eef5ea;
   --bg: #0b100a;
   --card: #141b12;
   --card-hover: #1a2318;
@@ -64,7 +68,7 @@
   --accent-glow: rgba(85, 254, 9, 0.22);
   --accent-ring: rgba(85, 254, 9, 0.24);
   --accent-glow-soft: rgba(85, 254, 9, 0.12);
-  /* неон очень светлый — текст на нём тёмный */
+  /* неон очень светлый - текст на нём тёмный */
   --on-accent: #0a1404;
   --success: #55fe09;
   --success-soft: rgba(85, 254, 9, 0.13);
@@ -73,11 +77,14 @@
   --toast-bg: rgba(26, 35, 24, 0.97);
 }
 [data-theme='light'][data-palette='neon'] {
+  --card-hover: #f2f8ee;
+  --sep: rgba(30, 70, 10, 0.1);
+  --hint: #76866f;
   --bg: #eef5ea;
   --sheet-bg: #f1f7ee;
   --chip: #e2eedc;
   --seg-bg: #d9e8d2;
-  /* на светлом фоне чистый неон не читается — берём тот же тон темнее */
+  /* на светлом фоне чистый неон не читается - берём тот же тон темнее */
   --accent: #33b000;
   --accent-hover: #2b9900;
   --accent-2: #7ee04a;
@@ -88,10 +95,12 @@
   --accent-glow-soft: rgba(51, 176, 0, 0.1);
   --success: #2b9900;
   --success-soft: rgba(43, 153, 0, 0.12);
+  --toast-bg: rgba(22, 34, 18, 0.95);
 }
 
-/* ---------- Графит: нейтральный тёмный, как у Major, голубой только акцент ---------- */
-[data-theme='dark'][data-palette='graphite'] {
+/* ---------- Графит: нейтральный тёмный, голубой только акцент. Фон своей палитры - тот же, акцент считает lib/palette.ts ---------- */
+[data-theme='dark'][data-palette='graphite'],
+[data-theme='dark'][data-palette='custom'] {
   --bg: #0e0f11;
   --card: #18191c;
   --card-hover: #1f2024;
@@ -115,7 +124,8 @@
   --toast-bg: rgba(36, 37, 42, 0.97);
   --shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
 }
-[data-theme='light'][data-palette='graphite'] {
+[data-theme='light'][data-palette='graphite'],
+[data-theme='light'][data-palette='custom'] {
   --bg: #f2f3f5;
   --sheet-bg: #f4f5f7;
   --chip: #eceef1;
@@ -129,12 +139,13 @@
   --accent-ring: rgba(47, 140, 240, 0.16);
   --accent-glow-soft: rgba(47, 140, 240, 0.1);
   --shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+  --toast-bg: rgba(30, 31, 35, 0.95);
 }
 
 /* выбор палитры */
 .palette-picker {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 6px;
 }
 
@@ -194,6 +205,116 @@
 
 .palette-option.is-active .palette-name {
   color: var(--accent);
+}
+
+.palette-swatch.is-custom {
+  background: conic-gradient(from 90deg, #ff5d63, #ffc233, #3ccf8e, #20c5c5, #3d9bff, #a35cff, #ff5cb3, #ff5d63);
+}
+
+.palette-swatch.is-custom i {
+  box-shadow: 0 0 0 2px var(--card);
+}
+
+/* окно точного выбора цвета */
+.color-editor {
+  display: grid;
+  gap: 14px;
+  margin: 4px 0 8px;
+}
+
+/* квадрат: слева направо насыщенность, снизу вверх яркость, фон - выбранный оттенок */
+.color-pad {
+  position: relative;
+  height: 150px;
+  border-radius: 14px;
+  background:
+    linear-gradient(to top, #000, transparent),
+    linear-gradient(to right, #fff, var(--pad-hue));
+  cursor: crosshair;
+  touch-action: none;
+  outline: 0;
+}
+.color-pad:focus-visible {
+  box-shadow: 0 0 0 3px var(--accent-ring);
+}
+.color-pad-thumb {
+  position: absolute;
+  width: 22px;
+  height: 22px;
+  border: 3px solid #fff;
+  border-radius: 50%;
+  box-shadow: 0 1px 4px rgb(0 0 0 / 0.45);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.hue-slider {
+  appearance: none;
+  width: 100%;
+  height: 14px;
+  margin: 6px 0;
+  border-radius: 99px;
+  background: linear-gradient(90deg, #f00, #ff0 17%, #0f0 33%, #0ff 50%, #00f 67%, #f0f 83%, #f00);
+  outline: 0;
+  cursor: pointer;
+}
+
+.hue-slider::-webkit-slider-thumb {
+  appearance: none;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--thumb-color);
+  border: 3px solid #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+}
+
+.hue-slider::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--thumb-color);
+  border: 3px solid #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+}
+
+.hue-slider:focus-visible::-webkit-slider-thumb {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.color-hex {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 46px;
+  padding: 0 14px;
+  border-radius: 14px;
+  background: var(--chip);
+  border: 1.5px solid transparent;
+  transition: border-color 0.15s;
+}
+
+.color-hex:focus-within {
+  border-color: var(--accent);
+}
+
+.color-hex-preview {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 7px;
+}
+
+.color-hex input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: none;
+  color: var(--text);
+  font: 500 16px var(--mono);
+  text-transform: uppercase;
 }
 
 /* плавная смена палитры */

@@ -3,6 +3,7 @@ import { encode } from 'uqr'
 
 // QR-код с логотипом в центре. Модули обычные квадратные: скруглённые «глаза» часть сканеров не читает.
 // Коррекция H выдерживает перекрытие до 30 %, логотип занимает ~5 %.
+
 export function QrCode({ value, size = 220 }: { value: string; size?: number }) {
   const { n, path } = useMemo(() => {
     const { data, size: n } = encode(value, { ecc: 'H', border: 0 })

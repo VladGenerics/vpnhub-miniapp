@@ -1,56 +1,23 @@
-import type { ReactNode } from 'react'
+import type { IconType } from 'react-icons'
+import { FaAndroid, FaApple, FaLinux, FaWindows } from 'react-icons/fa6'
+import { LuMonitorSmartphone } from 'react-icons/lu'
 import type { Platform } from '../lib/device'
 
-const COLORS: Record<Platform, string> = {
-  other: 'linear-gradient(160deg,#7f93ab,#4d5e72)',
-  macos: 'linear-gradient(160deg,#6c7a8c,#3d4756)',
-  ios: 'linear-gradient(160deg,#4fb5ff,#1e7fe0)',
-  android: 'linear-gradient(160deg,#4fd3a0,#1f9e6d)',
-  windows: 'linear-gradient(160deg,#4f8dff,#2a5fd6)',
-  linux: 'linear-gradient(160deg,#ffb547,#e07b16)',
-}
-
-const GLYPH: Record<Platform, ReactNode> = {
-  other: (
-    <>
-      <rect x="4" y="4" width="16" height="16" rx="3" fill="none" stroke="#fff" strokeWidth="1.8" />
-      <circle cx="12" cy="12" r="2.4" fill="#fff" />
-    </>
-  ),
-  macos: (
-    <>
-      <rect x="4" y="5" width="16" height="10.5" rx="1.6" fill="none" stroke="#fff" strokeWidth="1.8" />
-      <path d="M2.5 18.5h19" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" />
-    </>
-  ),
-  ios: (
-    <>
-      <rect x="7" y="2.8" width="10" height="18.4" rx="2.4" fill="none" stroke="#fff" strokeWidth="1.8" />
-      <path d="M10.6 5.6h2.8" stroke="#fff" strokeWidth="1.6" strokeLinecap="round" />
-    </>
-  ),
-  android: (
-    <>
-      <path d="M6 11a6 6 0 0112 0v1H6z" fill="#fff" />
-      <path d="M8 6.2L6.8 4.4M16 6.2l1.2-1.8" stroke="#fff" strokeWidth="1.6" strokeLinecap="round" />
-      <rect x="6" y="13" width="12" height="6.5" rx="1.6" fill="#fff" opacity=".85" />
-    </>
-  ),
-  windows: <path d="M4 5.6l7-1v6.9H4zM12.4 4.4L20 3.3v8.2h-7.6zM4 12.9h7v6.9l-7-1zM12.4 12.9H20v8.2l-7.6-1.1z" fill="#fff" />,
-  linux: (
-    <>
-      <rect x="3.5" y="4.5" width="17" height="15" rx="2.2" fill="none" stroke="#fff" strokeWidth="1.8" />
-      <path d="M7 9.5l2.6 2.3L7 14.2M11.5 14.5H16" fill="none" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-    </>
-  ),
+// Плитки в фирменных цветах, как иконки в настройках iOS
+const TILE: Record<Platform, { bg: string; ink: string; Logo: IconType }> = {
+  macos: { bg: 'linear-gradient(160deg,#55595f,#1f2125)', ink: '#fff', Logo: FaApple },
+  ios: { bg: 'linear-gradient(160deg,#ffffff,#d5d8de)', ink: '#1c1d21', Logo: FaApple },
+  android: { bg: 'linear-gradient(160deg,#4ee39a,#1f9e5f)', ink: '#fff', Logo: FaAndroid },
+  windows: { bg: 'linear-gradient(160deg,#3aa0ff,#0063d1)', ink: '#fff', Logo: FaWindows },
+  linux: { bg: 'linear-gradient(160deg,#ffd35c,#f29a12)', ink: '#1c1d21', Logo: FaLinux },
+  other: { bg: 'linear-gradient(160deg,#8a97a8,#4d5868)', ink: '#fff', Logo: LuMonitorSmartphone },
 }
 
 export function DeviceIcon({ platform, size = 40 }: { platform: Platform; size?: number }) {
+  const { bg, ink, Logo } = TILE[platform]
   return (
-    <span className="device-icon" style={{ background: COLORS[platform], width: size, height: size, borderRadius: size * 0.28 }}>
-      <svg width={size * 0.58} height={size * 0.58} viewBox="0 0 24 24" aria-hidden>
-        {GLYPH[platform]}
-      </svg>
+    <span className="device-icon" style={{ background: bg, color: ink, width: size, height: size, borderRadius: size * 0.28 }}>
+      <Logo size={size * 0.54} aria-hidden />
     </span>
   )
 }

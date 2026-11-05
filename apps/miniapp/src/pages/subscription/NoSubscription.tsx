@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { quote } from '@vpnhub/shared'
 import { AnimatedNumber } from '../../components/AnimatedNumber'
 import { Lottie } from '../../components/Lottie'
+import { LoadError } from '../../components/LoadError'
 import { Section, Cell } from '../../components/List'
 import { Button, Chips, Stepper } from '../../components/Controls'
 import { useToast } from '../../components/Toast'
@@ -46,7 +47,7 @@ const FEATURES = [
 
 export function NoSubscription() {
   const { data: me } = useMe()
-  const { data: tariffs } = useTariffs()
+  const { data: tariffs, error: tariffsError, refetch: refetchTariffs, isFetching: tariffsFetching } = useTariffs()
   const purchase = usePurchase()
   const toast = useToast()
   const [emoji] = useState(() => HERO_POOL[Math.floor(Math.random() * HERO_POOL.length)])
@@ -102,6 +103,7 @@ export function NoSubscription() {
           <Chips items={PERIODS} value={period} onChange={setPeriod} render={(d) => days(d)} />
         </div>
       </Section>
+      {tariffsError && !tariffs && <LoadError text="Не удалось загрузить цены" onRetry={() => refetchTariffs()} busy={tariffsFetching} />}
 
       <div className="sticky-cta">
         <div className="sticky-cta-meta">
@@ -113,7 +115,7 @@ export function NoSubscription() {
           </Link>
         </div>
         {q && !enough ? (
-          <Link to="/topup" className="btn btn-primary btn-l is-stretched" onClick={() => haptic.tap()}>
+          <Link to={`/topup?amount=${Math.ceil(q.total - balance)}`} className="btn btn-primary btn-l is-stretched" onClick={() => haptic.tap()}>
             Пополнить на {rub(Math.ceil(q.total - balance))}
           </Link>
         ) : (

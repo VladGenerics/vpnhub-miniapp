@@ -10,12 +10,12 @@ export const preloadTelegramLogin = () => {
   if (BOT_ID) preload()
 }
 
-/** Открывает окно входа Telegram. null — пользователь закрыл окно. */
+/** Открывает окно входа Telegram. null - пользователь закрыл окно. */
 export async function telegramLogin(): Promise<TelegramAuthData | null> {
   if (!BOT_ID) throw new Error('Не задан VITE_TG_BOT_ID')
   return telegramLoginPopup(BOT_ID)
 }
 
-/** Ссылка на бота — открыть кабинет внутри Telegram */
+/** Ссылка на бота - открыть кабинет внутри Telegram */
 export const botLink = (startParam?: string) =>
   BOT_USERNAME ? `https://t.me/${BOT_USERNAME}${startParam ? `?start=${encodeURIComponent(startParam)}` : ''}` : null

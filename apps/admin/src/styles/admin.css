@@ -59,7 +59,6 @@
   color-scheme: dark;
 }
 
-
 /* ============ База ============ */
 *,
 *::before,
@@ -78,7 +77,7 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* мигающая линия курсора — только в полях ввода, а не на любом тексте (режим навигации курсором в браузере, F7) */
+/* мигающая линия курсора - только в полях ввода, а не на любом тексте (режим навигации курсором в браузере, F7) */
 body {
   caret-color: transparent;
 }
@@ -283,7 +282,7 @@ p {
   margin-left: auto;
 }
 
-/* Кнопка меню и подложка — только для телефона. .btn задаёт display позже по файлу, поэтому селектор с двумя классами */
+/* Кнопка меню и подложка - только для телефона. .btn задаёт display позже по файлу, поэтому селектор с двумя классами */
 .btn.menu-btn,
 .side-backdrop {
   display: none;
@@ -447,9 +446,11 @@ p {
   position: relative;
   container-type: inline-size;
 }
-/* карточка-переход: вся карточка кликабельна, ссылки в подписи — поверх */
+/* карточка-переход: вся карточка кликабельна, ссылки в подписи - поверх */
 .kpi.is-link {
-  transition: border-color 0.15s, background 0.15s;
+  transition:
+    border-color 0.15s,
+    background 0.15s;
 }
 .kpi.is-link:hover {
   border-color: var(--accent);
@@ -478,7 +479,9 @@ p {
 .kpi-go {
   margin-left: auto;
   opacity: 0;
-  transition: opacity 0.15s, transform 0.15s;
+  transition:
+    opacity 0.15s,
+    transform 0.15s;
 }
 .kpi.is-link:hover .kpi-go {
   opacity: 1;
@@ -509,7 +512,7 @@ p {
   color: var(--accent);
   pointer-events: none;
 }
-/* В узкой карточке мини-график налезал бы на число — прячем */
+/* В узкой карточке мини-график налезал бы на число - прячем */
 @container (max-width: 300px) {
   .kpi-spark {
     display: none;
@@ -528,7 +531,7 @@ p {
   }
 }
 
-/* Появление страницы: блоки по очереди мягко поднимаются. Только при монтировании —
+/* Появление страницы: блоки по очереди мягко поднимаются. Только при монтировании -
    обновления данных и движение ползунка не анимируются. */
 .content > .stack > *,
 .kpi-grid > *,
@@ -562,7 +565,7 @@ p {
   }
 }
 
-/* список «название — значение» */
+/* список «название - значение» */
 .dl {
   display: grid;
   grid-template-columns: minmax(140px, max-content) minmax(0, 1fr);
@@ -909,7 +912,7 @@ p {
   gap: 10px;
   padding: 16px 20px;
 }
-/* период в «Счетах»: по какой дате + с — по */
+/* период в «Счетах»: по какой дате + с - по */
 .date-range {
   display: flex;
   flex-wrap: wrap;
@@ -1500,7 +1503,7 @@ p {
   border: 1px solid var(--border);
   border-radius: var(--radius-s);
 }
-/* разделители — тенью справа и снизу: у крайних ячеек они уходят под рамку */
+/* разделители - тенью справа и снизу: у крайних ячеек они уходят под рамку */
 .metric {
   padding: 12px 14px;
   box-shadow:
@@ -1644,7 +1647,7 @@ p {
     opacity 0.2s,
     transform 0.2s var(--ease);
 }
-/* выключенная серия: цвет остаётся только на рамке, текст — обычным цветом */
+/* выключенная серия: цвет остаётся только на рамке, текст - обычным цветом */
 .legend-pill.is-off {
   background: transparent;
   color: var(--hint);
@@ -1677,7 +1680,7 @@ p {
   margin-bottom: 8px;
 }
 
-/* круговая диаграмма с легендой-таблицей: в узкой карточке круг над легендой, в широкой — слева */
+/* круговая диаграмма с легендой-таблицей: в узкой карточке круг над легендой, в широкой - слева */
 .pie-wrap {
   container-type: inline-size;
 }
@@ -1739,7 +1742,9 @@ p {
   width: 100%;
   padding: 8px 10px;
   border-radius: 8px;
-  transition: background 0.15s, opacity 0.15s;
+  transition:
+    background 0.15s,
+    opacity 0.15s;
 }
 .pie-row:hover {
   background: var(--hover);
@@ -1789,7 +1794,7 @@ p {
   }
 }
 
-/* Узкое окно и планшет: меню — колонка иконок, всегда на месте; название раздела — подсказкой при наведении */
+/* Узкое окно и планшет: меню - колонка иконок, всегда на месте; название раздела - подсказкой при наведении */
 @media (min-width: 641px) and (max-width: 900px) {
   .layout {
     grid-template-columns: 68px minmax(0, 1fr);
@@ -1950,7 +1955,7 @@ p {
     width: auto;
     min-width: 0;
   }
-  /* на телефоне «Созданы/Оплачены» отдельной строкой, даты — под ней */
+  /* на телефоне «Созданы/Оплачены» отдельной строкой, даты - под ней */
   .date-range .select {
     flex: 1 1 100%;
   }
@@ -2038,7 +2043,7 @@ p {
   text-decoration: underline;
 }
 
-/* поиск: убираем встроенный крестик браузера — есть свой */
+/* поиск: убираем встроенный крестик браузера - есть свой */
 .search .input::-webkit-search-cancel-button {
   appearance: none;
 }
@@ -2098,7 +2103,33 @@ p {
   }
 }
 
-/* шесть показателей обзора: 6 в ряд на широком экране, 3×2 на среднем, 2×3 на телефоне — без «висячей» карточки */
+/* самые узкие телефоны (320-400 px): сегменты на всю ширину и плотная пагинация, иначе вылезают за экран */
+@media (max-width: 400px) {
+  .seg {
+    display: flex;
+    width: 100%;
+  }
+  .seg-item {
+    flex: 1 1 auto;
+    min-width: 0;
+    padding: 0 6px;
+    overflow: hidden;
+    font-size: 13px;
+    text-overflow: ellipsis;
+  }
+  .pagination {
+    padding: 12px;
+  }
+  .pagination-pages {
+    gap: 2px;
+  }
+  .page-btn {
+    min-width: 28px;
+    padding: 0 4px;
+  }
+}
+
+/* шесть показателей обзора: 6 в ряд на широком экране, 3×2 на среднем, 2×3 на телефоне - без «висячей» карточки */
 .kpi-grid.is-6 {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
@@ -2140,7 +2171,10 @@ p {
   padding: 0 5px;
   border: 1px solid var(--border);
   border-radius: 5px;
-  font: 500 11px/1 Inter, system-ui, sans-serif;
+  font:
+    500 11px/1 Inter,
+    system-ui,
+    sans-serif;
   color: var(--hint);
   pointer-events: none;
 }

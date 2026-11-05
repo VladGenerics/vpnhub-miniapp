@@ -102,7 +102,7 @@ export function RenewSheet({ sub, open, onClose }: { sub: Subscription; open: bo
       <div className="sheet-actions">
         {lacking > 0 ? (
           <Link
-            to="/topup"
+            to={`/topup?amount=${Math.ceil(lacking)}`}
             className="btn btn-primary btn-l is-stretched"
             onClick={() => {
               haptic.tap()
@@ -113,9 +113,12 @@ export function RenewSheet({ sub, open, onClose }: { sub: Subscription; open: bo
           </Link>
         ) : (
           <Button stretched onClick={submit} disabled={!q || renew.isPending}>
-            {renew.isPending ? 'Продлеваем…' : q ? `Продлить за ${rub(q.total)}` : 'Продлить'}
+            {renew.isPending ? 'Продлеваем...' : q ? `Продлить за ${rub(q.total)}` : 'Продлить'}
           </Button>
         )}
+        <Button stretched variant="ghost" onClick={onClose}>
+          Назад
+        </Button>
       </div>
     </Sheet>
   )

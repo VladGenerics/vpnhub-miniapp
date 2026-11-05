@@ -4,7 +4,7 @@ import { PageHead } from '../../components/ui'
 
 type Tab = '' | 'deposits' | 'purchases'
 
-/* Вкладки — отдельные подразделы со своими адресами: /statistics, /statistics/deposits, /statistics/purchases */
+/* Вкладки - отдельные подразделы со своими адресами: /statistics, /statistics/deposits, /statistics/purchases */
 const TABS: { value: Tab; label: string }[] = [
   { value: '', label: 'Пользователи' },
   { value: 'deposits', label: 'Пополнения' },

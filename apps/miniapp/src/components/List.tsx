@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
+import { LuChevronRight } from 'react-icons/lu'
 import { haptic } from '../lib/telegram'
 
 export function Section({ title, footer, children }: { title?: string; footer?: ReactNode; children: ReactNode }) {
@@ -57,17 +58,4 @@ export function Cell({ icon, title, subtitle, after, to, onClick, chevron, tone 
   return <div className={cls}>{inner}</div>
 }
 
-export const Chevron = () => (
-  <svg className="chevron" width="8" height="14" viewBox="0 0 8 14" aria-hidden>
-    <path d="M1 1l6 6-6 6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-  </svg>
-)
-
-/** Цветная плитка-иконка как в настройках Telegram */
-export function IconTile({ color, children }: { color: string; children: ReactNode }) {
-  return (
-    <span className="icon-tile" style={{ background: color }}>
-      {children}
-    </span>
-  )
-}
+export const Chevron = () => <LuChevronRight className="chevron" size={18} aria-hidden />

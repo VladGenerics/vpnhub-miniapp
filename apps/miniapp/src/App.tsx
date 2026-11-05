@@ -11,6 +11,7 @@ import { ArticlesPage } from './pages/ArticlesPage'
 import { ArticlePage } from './pages/ArticlePage'
 import { LoginPage } from './pages/LoginPage'
 import { RequireAuth } from './auth/AuthProvider'
+import { USE_MOCKS } from './api'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { applyTelegramChrome, getColorScheme, isTelegram, tg } from './lib/telegram'
 import { preloadEmoji } from './components/Lottie'
@@ -21,7 +22,9 @@ import { useIsWide } from './hooks/useMediaQuery'
 
 // витрины /ui и /emoji служебные, грузим их отдельно
 const UiKitPage = lazy(() => import('./pages/UiKitPage').then((m) => ({ default: m.UiKitPage })))
-const EmojiGalleryPage = lazy(() => import('./pages/EmojiGalleryPage').then((m) => ({ default: m.EmojiGalleryPage })))
+const TestPayPage = lazy(() => import('./pages/TestPayPage').then((m) => ({ default: m.TestPayPage })))
+// галерея эмодзи только для разработки, в прод-сборку не попадает
+const EmojiGalleryPage = import.meta.env.DEV ? lazy(() => import('./pages/EmojiGalleryPage').then((m) => ({ default: m.EmojiGalleryPage }))) : () => null
 
 function syncChrome() {
   const bg = currentBg()
@@ -79,6 +82,17 @@ export default function App() {
     preloadEmoji(emojiFolder(palette), E.renewTile, E.walletTile, E.dollarTile, E.link, E.mail, E.bulbTile, E.questionTile)
   }, [palette])
 
+  // заглушка платёжки для счетов на тестовых данных, без входа
+  if (USE_MOCKS && pathname === '/test-pay') {
+    return (
+      <div className="app in-browser">
+        <Suspense fallback={null}>
+          <TestPayPage />
+        </Suspense>
+      </div>
+    )
+  }
+
   if (pathname === '/login') {
     return (
       <div className={`app ${isTelegram ? 'in-telegram' : 'in-browser'}`}>
@@ -92,6 +106,7 @@ export default function App() {
       <div
         className={`app ${isTelegram ? 'in-telegram' : 'in-browser'} ${wide ? 'has-sidebar' : ''} ${wide && sidebarCollapsed ? 'is-sidebar-collapsed' : ''}`}
       >
+        {wide && <Sidebar />}
         <div className="app-main">
           <div className={`route ${routeAnim}`} key={pathname}>
             {/* у каждой страницы своя граница ошибок, при переходе она сбрасывается */}
@@ -107,14 +122,14 @@ export default function App() {
                   <Route path="/help" element={<ArticlesPage kind="help" />} />
                   <Route path="/help/:slug" element={<ArticlePage kind="help" />} />
                   <Route path="/ui" element={<UiKitPage />} />
-                  <Route path="/emoji" element={<EmojiGalleryPage />} />
+                  {import.meta.env.DEV && <Route path="/emoji" element={<EmojiGalleryPage />} />}
                   <Route path="*" element={<SubscriptionPage />} />
                 </Routes>
               </Suspense>
             </ErrorBoundary>
           </div>
         </div>
-        {wide ? <Sidebar /> : NAV_ROUTES.includes(pathname) && <BottomNav />}
+        {!wide && NAV_ROUTES.includes(pathname) && <BottomNav />}
       </div>
     </RequireAuth>
   )

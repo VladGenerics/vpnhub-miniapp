@@ -1,9 +1,9 @@
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react'
-import { applyPalette, initialPalette, type PaletteId } from '../lib/palette'
+import { applyPalette, initialAccent, initialPalette, type PaletteId } from '../lib/palette'
 
 // Локальные настройки интерфейса. Данные пользователя приходят из API (src/api/queries.ts).
 
-/** auto — как в Telegram или системе */
+/** auto - как в Telegram или системе */
 export type ThemeMode = 'auto' | 'dark' | 'light'
 
 const THEME_KEY = 'vpnhub.theme'
@@ -29,6 +29,9 @@ function save(key: string, value: string) {
 interface AppState {
   palette: PaletteId
   setPalette(id: PaletteId): void
+  /** Свой акцентный цвет (#rrggbb), действует при палитре custom */
+  accent: string
+  setAccent(hex: string): void
   themeMode: ThemeMode
   setThemeMode(m: ThemeMode): void
   /** Боковая панель на ПК свёрнута до иконок */
@@ -39,14 +42,24 @@ interface AppState {
 const Ctx = createContext<AppState | null>(null)
 
 export function AppStoreProvider({ children }: { children: ReactNode }) {
+  const [accent, setAccentState] = useState(initialAccent)
   const [palette, setPaletteState] = useState<PaletteId>(() => {
     const p = initialPalette()
-    applyPalette(p)
+    applyPalette(p, accent)
     return p
   })
-  const setPalette = useCallback((id: PaletteId) => {
-    applyPalette(id, true)
-    setPaletteState(id)
+  const setPalette = useCallback(
+    (id: PaletteId) => {
+      applyPalette(id, accent, true)
+      setPaletteState(id)
+    },
+    [accent],
+  )
+  // цвет меняется непрерывно (ползунок), без анимации перехода
+  const setAccent = useCallback((hex: string) => {
+    applyPalette('custom', hex)
+    setPaletteState('custom')
+    setAccentState(hex)
   }, [])
 
   const [themeMode, setThemeModeState] = useState<ThemeMode>(() => load(THEME_KEY, ['auto', 'dark', 'light'], 'auto'))
@@ -69,8 +82,8 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
   )
 
   const value = useMemo<AppState>(
-    () => ({ palette, setPalette, themeMode, setThemeMode, sidebarCollapsed, toggleSidebar }),
-    [palette, setPalette, themeMode, setThemeMode, sidebarCollapsed, toggleSidebar],
+    () => ({ palette, setPalette, accent, setAccent, themeMode, setThemeMode, sidebarCollapsed, toggleSidebar }),
+    [palette, setPalette, accent, setAccent, themeMode, setThemeMode, sidebarCollapsed, toggleSidebar],
   )
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>

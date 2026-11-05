@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { dateShort } from '../lib/format'
 
 // Лёгкий столбчатый график для главной, без ECharts, чтобы она открывалась быстро.
-// active/onActive — общий выбранный день для соседних графиков, onPick — клик по столбцу.
+// active/onActive - общий выбранный день для соседних графиков, onPick - клик по столбцу.
 export function MiniBars({
   points,
   format,

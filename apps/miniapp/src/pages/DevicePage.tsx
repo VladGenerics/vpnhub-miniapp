@@ -41,9 +41,9 @@ export function DevicePage() {
   ]
   if (slot.first_connection_at) rows.push(['Подключено', dateTime(slot.first_connection_at)])
 
-  const onError = () => {
+  const onError = (e: Error) => {
     haptic.notify('error')
-    toast('Не удалось выполнить действие', E.warning)
+    toast(e.message || 'Не удалось выполнить действие', E.warning)
   }
 
   const doRelease = () =>
@@ -103,9 +103,12 @@ export function DevicePage() {
         <Cell tone="accent" icon={<Lottie name={E.sponge} size={30} />} title="Освободить слот" onClick={doRelease} />
       </Section>
 
-      <Section>
-        <Cell tone="danger" icon={<Lottie name={E.warning} size={30} />} title="Удалить слот" onClick={() => setConfirm(true)} />
-      </Section>
+      {/* без слотов подписка теряет смысл, последний можно только освободить */}
+      {(active?.slots.length ?? 0) > 1 && (
+        <Section>
+          <Cell tone="danger" icon={<Lottie name={E.warning} size={30} />} title="Удалить слот" onClick={() => setConfirm(true)} />
+        </Section>
+      )}
 
       <Sheet open={confirm} onClose={() => setConfirm(false)} expandable={false}>
         <div className="sheet-head">
@@ -117,8 +120,8 @@ export function DevicePage() {
           <Button variant="danger" stretched onClick={doRemove} disabled={remove.isPending}>
             Подтвердить удаление
           </Button>
-          <Button variant="secondary" stretched onClick={() => setConfirm(false)}>
-            Закрыть
+          <Button variant="ghost" stretched onClick={() => setConfirm(false)}>
+            Назад
           </Button>
         </div>
       </Sheet>

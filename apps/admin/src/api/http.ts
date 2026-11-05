@@ -1,6 +1,6 @@
 import { createHttpClient } from '@vpnhub/shared'
 
-// В браузере токен после входа через Telegram, внутри Telegram — initData
+// В браузере токен после входа через Telegram, внутри Telegram - initData
 
 export const API_URL = ((import.meta.env.VITE_API_URL as string | undefined) ?? '').replace(/\/$/, '')
 

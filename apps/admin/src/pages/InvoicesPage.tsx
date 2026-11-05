@@ -12,10 +12,13 @@ import { useListParams } from '../hooks/useListParams'
 import { dateNum, fromDateInput, num, rub, toDateInput } from '../lib/format'
 import { useStaleCutoff } from '../lib/invoices'
 
-/** from/to — дни включительно (yyyy-mm-dd), by=paid — по дате оплаты, stale=1 — зависшие неоплаченные */
+/** from/to - дни включительно (yyyy-mm-dd), by=paid - по дате оплаты, stale=1 - зависшие неоплаченные */
 const FILTERS = ['status', 'provider', 'user_id', 'from', 'to', 'by', 'stale'] as const
 
 const iso = (ms: number) => new Date(ms).toISOString()
+/** Дату из адреса берём, только если она настоящая: руками в URL можно вписать что угодно */
+const validDay = (v?: string) => (v && /^\d{4}-\d{2}-\d{2}$/.test(v) && !Number.isNaN(fromDateInput(v)) ? v : undefined)
+const validId = (v?: string) => (v && /^\d{1,15}$/.test(v) && Number(v) > 0 ? Number(v) : undefined)
 /** Начало следующего дня по календарю: в день перевода часов сутки не 24 ч */
 const dayAfter = (v: string) => {
   const d = new Date(fromDateInput(v))
@@ -23,7 +26,7 @@ const dayAfter = (v: string) => {
   return d.getTime()
 }
 
-// дата и время в две строки — так таблица счетов помещается без прокрутки вбок
+// дата и время в две строки - так таблица счетов помещается без прокрутки вбок
 function When({ at }: { at: string }) {
   const d = new Date(at)
   return (
@@ -72,12 +75,14 @@ export function InvoicesPage() {
   const navigate = useNavigate()
   const cutoff = useStaleCutoff()
   const stale = params.stale === '1'
-  const { from: fromDay, to: toDay, by, stale: _stale, ...rest } = params
+  const { from: rawFrom, to: rawTo, by, stale: _stale, ...rest } = params
+  const fromDay = validDay(rawFrom)
+  const toDay = validDay(rawTo)
   const query = {
     ...rest,
     status: (stale ? 'UNPAID' : params.status) as InvoiceStatus | undefined,
     provider: params.provider as PaymentProvider | undefined,
-    user_id: params.user_id ? Number(params.user_id) : undefined,
+    user_id: validId(params.user_id),
     from: !stale && fromDay ? iso(fromDateInput(fromDay)) : undefined,
     to: stale ? iso(cutoff) : toDay ? iso(dayAfter(toDay)) : undefined,
     date_by: !stale && by === 'paid' ? ('paid' as const) : undefined,

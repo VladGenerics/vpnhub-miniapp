@@ -1,6 +1,6 @@
 # Собирает одно приложение (APP=miniapp или admin) и отдаёт статику через nginx.
 #   docker build --build-arg APP=admin --build-arg VITE_API_URL=https://api.example.com/api -t vpnhub-admin .
-# VITE_* вшиваются при сборке: поменяли — пересоберите образ. Без VITE_API_URL будет демо.
+# VITE_* вшиваются при сборке: поменяли - пересоберите образ.
 
 FROM node:22-alpine AS build
 WORKDIR /src

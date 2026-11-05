@@ -20,7 +20,7 @@ export function PeriodBar({
 }) {
   const presets = PRESETS[g].map((p) => ({ ...p, period: presetPeriod(p, g, bounds) }))
   const active = presets.find((p) => p.period.from === period.from && p.period.to === period.to)
-  // даты по дням включительно; для часов «по» — день, в котором кончается период
+  // даты по дням включительно; для часов «по» - день, в котором кончается период
   const lastDay = period.to - 1
   const min = toDateInput(bounds.from)
   const max = toDateInput(bounds.to - 1)

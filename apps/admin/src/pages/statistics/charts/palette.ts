@@ -8,12 +8,12 @@ const SERIES: Record<Theme, string[]> = {
   dark: ['#3987e5', '#d95926', '#199e70', '#c98500', '#d55181', '#008300', '#9085e9', '#e66767'],
 }
 
-/** Номер слота (1–8) или нейтральный серый — для итоговой линии «Всего» */
+/** Номер слота (1–8) или нейтральный серый - для итоговой линии «Всего» */
 export type Slot = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 'neutral'
 
 export const seriesColor = (slot: Slot, theme: Theme) => (slot === 'neutral' ? (theme === 'dark' ? '#9aa0aa' : '#5b616c') : SERIES[theme][slot - 1])
 
-/** Цвета обвязки графика (фон, сетка, оси, подписи) — из CSS-токенов текущей темы и палитры */
+/** Цвета обвязки графика (фон, сетка, оси, подписи) - из CSS-токенов текущей темы и палитры */
 export function chrome() {
   const cs = getComputedStyle(document.documentElement)
   const v = (name: string) => cs.getPropertyValue(name).trim()

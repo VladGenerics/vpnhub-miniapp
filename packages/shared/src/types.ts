@@ -1,5 +1,5 @@
 // Типы данных между фронтендом и бэкендом. Поля называются как колонки в database.dbml (snake_case).
-// Деньги — число в рублях, даты — строки ISO 8601.
+// Деньги - число в рублях, даты - строки ISO 8601.
 
 export type ISODate = string
 
@@ -96,7 +96,7 @@ export interface PersonalDiscount {
 export interface Tariffs {
   prices: Price[]
   device_discounts: DeviceCountDiscount[]
-  /** application_settings.current_discount — общая скидка (доля 0..1) */
+  /** application_settings.current_discount - общая скидка (доля 0..1) */
   current_discount: number
   personal_discount: PersonalDiscount | null
 }
@@ -139,7 +139,7 @@ export interface PublicSettings {
 
 // --- вход с сайта ---
 
-/** Данные Telegram Login Widget — бэкенд проверяет hash токеном бота */
+/** Данные Telegram Login Widget - бэкенд проверяет hash токеном бота */
 export interface TelegramAuthData {
   id: number
   first_name: string
@@ -151,7 +151,7 @@ export interface TelegramAuthData {
 }
 
 export interface TelegramLoginRequest extends TelegramAuthData {
-  /** Код реферальной ссылки (ref_links.code) или ID пригласившего — при первом входе */
+  /** Код реферальной ссылки (ref_links.code) или ID пригласившего - при первом входе */
   ref?: string
 }
 

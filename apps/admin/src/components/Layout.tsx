@@ -1,10 +1,9 @@
 import { useEffect, useState } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { ROLE_LABEL } from '@vpnhub/shared'
-import { USE_MOCKS } from '../api'
 import { useAuth } from '../auth/AuthProvider'
 import { Icon } from './Icon'
-import type { IconName } from './icons'
+import type { IconName } from './Icon'
 import { Button } from './ui'
 
 export const NAV: { to: string; label: string; icon: IconName; support?: boolean }[] = [
@@ -69,7 +68,7 @@ export function Layout() {
     }
   }, [open])
 
-  // «/» — к поиску, как в GitHub. В русской раскладке это «.»
+  // «/» - к поиску, как в GitHub. В русской раскладке это «.»
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (!(e.key === '/' || (e.code === 'Slash' && !e.shiftKey)) || e.ctrlKey || e.metaKey || e.altKey) return
@@ -109,7 +108,9 @@ export function Layout() {
             </NavLink>
           ))}
         </nav>
-        <div className="side-foot">{USE_MOCKS ? <span className="badge is-warn badge-dot">Демо-данные</span> : <span>Панель управления VPNHub</span>}</div>
+        <div className="side-foot">
+          <span>Панель управления VPNHub</span>
+        </div>
       </aside>
       {open && <div className="side-backdrop" onClick={() => setOpen(false)} />}
 

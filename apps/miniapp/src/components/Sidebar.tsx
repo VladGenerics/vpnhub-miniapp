@@ -1,4 +1,5 @@
 import { NavLink, useLocation } from 'react-router-dom'
+import { LuPanelLeft } from 'react-icons/lu'
 import { useMe } from '../api/queries'
 import { E } from '../data/emoji'
 import { rub } from '../lib/format'
@@ -7,25 +8,20 @@ import { useApp } from '../store/AppStore'
 import { Lottie } from './Lottie'
 import { Avatar, NAV_ITEMS, navIndex } from './nav'
 
-const PanelIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden>
-    <rect x="3" y="4" width="18" height="16" rx="3.5" fill="none" stroke="currentColor" strokeWidth="1.8" />
-    <path d="M15 4.5v15" stroke="currentColor" strokeWidth="1.8" />
-  </svg>
-)
-
 const EXTRA = [
   { to: '/info', label: 'Информация', emoji: E.bulbTile },
   { to: '/help', label: 'Помощь', emoji: E.questionTile },
   { to: '/ui', label: 'Оформление', emoji: E.gearTile },
 ]
 
-// Боковая панель справа на широком экране: меню, ссылки и профиль. Сворачивается до иконок, состояние запоминается.
+// Боковая панель слева на широком экране: меню, ссылки и профиль. Сворачивается до иконок, состояние запоминается.
 export function Sidebar() {
   const { pathname } = useLocation()
   const { sidebarCollapsed: collapsed, toggleSidebar } = useApp()
   const { data: me } = useMe()
-  const active = navIndex(pathname)
+  const isExtra = (to: string) => pathname === to || pathname.startsWith(to + '/')
+  // у статей и оформления в панели свои пункты, «Профиль» при них не подсвечиваем
+  const active = EXTRA.some((it) => isExtra(it.to)) ? -1 : navIndex(pathname)
   const u = getTgUser()
   const name = u ? [u.first_name, u.last_name].filter(Boolean).join(' ') : 'Мой аккаунт'
 
@@ -39,7 +35,7 @@ export function Sidebar() {
           aria-expanded={!collapsed}
           title={collapsed ? 'Развернуть панель' : 'Свернуть панель'}
         >
-          <PanelIcon />
+          <LuPanelLeft size={20} />
         </button>
         <div className="sidebar-brand">
           <img className="brand-logo" src={`${import.meta.env.BASE_URL}favicon.svg`} width={28} height={28} alt="" />
@@ -70,7 +66,7 @@ export function Sidebar() {
           <NavLink
             key={it.to}
             to={it.to}
-            className={({ isActive }) => `sidebar-item ${isActive || pathname.startsWith(it.to + '/') ? 'is-active' : ''}`}
+            className={`sidebar-item ${isExtra(it.to) ? 'is-active' : ''}`}
             title={collapsed ? it.label : undefined}
             aria-label={collapsed ? it.label : undefined}
           >

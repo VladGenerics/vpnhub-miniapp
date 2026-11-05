@@ -8,7 +8,7 @@ import { ErrorView } from '../components/ui'
 // Вход как в кабинете: Telegram Login Widget → POST /auth/telegram → токен.
 // Права проверяет GET /admin/me, обычный USER получает 403. В Telegram вместо токена идёт initData.
 
-/** Имя и аватар для шапки — из Telegram, в базе этих полей нет */
+/** Имя и аватар для шапки - из Telegram, в базе этих полей нет */
 export interface Profile {
   first_name: string
   last_name?: string
@@ -99,7 +99,9 @@ export function useAuth() {
   return v
 }
 
-// Пускает только сотрудников. Пока грузится /admin/me — спиннер, чтобы панель не мелькала.
+const STAFF_ROLES: string[] = ['OWNER', 'ADMIN', 'SUPPORT_AGENT']
+
+// Пускает только сотрудников. Пока грузится /admin/me - спиннер, чтобы панель не мелькала.
 export function RequireAdmin({ children, denied }: { children: ReactNode; denied: ReactNode }) {
   const { isAuthed } = useAuth()
   const location = useLocation()
@@ -113,7 +115,8 @@ export function RequireAdmin({ children, denied }: { children: ReactNode; denied
       </div>
     )
   const status = (me.error as { status?: number } | null)?.status
-  if (status === 403 || me.data?.role === 'USER') return denied
+  // пускаем только известные роли сотрудников: USER и всё, чего фронт не знает, получают отказ
+  if (status === 403 || (me.data && !STAFF_ROLES.includes(me.data.role))) return denied
   if (me.isError)
     return (
       <div className="login">

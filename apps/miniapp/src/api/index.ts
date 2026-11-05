@@ -14,19 +14,21 @@ import type {
 import { ApiError, http } from './http'
 import { mockApi } from './mock'
 
-/** Все запросы кабинета. Описание — docs/api.md */
+/** Все запросы кабинета. Описание - docs/api.md */
 export interface UserApi {
   /** Вход с сайта через Telegram, новый пользователь регистрируется */
   loginTelegram(req: TelegramLoginRequest): Promise<AuthResponse>
   getMe(): Promise<Me>
   bindEmail(email: string): Promise<Me>
-  /** null — подписки нет */
+  /** null - подписки нет */
   getSubscription(): Promise<Subscription | null>
   getTariffs(): Promise<Tariffs>
   getPaymentMethods(): Promise<PaymentMethod[]>
   getSettings(): Promise<PublicSettings>
   createInvoice(req: CreateInvoiceRequest): Promise<Invoice>
   getInvoice(id: number): Promise<Invoice>
+  /** Неоплаченные счета пользователя (status = UNPAID), новые сверху */
+  getUnpaidInvoices(): Promise<Invoice[]>
   purchase(req: PurchaseRequest): Promise<Subscription>
   /** Продление активной подписки заранее. Устройства остаются, дни прибавляются к сроку */
   renew(days: number): Promise<Subscription>
@@ -54,8 +56,9 @@ const httpApi: UserApi = {
   getSettings: () => http('GET', '/settings'),
   createInvoice: (req) => http('POST', '/invoices', req),
   getInvoice: (id) => http('GET', `/invoices/${id}`),
+  getUnpaidInvoices: () => http('GET', '/invoices?status=UNPAID'),
   purchase: (req) => http('POST', '/subscription/purchase', req),
-  // отдельной ручки нет: покупка на активную подписку и есть продление. Будет своя — поменять здесь
+  // отдельной ручки нет: покупка на активную подписку и есть продление. Будет своя - поменять здесь
   renew: async (days) => {
     const sub = await httpApi.getSubscription()
     if (!sub) throw new ApiError(404, 'Подписка не найдена')
@@ -66,7 +69,7 @@ const httpApi: UserApi = {
   deleteSlot: (id) => http('DELETE', `/subscription/slots/${id}`),
 }
 
-/** Демо-данные, если VITE_USE_MOCKS=true или не задан VITE_API_URL */
-export const USE_MOCKS = import.meta.env.VITE_USE_MOCKS === 'true' || !import.meta.env.VITE_API_URL
+/** Тестовые данные вместо API: VITE_USE_MOCKS=true, или локальная разработка без VITE_API_URL. В боевой сборке только явно */
+export const USE_MOCKS = import.meta.env.VITE_USE_MOCKS === 'true' || (import.meta.env.DEV && !import.meta.env.VITE_API_URL)
 
 export const api: UserApi = USE_MOCKS ? mockApi : httpApi

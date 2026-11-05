@@ -15,7 +15,7 @@ import {
   type UserRole,
   type UsersStatsPoint,
 } from '@vpnhub/shared'
-import { DEMO_ROLE_KEY, type AdminApi } from '../index'
+import { MOCK_ROLE_KEY, type AdminApi } from '../index'
 import {
   DAY,
   NOW,
@@ -34,7 +34,7 @@ import {
   type MUser,
 } from './data'
 
-// Демо-бэкенд в памяти. Отдаёт то же, что описано в docs/api.md, с небольшой задержкой.
+// Тестовый бэкенд в памяти. Отдаёт то же, что описано в docs/api.md, с небольшой задержкой.
 
 const iso = (ms: number) => new Date(ms).toISOString()
 const delay = <T>(v: T, ms = 180 + Math.random() * 220) => new Promise<T>((r) => setTimeout(() => r(structuredClone(v)), ms))
@@ -123,7 +123,7 @@ function sortList<T>(list: T[], getters: Record<string, (r: T) => number | strin
     const x = get(a)
     const y = get(b)
     if (x === y) return 0
-    if (x === null) return 1 // пустые значения — всегда в конце
+    if (x === null) return 1 // пустые значения - всегда в конце
     if (y === null) return -1
     return (x < y ? -1 : 1) * dir
   })
@@ -187,9 +187,9 @@ const countBefore = (sorted: number[], t: number) => {
 }
 const regTimes = usersByReg.map((u) => u.registered_at)
 
-function demoRole(): UserRole {
+function mockRole(): UserRole {
   try {
-    return (localStorage.getItem(DEMO_ROLE_KEY) as UserRole | null) ?? 'OWNER'
+    return (localStorage.getItem(MOCK_ROLE_KEY) as UserRole | null) ?? 'OWNER'
   } catch {
     return 'OWNER'
   }
@@ -204,7 +204,7 @@ export const mockApi: AdminApi = {
 
   async getMe() {
     const owner = users[0]
-    return delay({ id: owner.id, tg_user_id: owner.tg_user_id, role: demoRole() })
+    return delay({ id: owner.id, tg_user_id: owner.tg_user_id, role: mockRole() })
   },
 
   async getDashboard() {
@@ -356,7 +356,7 @@ export const mockApi: AdminApi = {
   async adjustBalance(id, req) {
     const u = users[id - 1]
     if (!u) throw new ApiError(404, 'Пользователь не найден')
-    if (demoRole() === 'SUPPORT_AGENT') throw new ApiError(403, 'Недостаточно прав')
+    if (mockRole() === 'SUPPORT_AGENT') throw new ApiError(403, 'Недостаточно прав')
     if (!(req.amount > 0)) throw new ApiError(422, 'Сумма должна быть больше нуля')
     if (req.direction === 'OUT' && req.amount > u.balance) throw new ApiError(422, 'Нельзя списать больше, чем на балансе')
     u.balance = round2(u.balance + (req.direction === 'IN' ? req.amount : -req.amount))
@@ -405,7 +405,7 @@ export const mockApi: AdminApi = {
   },
 
   async updatePaymentMethod(id, patch) {
-    if (demoRole() === 'SUPPORT_AGENT') throw new ApiError(403, 'Недостаточно прав')
+    if (mockRole() === 'SUPPORT_AGENT') throw new ApiError(403, 'Недостаточно прав')
     const m = paymentMethods.find((x) => x.id === id)
     if (!m) throw new ApiError(404, 'Платёжная система не найдена')
     if (patch.name !== undefined && !patch.name.trim()) throw new ApiError(422, 'Название не может быть пустым')
@@ -418,7 +418,7 @@ export const mockApi: AdminApi = {
   },
 
   async updateSettings(patch) {
-    if (demoRole() === 'SUPPORT_AGENT') throw new ApiError(403, 'Недостаточно прав')
+    if (mockRole() === 'SUPPORT_AGENT') throw new ApiError(403, 'Недостаточно прав')
     Object.assign(settings, patch, { updated_at: iso(Date.now()) })
     return delay(settings)
   },

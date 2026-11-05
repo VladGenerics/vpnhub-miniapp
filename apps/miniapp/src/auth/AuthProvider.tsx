@@ -9,7 +9,7 @@ import { isTelegram, saveWebUser, type TgUser } from '../lib/telegram'
 
 interface AuthState {
   isAuthed: boolean
-  /** user — данные из Telegram Login Widget, для шапки профиля в браузере */
+  /** user - данные из Telegram Login Widget, для шапки профиля в браузере */
   login(token: string, user?: TgUser): void
   logout(): void
 }

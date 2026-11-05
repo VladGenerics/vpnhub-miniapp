@@ -46,12 +46,24 @@ export const useDashboard = () => useQuery({ queryKey: keys.dashboard, queryFn: 
 
 // пока грузится следующая страница, показываем предыдущую, чтобы таблица не прыгала
 export const useUsers = (p: UsersParams) => useQuery({ queryKey: keys.users(p), queryFn: () => api.getUsers(p), placeholderData: keepPreviousData })
-export const useUser = (id: number) => useQuery({ queryKey: keys.user(id), queryFn: () => api.getUser(id), enabled: id > 0 })
+export const useUser = (id: number) => useQuery({ queryKey: keys.user(id), queryFn: () => api.getUser(id), enabled: Number.isInteger(id) && id > 0 })
+// прошлую страницу показываем только для того же пользователя, иначе в карточке B мелькнёт история A
+const samePlaceholder =
+  (same: (prevKey: readonly unknown[]) => boolean) =>
+  <T>(prev: T | undefined, prevQuery?: { queryKey: readonly unknown[] }) =>
+    prevQuery && same(prevQuery.queryKey) ? prev : undefined
+
 export const useReferrals = (id: number, p: ListParams) =>
-  useQuery({ queryKey: keys.referrals(id, p), queryFn: () => api.getUserReferrals(id, p), placeholderData: keepPreviousData })
+  useQuery({ queryKey: keys.referrals(id, p), queryFn: () => api.getUserReferrals(id, p), placeholderData: samePlaceholder((k) => k[1] === id) })
 export const useLedger = (id: number, p: ListParams) =>
-  useQuery({ queryKey: keys.ledger(id, p), queryFn: () => api.getUserLedger(id, p), placeholderData: keepPreviousData })
-export const useInvoices = (p: InvoicesParams) => useQuery({ queryKey: keys.invoices(p), queryFn: () => api.getInvoices(p), placeholderData: keepPreviousData })
+  useQuery({ queryKey: keys.ledger(id, p), queryFn: () => api.getUserLedger(id, p), placeholderData: samePlaceholder((k) => k[1] === id) })
+export const useInvoices = (p: InvoicesParams) =>
+  useQuery({
+    queryKey: keys.invoices(p),
+    queryFn: () => api.getInvoices(p),
+    // в общем списке счетов предыдущую страницу держим всегда, во вкладке пользователя - только для него же
+    placeholderData: p.user_id ? samePlaceholder((k) => (k[1] as InvoicesParams | undefined)?.user_id === p.user_id) : keepPreviousData,
+  })
 
 export const usePaymentMethods = () => useQuery({ queryKey: keys.paymentMethods, queryFn: api.getPaymentMethods })
 export const useSettings = () => useQuery({ queryKey: keys.settings, queryFn: api.getSettings })
@@ -60,9 +72,10 @@ export function useAdjustBalance(id: number) {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (req: BalanceAdjustRequest) => api.adjustBalance(id, req),
+    // ключ берём из ответа: если карточку успели сменить, данные A не попадут под B
     onSuccess: (user: AdminUserDetails) => {
-      qc.setQueryData(keys.user(id), user)
-      qc.invalidateQueries({ queryKey: ['user', id, 'ledger'] })
+      qc.setQueryData(keys.user(user.id), user)
+      qc.invalidateQueries({ queryKey: ['user', user.id, 'ledger'] })
       qc.invalidateQueries({ queryKey: ['users'] })
     },
   })

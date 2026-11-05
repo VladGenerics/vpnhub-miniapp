@@ -1,5 +1,7 @@
-# Кабинет на :8080, админка на :8081. Настройки берутся из .env (образец — .env.example).
+# Кабинет на :8080, админка на :8081. Настройки берутся из .env (образец - .env.example).
 #   docker compose up -d --build
+# Порты слушают только 127.0.0.1: снаружи ходят через HTTPS-прокси на хосте (Caddy, nginx, Traefik),
+# Telegram открывает Mini App только по https. Нужен прямой доступ - BIND_ADDR=0.0.0.0 в .env.
 services:
   miniapp:
     build:
@@ -7,10 +9,11 @@ services:
       args:
         APP: miniapp
         VITE_API_URL: ${VITE_API_URL:-}
+        VITE_USE_MOCKS: ${VITE_USE_MOCKS:-false}
         VITE_TG_BOT_ID: ${VITE_TG_BOT_ID:-}
         VITE_TG_BOT_USERNAME: ${VITE_TG_BOT_USERNAME:-}
     ports:
-      - "${MINIAPP_PORT:-8080}:80"
+      - "${BIND_ADDR:-127.0.0.1}:${MINIAPP_PORT:-8080}:80"
     restart: unless-stopped
 
   admin:
@@ -19,8 +22,9 @@ services:
       args:
         APP: admin
         VITE_API_URL: ${VITE_API_URL:-}
+        VITE_USE_MOCKS: ${VITE_USE_MOCKS:-false}
         VITE_TG_BOT_ID: ${VITE_TG_BOT_ID:-}
         VITE_BASE_PATH: ${ADMIN_BASE_PATH:-/}
     ports:
-      - "${ADMIN_PORT:-8081}:80"
+      - "${BIND_ADDR:-127.0.0.1}:${ADMIN_PORT:-8081}:80"
     restart: unless-stopped

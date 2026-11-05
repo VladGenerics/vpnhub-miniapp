@@ -7,6 +7,7 @@ import { queryClient } from './api/queries'
 import { AppStoreProvider } from './store/AppStore'
 import { AuthProvider } from './auth/AuthProvider'
 import { ToastProvider } from './components/Toast'
+import { BackgroundErrors } from './components/BackgroundErrors'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { initTelegram } from './lib/telegram'
 import './styles/global.css'
@@ -21,6 +22,7 @@ createRoot(document.getElementById('root')!).render(
         <AuthProvider>
           <AppStoreProvider>
             <ToastProvider>
+              <BackgroundErrors />
               <ErrorBoundary>
                 <App />
               </ErrorBoundary>

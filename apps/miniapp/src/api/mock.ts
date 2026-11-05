@@ -3,8 +3,8 @@ import { quote } from '@vpnhub/shared'
 import { getTgUser } from '../lib/telegram'
 import type { UserApi } from './index'
 
-// Демо-бэкенд в памяти, данные той же формы, что у настоящего API.
-// Для проверки: ?sub=0 — без подписки, ?expires=90 — подписка кончится через 90 с.
+// Тестовый бэкенд в памяти, данные той же формы, что у настоящего API.
+// Для проверки: ?sub=0 - без подписки, ?expires=90 - подписка кончится через 90 с.
 
 const params = new URLSearchParams(location.search)
 const DAY = 864e5
@@ -77,41 +77,72 @@ const methods: PaymentMethod[] = [
 
 const settings: PublicSettings = { support_link: 'https://t.me/vpnhub_support', invited_bonus: 30, referral_bonus: 30 }
 
-const invoices = new Map<number, Invoice & { payAt: number }>()
-let invoiceSeq = 1000
+// Счета. Оплата - страница-заглушка /test-pay в новой вкладке: она пишет итог в localStorage,
+// кабинет видит его при следующем опросе счёта.
+const PAY_KEY = 'vpnhub.test-pay'
+const invoices = new Map<number, Invoice>()
+// номера от времени запуска: итоги оплат в localStorage не путаются между перезагрузками
+let invoiceSeq = Math.floor(Date.now() / 1000) % 10_000_000
+
+const payUrl = (id: number, amount: number) => `${location.origin}${import.meta.env.BASE_URL}test-pay?invoice=${id}&amount=${amount}`
+
+function addInvoice(provider: Invoice['provider'], amount: number, createdAt = now()) {
+  const id = ++invoiceSeq
+  const inv: Invoice = {
+    id,
+    user_id: me.id,
+    provider,
+    amount,
+    selected_currency: 'RUB',
+    status: 'UNPAID',
+    created_at: createdAt,
+    updated_at: null,
+    external_invoice_id: `test-${id}`,
+    pay_url: payUrl(id, amount),
+    paid_at: null,
+  }
+  invoices.set(id, inv)
+  return inv
+}
+
+// несколько старых неоплаченных счетов, чтобы было видно раздел и кнопку «Показать ещё»
+addInvoice('yookassa', 300, iso(Date.now() - 26 * 3600_000))
+addInvoice('cryptobot', 1000, iso(Date.now() - 5 * 3600_000))
+addInvoice('WATA', 750, iso(Date.now() - 3 * 3600_000))
+addInvoice('tg_stars', 200, iso(Date.now() - 2 * 3600_000))
+addInvoice('yookassa', 500, iso(Date.now() - 40 * 60_000))
+
+/** Итог тестовой оплаты из соседней вкладки */
+export function setTestPayResult(id: number, status: 'PAID' | 'FAILED') {
+  try {
+    const all = JSON.parse(localStorage.getItem(PAY_KEY) || '{}')
+    localStorage.setItem(PAY_KEY, JSON.stringify({ ...all, [id]: status }))
+  } catch {
+    /* хранилище недоступно */
+  }
+}
+
+function syncInvoice(inv: Invoice) {
+  if (inv.status !== 'UNPAID') return
+  let result: string | undefined
+  try {
+    result = JSON.parse(localStorage.getItem(PAY_KEY) || '{}')[inv.id]
+  } catch {
+    return
+  }
+  if (result === 'PAID') {
+    inv.status = 'PAID'
+    inv.paid_at = inv.updated_at = now()
+    me = { ...me, balance: me.balance + inv.amount }
+  } else if (result === 'FAILED') {
+    inv.status = 'FAILED'
+    inv.updated_at = now()
+  }
+}
 
 function requireSub(): Subscription {
   if (!subscription) throw new Error('Подписки нет')
   return subscription
-}
-
-/** Для тестовой страницы /ui: управлять подпиской в демо */
-export const mockControls = {
-  hasSubscription: () => subscription?.status === 'ACTIVE',
-  /** Подписка закончится через sec секунд, чтобы проверить таймер и автопродление */
-  expireIn(sec: number) {
-    this.setHasSubscription(true)
-    subscription!.expires_at = iso(Date.now() + sec * 1000)
-  },
-  /** Задать баланс, чтобы проверить нехватку денег на автопродление */
-  setBalance(v: number) {
-    me = { ...me, balance: v }
-  },
-  balance: () => me.balance,
-  setHasSubscription(v: boolean) {
-    if (!v) subscription = null
-    else if (subscription?.status !== 'ACTIVE') {
-      subscription = {
-        id: 1,
-        status: 'ACTIVE',
-        purchased_at: now(),
-        expires_at: iso(Date.now() + 30 * DAY),
-        url: 'https://sub.vpnhub.app/s/8Kf2xQ9mZt4pLw7R',
-        auto_renewal: { is_enabled: true, days: 30 },
-        slots: [slot(1, 'iOS', 'iPhone 17 Pro', '26.6', 'Happ/5.3.0', 0)],
-      }
-    }
-  },
 }
 
 export const mockApi: UserApi = {
@@ -140,34 +171,24 @@ export const mockApi: UserApi = {
   getPaymentMethods: () => delay(methods.filter((m) => m.is_active).sort((a, b) => a.sequence_number - b.sequence_number)),
   getSettings: () => delay(settings),
 
-  async createInvoice({ provider, amount }) {
-    const inv: Invoice & { payAt: number } = {
-      id: ++invoiceSeq,
-      user_id: me.id,
-      provider,
-      amount,
-      selected_currency: 'RUB',
-      status: 'UNPAID',
-      created_at: now(),
-      updated_at: null,
-      external_invoice_id: null,
-      pay_url: null,
-      paid_at: null,
-      payAt: Date.now() + 1500, // «оплата» проходит через 1,5 с
-    }
-    invoices.set(inv.id, inv)
-    return delay(inv, 400)
+  // как советуем бэкенду (docs/api.md): тот же неоплаченный счёт на ту же сумму тем же способом не дублируем
+  createInvoice({ provider, amount }) {
+    invoices.forEach(syncInvoice)
+    const same = [...invoices.values()].find((i) => i.status === 'UNPAID' && i.provider === provider && i.amount === amount)
+    return delay(same ?? addInvoice(provider, amount), 400)
   },
 
   async getInvoice(id) {
     const inv = invoices.get(id)
     if (!inv) throw new Error('Счёт не найден')
-    if (inv.status === 'UNPAID' && Date.now() >= inv.payAt) {
-      inv.status = 'PAID'
-      inv.paid_at = inv.updated_at = now()
-      me = { ...me, balance: me.balance + inv.amount }
-    }
+    syncInvoice(inv)
     return delay(inv)
+  },
+
+  async getUnpaidInvoices() {
+    invoices.forEach(syncInvoice)
+    const list = [...invoices.values()].filter((i) => i.status === 'UNPAID').sort((a, b) => b.id - a.id)
+    return delay(list)
   },
 
   async purchase({ days, devices }) {
@@ -175,6 +196,9 @@ export const mockApi: UserApi = {
     if (total > me.balance) throw new Error('Недостаточно средств на балансе')
     me = { ...me, balance: me.balance - total }
     const base = subscription && +new Date(subscription.expires_at) > Date.now() ? +new Date(subscription.expires_at) : Date.now()
+    // как на бэкенде: привязанные устройства остаются, недостающие слоты добавляются пустыми
+    const kept = (subscription?.slots ?? []).slice(0, devices)
+    const nextId = Math.max(0, ...kept.map((s) => s.id)) + 1
     subscription = {
       id: 1,
       status: 'ACTIVE',
@@ -182,7 +206,7 @@ export const mockApi: UserApi = {
       expires_at: iso(base + days * DAY),
       url: 'https://sub.vpnhub.app/s/8Kf2xQ9mZt4pLw7R',
       auto_renewal: subscription?.auto_renewal ?? { is_enabled: true, days: 30 },
-      slots: Array.from({ length: devices }, (_, i) => emptySlot(i + 1)),
+      slots: [...kept, ...Array.from({ length: devices - kept.length }, (_, i) => emptySlot(nextId + i))],
     }
     return delay(subscription, 500)
   },
@@ -209,7 +233,8 @@ export const mockApi: UserApi = {
 
   async deleteSlot(id) {
     const sub = requireSub()
-    if (sub.slots.length > 1) sub.slots = sub.slots.filter((x) => x.id !== id)
+    if (sub.slots.length <= 1) throw new Error('Последний слот удалить нельзя, его можно только освободить')
+    sub.slots = sub.slots.filter((x) => x.id !== id)
     await delay(null)
   },
 }

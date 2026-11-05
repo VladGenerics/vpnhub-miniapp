@@ -1,4 +1,4 @@
-/* ECharts по модулям: только нужные типы графиков — бандл раздела меньше в 2–3 раза. */
+/* ECharts по модулям: только нужные типы графиков - бандл раздела меньше в 2–3 раза. */
 import { BarChart, LineChart, PieChart } from 'echarts/charts'
 import { DataZoomComponent, GridComponent, TooltipComponent } from 'echarts/components'
 import * as echarts from 'echarts/core'

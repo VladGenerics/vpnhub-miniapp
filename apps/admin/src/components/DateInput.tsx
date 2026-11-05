@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent } from
 import { Icon } from './Icon'
 
 // Свой выбор даты вместо <input type="date">: у системного календаря в каждом браузере свой вид,
-// и в тёмной теме он выглядит чужим. Значение — строка yyyy-mm-dd, как у обычного поля.
+// и в тёмной теме он выглядит чужим. Значение - строка yyyy-mm-dd, как у обычного поля.
 
 const WEEK = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс']
 const MONTHS = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь']
@@ -42,7 +42,7 @@ export function DateInput({
   clearable?: boolean
 }) {
   const [open, setOpen] = useState(false)
-  // курсор — день, который в фокусе; по нему же выбирается показанный месяц
+  // курсор - день, который в фокусе; по нему же выбирается показанный месяц
   const [cursor, setCursor] = useState(() => clamp(value || todayKey(), min, max))
   const [alignEnd, setAlignEnd] = useState(false)
   const root = useRef<HTMLDivElement>(null)
@@ -90,12 +90,12 @@ export function DateInput({
 
   const [cy, cm] = parse(cursor)
   const first = new Date(cy, cm - 1, 1)
-  const lead = (first.getDay() + 6) % 7 // понедельник — первый
+  const lead = (first.getDay() + 6) % 7 // понедельник - первый
   const cells = Array.from({ length: 42 }, (_, i) => {
     const t = new Date(cy, cm - 1, 1 - lead + i)
     return { key: toKey(t.getFullYear(), t.getMonth(), t.getDate()), day: t.getDate(), out: t.getMonth() !== cm - 1 }
   })
-  // шестая неделя целиком из следующего месяца — не рисуем
+  // шестая неделя целиком из следующего месяца - не рисуем
   const days = cells[35].out && cells[35].day < 15 ? cells.slice(0, 35) : cells
 
   const monthStart = toKey(cy, cm - 1, 1)

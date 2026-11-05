@@ -12,7 +12,7 @@ import { hoverSync } from './hoverSync'
 function barWidth(c: ECharts, p: Period, g: Granularity) {
   let n = 0
   for (let t = p.from; t < p.to && n < 5000; t = step(t, g)) n++
-  // ширина области графика без подписей оси Y; до первой отрисовки — приблизительно
+  // ширина области графика без подписей оси Y; до первой отрисовки - приблизительно
   const grid = (c as unknown as { getModel(): { getComponent(t: string): { coordinateSystem?: { getRect(): { width: number } } } } | undefined })
     .getModel()
     ?.getComponent('grid')?.coordinateSystem
@@ -56,7 +56,7 @@ export function LegendPills({
       {items.map((s) => {
         const c = seriesColor(s.slot, theme)
         const off = hidden.has(s.key)
-        // последнюю видимую серию не выключаем — пустой график ничего не объясняет
+        // последнюю видимую серию не выключаем - пустой график ничего не объясняет
         const lock = !off && visible === 1
         return (
           <button
@@ -133,13 +133,13 @@ export function TimeSeriesCard({
   height?: number
   className?: string
   right?: ReactNode
-  /** Клик по интервалу графика — [from, to) этого интервала (например, открыть его счета) */
+  /** Клик по интервалу графика - [from, to) этого интервала (например, открыть его счета) */
   onPick?(from: number, to: number): void
   /** Подпись к клику в подсказке: «счета за день» */
   pickHint?: string
 }) {
   const theme = useResolvedTheme()
-  // смена темы меняет фон и сетку — график перечитывает цвета
+  // смена темы меняет фон и сетку - график перечитывает цвета
   const skin = useSkin()
   const ref = useRef<HTMLDivElement>(null)
   const chart = useRef<ECharts | null>(null)
@@ -150,7 +150,7 @@ export function TimeSeriesCard({
   // актуальные значения для обработчиков событий графика
   const live = useRef({ period, onPeriod, g, onPick })
   live.current = { period, onPeriod, g, onPick }
-  /** Период, который график показывает сейчас — чтобы не применять его повторно */
+  /** Период, который график показывает сейчас - чтобы не применять его повторно */
   const shown = useRef<Period | null>(null)
 
   // Столбец стоит по центру своей даты, поэтому окно и ось шире на полшага с каждой стороны,
@@ -198,7 +198,7 @@ export function TimeSeriesCard({
         const from = type === 'bar' && first < dz.startValue ? step(first, gg) : first
         const p = { from, to: Math.max(step(truncate(dz.endValue, gg), gg), step(from, gg)) }
         shown.current = p
-        // пока тянут ползунок — без анимации, иначе столбцы отстают от оси
+        // пока тянут ползунок - без анимации, иначе столбцы отстают от оси
         if (!dragging) c.setOption({ animation: false })
         clearTimeout(dragging)
         dragging = setTimeout(() => {
@@ -210,7 +210,7 @@ export function TimeSeriesCard({
       })
     })
 
-    // наведение: своё время под курсором — соседям, их время — показываем у себя
+    // наведение: своё время под курсором - соседям, их время - показываем у себя
     const zr = c.getZr()
     zr.on('mousemove', (e) => {
       const inside = c.containPixel('grid', [e.offsetX, e.offsetY])
@@ -252,7 +252,7 @@ export function TimeSeriesCard({
     }
   }, [asTable])
 
-  // поменялись данные, тема или набор серий — перерисовываем целиком
+  // поменялись данные, тема или набор серий - перерисовываем целиком
   useEffect(() => {
     const c = chart.current
     if (!c) return
@@ -278,7 +278,7 @@ export function TimeSeriesCard({
         },
         yAxis: {
           type: 'value',
-          // накопительные ряды — не от нуля, чтобы был виден рост; остальное — от нуля
+          // накопительные ряды - не от нуля, чтобы был виден рост; остальное - от нуля
           scale: !!cumulative && !bar,
           splitNumber: 4,
           splitLine: { lineStyle: { color: ch.grid } },
@@ -298,14 +298,14 @@ export function TimeSeriesCard({
             const [w, h] = size.contentSize
             const [vw, vh] = size.viewSize
             const x = point[0] + 16 + w <= vw ? point[0] + 16 : Math.max(0, point[0] - 16 - w)
-            // по вертикали — у курсора, но в пределах видимой полосы графика
+            // по вертикали - у курсора, но в пределах видимой полосы графика
             const [top, bottom] = chart.current ? visibleBand(chart.current.getDom()) : [0, vh]
             const y = Math.min(Math.max(point[1] - h / 2, top + 4), bottom - h - 4, vh - h)
             return [x, Math.max(0, y)]
           },
           axisPointer: bar ? { type: 'shadow', shadowStyle: { color: ch.zoomFill } } : { type: 'line', lineStyle: { color: ch.axis, width: 1 } },
           formatter: (all: { axisValue: number; seriesName: string; value: [number, number | string]; color: string }[]) => {
-            // у ряда с пунктирным хвостом две серии с одним именем — берём ту, где есть значение
+            // у ряда с пунктирным хвостом две серии с одним именем - берём ту, где есть значение
             const seen = new Set<string>()
             const params = all.filter(
               (pr): pr is (typeof all)[number] & { value: [number, number] } =>
@@ -367,7 +367,7 @@ export function TimeSeriesCard({
               barWidth: chart.current ? barWidth(chart.current, p, g) : undefined,
               itemStyle: {
                 color,
-                // скругление 4 px — только у верхнего края столбца; зазор между частями — цветом фона
+                // скругление 4 px - только у верхнего края столбца; зазор между частями - цветом фона
                 borderRadius: !stacked || i === lastVisible ? [4, 4, 0, 0] : 0,
                 borderColor: ch.surface,
                 borderWidth: gapWidth(p),
@@ -387,7 +387,7 @@ export function TimeSeriesCard({
             areaStyle: type === 'area' ? { color, opacity: 0.1 } : undefined,
             emphasis: { focus: 'none' as const, scale: false },
           }
-          // у сложенных линий хвост отдельной серией не нарисовать — оставляем как есть
+          // у сложенных линий хвост отдельной серией не нарисовать - оставляем как есть
           if (!hasPartial || stacked || s.data.length < 2) return line
           return [
             { ...line, data: s.data.map(([t, v]) => [t, t === partial ? '-' : v] as [number, number | '-']) },
@@ -400,7 +400,7 @@ export function TimeSeriesCard({
     shown.current = p
   }, [visible, theme, skin, type, stacked, cumulative, g, bounds, partial, format, axisFormat, total, pickHint, asTable])
 
-  // период поменяли снаружи (пресет, даты, соседний график) — сдвигаем окно
+  // период поменяли снаружи (пресет, даты, соседний график) - сдвигаем окно
   useEffect(() => {
     const c = chart.current
     if (!c) return
@@ -416,7 +416,7 @@ export function TimeSeriesCard({
     if (!c) return
     let n = 0
     for (let t = period.from; t < period.to && n < 400; t = step(t, g)) n++
-    // ~56 px на подпись; не влезают все — ровный шаг (через 1, 2…), а не выборочные пропуски
+    // ~56 px на подпись; не влезают все - ровный шаг (через 1, 2...), а не выборочные пропуски
     const fit = Math.max(2, Math.floor(c.getWidth() / 56))
     c.setOption({ xAxis: { splitNumber: n <= fit ? Math.max(1, n) : Math.ceil(n / Math.ceil(n / fit)) } })
   }, [period, g, visible, theme, skin, bounds, asTable])

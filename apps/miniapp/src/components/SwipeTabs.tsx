@@ -96,6 +96,8 @@ export function SwipeTabs({ tabs }: { tabs: TabDef[] }) {
                 panes.current[i] = el
               }}
               aria-hidden={i !== index}
+              // скрытая вкладка не ловит Tab и клики, иначе фокус уезжает за край экрана
+              inert={i !== index}
             >
               {t.content}
             </div>

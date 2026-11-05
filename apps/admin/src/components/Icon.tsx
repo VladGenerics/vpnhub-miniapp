@@ -1,16 +1,71 @@
-import { ICONS, type IconName } from './icons'
+import {
+  LuArrowDown,
+  LuArrowUp,
+  LuCalendar,
+  LuChartLine,
+  LuCheck,
+  LuChevronLeft,
+  LuChevronRight,
+  LuChevronsUpDown,
+  LuCopy,
+  LuCreditCard,
+  LuExternalLink,
+  LuLayoutDashboard,
+  LuLogOut,
+  LuMenu,
+  LuMinus,
+  LuMonitor,
+  LuPlus,
+  LuReceipt,
+  LuRefreshCw,
+  LuSearch,
+  LuSend,
+  LuSettings,
+  LuShield,
+  LuTrendingDown,
+  LuTrendingUp,
+  LuUserPlus,
+  LuUsers,
+  LuWallet,
+  LuX,
+} from 'react-icons/lu'
+import type { IconType } from 'react-icons'
 
-/** SVG-иконка из Lucide, цвет — currentColor */
+const ICONS = {
+  dashboard: LuLayoutDashboard,
+  users: LuUsers,
+  receipt: LuReceipt,
+  calendar: LuCalendar,
+  card: LuCreditCard,
+  chart: LuChartLine,
+  settings: LuSettings,
+  logout: LuLogOut,
+  monitor: LuMonitor,
+  search: LuSearch,
+  chevronLeft: LuChevronLeft,
+  chevronRight: LuChevronRight,
+  sort: LuChevronsUpDown,
+  arrowUp: LuArrowUp,
+  arrowDown: LuArrowDown,
+  close: LuX,
+  menu: LuMenu,
+  plus: LuPlus,
+  minus: LuMinus,
+  check: LuCheck,
+  copy: LuCopy,
+  external: LuExternalLink,
+  wallet: LuWallet,
+  refresh: LuRefreshCw,
+  userPlus: LuUserPlus,
+  shield: LuShield,
+  trendUp: LuTrendingUp,
+  trendDown: LuTrendingDown,
+  send: LuSend,
+} satisfies Record<string, IconType>
+
+export type IconName = keyof typeof ICONS
+
 export function Icon({ name, size = 18, className }: { name: IconName; size?: number; className?: string }) {
-  return (
-    <svg
-      className={`icon ${className ?? ''}`}
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      aria-hidden
-      // иконки свои, из бандла, внешних данных тут нет
-      dangerouslySetInnerHTML={{ __html: ICONS[name] }}
-    />
-  )
+  const Svg = ICONS[name]
+  return <Svg className={`icon ${className ?? ''}`} size={size} aria-hidden />
 }

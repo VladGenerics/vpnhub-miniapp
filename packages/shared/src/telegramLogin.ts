@@ -32,7 +32,7 @@ export function preloadTelegramLogin() {
   loadWidget().catch(() => {})
 }
 
-/** Открывает окно входа Telegram. null — окно закрыли */
+/** Открывает окно входа Telegram. null - окно закрыли */
 export async function telegramLoginPopup(botId: number): Promise<TelegramAuthData | null> {
   const login = await loadWidget()
   return new Promise((resolve) => login.auth({ bot_id: botId, request_access: 'write', lang: 'ru' }, (d) => resolve(d || null)))

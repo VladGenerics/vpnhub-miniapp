@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { useMutation } from '@tanstack/react-query'
 import type { TelegramAuthData } from '@vpnhub/shared'
+import { FaTelegramPlane } from 'react-icons/fa'
 import { api, USE_MOCKS } from '../api'
 import { useSettings } from '../api/queries'
 import { useAuth } from '../auth/AuthProvider'
@@ -17,11 +18,14 @@ type Mode = 'login' | 'register'
 
 const REF_KEY = 'vpnhub.ref'
 
-/** Реферальный код из ?ref=…, держим его в sessionStorage, чтобы пережил переходы */
+/** Реферальный код из ?ref=..., держим его в sessionStorage, чтобы пережил переходы.
+ *  По ссылке /?ref=... гость сначала попадает на защищённую страницу, и та уводит на вход,
+ *  сохранив исходный адрес в state.from - код ищем и там */
 function useRefCode(): string | null {
-  const { search } = useLocation()
+  const { search, state } = useLocation()
   const [ref] = useState(() => {
-    const fromUrl = new URLSearchParams(search).get('ref')
+    const from = (state as { from?: string } | null)?.from
+    const fromUrl = new URLSearchParams(search).get('ref') ?? (from ? new URL(from, location.origin).searchParams.get('ref') : null)
     try {
       if (fromUrl) sessionStorage.setItem(REF_KEY, fromUrl)
       return fromUrl ?? sessionStorage.getItem(REF_KEY)
@@ -31,15 +35,6 @@ function useRefCode(): string | null {
   })
   return ref
 }
-
-const TelegramPlane = () => (
-  <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden>
-    <path
-      d="M20.7 4.3L3.6 10.9c-1.2.5-1.1 1.2-.2 1.5l4.4 1.4 1.7 5.2c.2.6.4.8.8.8.4 0 .6-.2.9-.5l2.1-2.1 4.4 3.3c.8.4 1.4.2 1.6-.8l2.9-13.6c.3-1.2-.4-1.7-1.5-1.3zM8.5 13.4l9.3-5.9c.4-.3.8-.1.5.2l-7.6 6.9-.3 3.2-1.9-4.4z"
-      fill="currentColor"
-    />
-  </svg>
-)
 
 const PERKS = [
   { emoji: E.rocket, text: 'Быстрый VPN без ограничений по трафику' },
@@ -61,14 +56,14 @@ export function LoginPage() {
 
   const auth = useMutation({
     mutationFn: async () => {
-      // в демо без бота окно Telegram не открываем, входим тестовым пользователем
+      // на тестовых данных без бота окно Telegram не открываем, входим тестовым пользователем
       const data: TelegramAuthData | null =
         USE_MOCKS && !BOT_ID
           ? {
               id: 5_812_334_097,
-              first_name: 'Демо',
+              first_name: 'Тест',
               last_name: 'Пользователь',
-              username: 'vpnhub_demo',
+              username: 'vpnhub_test',
               auth_date: Math.floor(Date.now() / 1000),
               hash: 'mock',
             }
@@ -137,7 +132,7 @@ export function LoginPage() {
         )}
 
         <div className="login-actions">
-          <Button stretched className="btn-telegram" icon={<TelegramPlane />} onClick={() => auth.mutate()} disabled={auth.isPending}>
+          <Button stretched className="btn-telegram" icon={<FaTelegramPlane size={22} />} onClick={() => auth.mutate()} disabled={auth.isPending}>
             {auth.isPending ? 'Ждём подтверждения…' : mode === 'login' ? 'Войти через Telegram' : 'Зарегистрироваться через Telegram'}
           </Button>
           {tgLink && (
@@ -153,7 +148,6 @@ export function LoginPage() {
           {mode === 'login'
             ? 'Нет аккаунта? Он создастся автоматически при первом входе.'
             : 'Уже пользовались ботом? Просто войдите — подписка и баланс сохранятся.'}
-          {USE_MOCKS && !BOT_ID && <span className="login-demo">Демо-режим: вход выполняется тестовым пользователем</span>}
         </p>
       </div>
     </main>

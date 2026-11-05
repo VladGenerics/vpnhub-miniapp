@@ -27,7 +27,7 @@ export interface ListParams {
   page_size: number
   sort?: string
   order?: SortOrder
-  /** Поиск по полям — какие поля, указано у конкретного списка */
+  /** Поиск по полям - какие поля, указано у конкретного списка */
   q?: string
 }
 
@@ -42,7 +42,7 @@ export interface Paginated<T> {
 
 // --- админ ---
 
-/** GET /admin/me — кто вошёл. Доступ есть у OWNER, ADMIN и SUPPORT_AGENT (только чтение). */
+/** GET /admin/me - кто вошёл. Доступ есть у OWNER, ADMIN и SUPPORT_AGENT (только чтение). */
 export interface AdminMe {
   id: number
   tg_user_id: number
@@ -54,7 +54,7 @@ export interface AdminMe {
 export type UserFlag = 'bot' | 'blocked' | 'premium' | 'trial' | 'active_sub'
 
 /**
- * GET /admin/users — строка списка.
+ * GET /admin/users - строка списка.
  * Поиск q: по id, tg_user_id (точное совпадение числа) и language_code.
  * Сортировка: id, tg_user_id, registered_at, balance, subscription_expires_at, referrals_count.
  */
@@ -70,7 +70,7 @@ export interface AdminUserRow {
   role: UserRole
   /** wallets.balance */
   balance: number
-  /** Статус последней подписки; NOT_FOUND — подписки нет */
+  /** Статус последней подписки; NOT_FOUND - подписки нет */
   subscription_status: SubscriptionStatus
   subscription_expires_at: ISODate | null
   /** Количество приглашённых (referrals) */
@@ -129,7 +129,7 @@ export interface AdminUserDetails extends AdminUserRow {
   }
 }
 
-/** GET /admin/users/:id/referrals — приглашённые пользователем */
+/** GET /admin/users/:id/referrals - приглашённые пользователем */
 export interface ReferralRow {
   id: number
   tg_user_id: number
@@ -142,7 +142,7 @@ export interface ReferralRow {
   deposits_total: number
 }
 
-/** GET /admin/users/:id/ledger — операции по кошельку пользователя (ledger_entries) */
+/** GET /admin/users/:id/ledger - операции по кошельку пользователя (ledger_entries) */
 export interface LedgerEntry {
   id: number
   entry_type: LedgerEntryType
@@ -154,8 +154,8 @@ export interface LedgerEntry {
 }
 
 /**
- * POST /admin/users/:id/balance — начисление (IN → ADMIN_ADD) или списание (OUT → ADMIN_DEDUCT).
- * Комментарий бэкенд пишет в audit_logs.comment. Ответ — обновлённый AdminUserDetails.
+ * POST /admin/users/:id/balance - начисление (IN → ADMIN_ADD) или списание (OUT → ADMIN_DEDUCT).
+ * Комментарий бэкенд пишет в audit_logs.comment. Ответ - обновлённый AdminUserDetails.
  */
 export interface BalanceAdjustRequest {
   direction: LedgerDirection
@@ -166,7 +166,7 @@ export interface BalanceAdjustRequest {
 // --- счета ---
 
 /**
- * GET /admin/invoices — счета.
+ * GET /admin/invoices - счета.
  * Поиск q: по id счёта, user_id, tg_user_id и external_invoice_id.
  * Сортировка: id, amount, created_at, paid_at.
  */
@@ -182,7 +182,7 @@ export interface InvoicesParams extends ListParams {
   /** Период, ISO 8601, полуинтервал [from, to). Любую из границ можно не передавать */
   from?: string
   to?: string
-  /** По какой дате период: created_at (по умолчанию) или paid_at — неоплаченные тогда не попадают */
+  /** По какой дате период: created_at (по умолчанию) или paid_at - неоплаченные тогда не попадают */
   date_by?: 'created' | 'paid'
 }
 
@@ -195,7 +195,7 @@ export interface PaymentMethodPatch {
   min_amount?: number
 }
 
-/** GET /admin/settings — часть application_settings, которую меняет админка */
+/** GET /admin/settings - часть application_settings, которую меняет админка */
 export interface AdminSettings {
   support_link: string
   /** Бонус приглашённому пользователю, ₽ */
@@ -210,7 +210,7 @@ export type AdminSettingsPatch = Partial<Pick<AdminSettings, 'support_link' | 'i
 
 // --- dashboard ---
 
-/** GET /admin/dashboard — сводка; «сегодня» и «30 дней» считаются в часовом поясе tz */
+/** GET /admin/dashboard - сводка; «сегодня» и «30 дней» считаются в часовом поясе tz */
 export interface Dashboard {
   users_total: number
   users_today: number
@@ -236,7 +236,7 @@ export type Granularity = 'hour' | 'day' | 'month' | 'year'
 
 /**
  * Параметры запросов статистики. Интервалы считаются в часовом поясе tz (IANA),
- * t в ответе — начало интервала.
+ * t в ответе - начало интервала.
  */
 export interface StatsQuery {
   from: ISODate
@@ -245,7 +245,7 @@ export interface StatsQuery {
   tz: string
 }
 
-/** GET /admin/stats/range — за какой период есть данные (от первой регистрации до сейчас) */
+/** GET /admin/stats/range - за какой период есть данные (от первой регистрации до сейчас) */
 export interface StatsRange {
   from: ISODate
   to: ISODate
@@ -253,8 +253,8 @@ export interface StatsRange {
 
 /**
  * GET /admin/stats/users. Даты блокировки бота и пометки «бот» в базе нет, поэтому по
- * времени считаются только регистрации, а доли категорий — по текущим флагам.
- * Категории не пересекаются: боты — все is_bot; «заблокировали» — люди (не боты)
+ * времени считаются только регистрации, а доли категорий - по текущим флагам.
+ * Категории не пересекаются: боты - все is_bot; «заблокировали» - люди (не боты)
  * с is_blocked_bot; активные = всего − заблокировали − боты.
  */
 export interface UsersStatsPoint {
@@ -263,9 +263,9 @@ export interface UsersStatsPoint {
   total: number
   /** Новых за интервал */
   new_total: number
-  /** Из новых — люди, которые сейчас заблокировали бота */
+  /** Из новых - люди, которые сейчас заблокировали бота */
   new_blocked: number
-  /** Из новых — те, кто сейчас помечен ботом */
+  /** Из новых - те, кто сейчас помечен ботом */
   new_bots: number
 }
 
@@ -281,7 +281,7 @@ export interface UsersStats {
   points: UsersStatsPoint[]
 }
 
-/** GET /admin/stats/deposits — оплаченные счета (по paid_at) */
+/** GET /admin/stats/deposits - оплаченные счета (по paid_at) */
 export interface DepositsStatsPoint {
   t: ISODate
   amount: number
@@ -291,12 +291,12 @@ export interface DepositsStatsPoint {
 }
 
 export interface DepositsStats {
-  /** Сумма всех пополнений до начала периода — база для накопительного графика */
+  /** Сумма всех пополнений до начала периода - база для накопительного графика */
   total_before: number
   points: DepositsStatsPoint[]
 }
 
-/** GET /admin/stats/purchases — покупки (по created_at) */
+/** GET /admin/stats/purchases - покупки (по created_at) */
 export interface PurchasesStatsPoint {
   t: ISODate
   by_kind: Partial<Record<PurchaseKind, { count: number; amount: number }>>

@@ -1,5 +1,5 @@
 import { QueryClient, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import type { AutoRenewal, CreateInvoiceRequest, PurchaseRequest, Subscription } from '@vpnhub/shared'
+import type { AutoRenewal, CreateInvoiceRequest, Invoice, PurchaseRequest, Subscription } from '@vpnhub/shared'
 import { api } from './index'
 
 const isClientError = (err: unknown) => {
@@ -25,6 +25,7 @@ export const keys = {
   paymentMethods: ['payment-methods'] as const,
   settings: ['settings'] as const,
   invoice: (id: number) => ['invoice', id] as const,
+  unpaidInvoices: ['invoices', 'UNPAID'] as const,
 }
 
 export const useMe = () => useQuery({ queryKey: keys.me, queryFn: api.getMe })
@@ -39,7 +40,7 @@ export function useActiveSubscription() {
   return { ...q, active: q.data?.status === 'ACTIVE' ? q.data : null }
 }
 
-/** Опрашивает счёт, пока он не оплачен, после оплаты обновляет баланс */
+/** Опрашивает счёт, пока он не оплачен. После оплаты обновляет баланс и список неоплаченных */
 export function useInvoice(id: number | null) {
   const qc = useQueryClient()
   return useQuery({
@@ -47,10 +48,29 @@ export function useInvoice(id: number | null) {
     enabled: id !== null,
     queryFn: async () => {
       const inv = await api.getInvoice(id!)
-      if (inv.status === 'PAID') qc.invalidateQueries({ queryKey: keys.me })
+      if (inv.status !== 'UNPAID') {
+        qc.invalidateQueries({ queryKey: keys.unpaidInvoices })
+        if (inv.status === 'PAID') qc.invalidateQueries({ queryKey: keys.me })
+      }
       return inv
     },
-    refetchInterval: (q) => (q.state.data?.status === 'UNPAID' || !q.state.data ? 2000 : false),
+    refetchInterval: (q) => (q.state.data?.status === 'UNPAID' || !q.state.data ? 3000 : false),
+  })
+}
+
+/** Неоплаченные счета. Пока они есть, список обновляется: оплаченный счёт пропадает, баланс обновляется */
+export function useUnpaidInvoices() {
+  const qc = useQueryClient()
+  return useQuery({
+    queryKey: keys.unpaidInvoices,
+    queryFn: async () => {
+      const prev = qc.getQueryData<Invoice[]>(keys.unpaidInvoices)
+      const list = await api.getUnpaidInvoices()
+      // счёт пропал из списка - его оплатили или он истёк, баланс мог измениться
+      if (prev?.some((p) => !list.some((n) => n.id === p.id))) qc.invalidateQueries({ queryKey: keys.me })
+      return list
+    },
+    refetchInterval: (q) => (q.state.data?.length ? 10_000 : false),
   })
 }
 
@@ -63,7 +83,14 @@ export function useBindEmail() {
 }
 
 export function useCreateInvoice() {
-  return useMutation({ mutationFn: (req: CreateInvoiceRequest) => api.createInvoice(req) })
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (req: CreateInvoiceRequest) => api.createInvoice(req),
+    onSuccess: (inv) => {
+      qc.setQueryData(keys.invoice(inv.id), inv)
+      qc.invalidateQueries({ queryKey: keys.unpaidInvoices })
+    },
+  })
 }
 
 export function usePurchase() {

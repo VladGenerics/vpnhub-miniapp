@@ -10,7 +10,7 @@ export interface Column<T> {
   render(row: T): ReactNode
   /** Поле сортировки на бэкенде; без него колонка не сортируется */
   sort?: string
-  /** Числовая колонка — выравнивание вправо */
+  /** Числовая колонка - выравнивание вправо */
   num?: boolean
 }
 
@@ -109,7 +109,7 @@ export function DataTable<T>({
 
 const PAGE_SIZES = [20, 50, 100]
 
-/** Номера страниц с многоточиями: 1 … 4 5 [6] 7 8 … 40 */
+/** Номера страниц с многоточиями: 1 ... 4 5 [6] 7 8 ... 40 */
 function pageList(page: number, pages: number): (number | '…')[] {
   if (pages <= 7) return Array.from({ length: pages }, (_, i) => i + 1)
   const set = new Set([1, pages, page - 1, page, page + 1].filter((p) => p >= 1 && p <= pages))

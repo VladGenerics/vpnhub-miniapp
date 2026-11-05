@@ -23,15 +23,16 @@ export function truncate(ms: number, g: Granularity) {
 }
 
 export function step(ms: number, g: Granularity, n = 1) {
+  // час считаем в миллисекундах: при переводе часов setHours пропустил бы или повторил интервал
+  if (g === 'hour') return ms + n * HOUR
   const d = new Date(ms)
-  if (g === 'hour') d.setHours(d.getHours() + n)
-  else if (g === 'day') d.setDate(d.getDate() + n)
+  if (g === 'day') d.setDate(d.getDate() + n)
   else if (g === 'month') d.setMonth(d.getMonth() + n)
   else d.setFullYear(d.getFullYear() + n)
   return d.getTime()
 }
 
-/** Период: from — начало первого интервала, to — конец последнего (не включительно) */
+/** Период: from - начало первого интервала, to - конец последнего (не включительно) */
 export interface Period {
   from: number
   to: number
@@ -46,7 +47,7 @@ export const GRANULARITIES: { value: Granularity; label: string }[] = [
 
 interface Preset {
   label: string
-  /** Сколько интервалов шага g назад от текущего; null — вся история */
+  /** Сколько интервалов шага g назад от текущего; null - вся история */
   count: number | null
 }
 
@@ -71,7 +72,7 @@ export const PRESETS: Record<Granularity, Preset[]> = {
   year: [{ label: 'Всё время', count: null }],
 }
 
-// по умолчанию: часы — 3 дня, дни — 30 дней, месяцы — год, годы — всё
+// по умолчанию: часы - 3 дня, дни - 30 дней, месяцы - год, годы - всё
 const DEFAULT_PRESET: Record<Granularity, number> = { hour: 1, day: 1, month: 1, year: 0 }
 
 export function presetPeriod(p: Preset, g: Granularity, bounds: Period): Period {
@@ -82,16 +83,22 @@ export function presetPeriod(p: Preset, g: Granularity, bounds: Period): Period 
 
 const pad = (n: number) => String(n).padStart(2, '0')
 
-/** Для адреса: дата, а для часов — дата и время */
-function encode(ms: number) {
+/** Смещение пояса для адреса: «+03:00» */
+function offset(d: Date) {
+  const m = -d.getTimezoneOffset()
+  return `${m < 0 ? '-' : '+'}${pad(Math.floor(Math.abs(m) / 60))}:${pad(Math.abs(m) % 60)}`
+}
+
+/** Для адреса: дата, а для часов - дата, время и смещение (без него час при переводе часов неоднозначен) */
+function encode(ms: number, withTime: boolean) {
   const d = new Date(ms)
   const day = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
-  return d.getHours() || d.getMinutes() ? `${day}T${pad(d.getHours())}:${pad(d.getMinutes())}` : day
+  return withTime ? `${day}T${pad(d.getHours())}:${pad(d.getMinutes())}${offset(d)}` : day
 }
 
 function decode(v: string | null): number | null {
-  if (!v || !/^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2})?$/.test(v)) return null
-  // yyyy-mm-dd без времени new Date читает как UTC — дописываем время, чтобы вышло локальное
+  if (!v || !/^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}([+-]\d{2}:\d{2}|Z)?)?$/.test(v)) return null
+  // yyyy-mm-dd без времени new Date читает как UTC - дописываем время, чтобы вышло локальное
   const ms = new Date(v.length === 10 ? `${v}T00:00` : v).getTime()
   return Number.isFinite(ms) ? ms : null
 }
@@ -114,9 +121,21 @@ export function useStatsPeriod() {
   const [sp, setSp] = useSearchParams()
   const range = useStatsRange()
   const g = (GRANULARITIES.some((x) => x.value === sp.get('g')) ? sp.get('g') : 'day') as Granularity
-  const [now] = useState(() => Date.now())
+  // «сейчас» двигается, когда начинается новый интервал: иначе свежий час или день не попал бы в запрос
+  const [now, setNow] = useState(() => Date.now())
+  useEffect(() => {
+    const next = step(truncate(now, g), g)
+    const t = setTimeout(() => setNow(Date.now()), Math.min(Math.max(1000, next - Date.now() + 1000), 2 ** 31 - 1))
+    // после сна компьютера таймер мог проспать границу
+    const onFocus = () => Date.now() >= next && setNow(Date.now())
+    window.addEventListener('focus', onFocus)
+    return () => {
+      clearTimeout(t)
+      window.removeEventListener('focus', onFocus)
+    }
+  }, [now, g])
 
-  // грузим всю историю (по часам — последний месяц) до конца текущего интервала
+  // грузим всю историю (по часам - последний месяц) до конца текущего интервала
   const bounds = useMemo<Period | null>(() => {
     if (!range.data) return null
     const start = new Date(range.data.from).getTime()
@@ -127,7 +146,7 @@ export function useStatsPeriod() {
   const fromUrl = useMemo<Period | null>(() => {
     const from = decode(sp.get('from'))
     const to = decode(sp.get('to'))
-    // в адресе «по» — последний день включительно
+    // в адресе «по» - последний день включительно
     return from !== null && to !== null ? { from, to: g === 'hour' ? to : step(truncate(to, 'day'), 'day') } : null
   }, [sp, g])
 
@@ -136,35 +155,63 @@ export function useStatsPeriod() {
   const [period, setPeriodState] = useState<Period | null>(null)
   const urlTimer = useRef<ReturnType<typeof setTimeout>>(undefined)
 
-  // первый расчёт и смена шага — когда известны границы
+  // первый расчёт и смена шага - когда известны границы
   const boundsKey = bounds ? `${g}:${bounds.from}:${bounds.to}` : ''
   const lastKey = useRef('')
-  useEffect(() => {
-    if (!bounds || lastKey.current === boundsKey) return
-    lastKey.current = boundsKey
-    setPeriodState(initial(bounds))
-  }, [bounds, boundsKey, initial])
+  const lastBounds = useRef<{ g: Granularity; b: Period } | null>(null)
+  const periodRef = useRef(period)
+  periodRef.current = period
 
   const writeUrl = useCallback(
     (p: Period, nextG: Granularity, immediate = false) => {
       clearTimeout(urlTimer.current)
-      const write = () =>
+      urlTimer.current = undefined
+      const write = () => {
+        urlTimer.current = undefined
         setSp(
           (prev) => {
             const n = new URLSearchParams(prev)
             n.set('g', nextG)
-            n.set('from', encode(p.from))
-            n.set('to', encode(nextG === 'hour' ? p.to : step(p.to, 'day', -1)))
+            n.set('from', encode(p.from, nextG === 'hour'))
+            n.set('to', encode(nextG === 'hour' ? p.to : step(p.to, 'day', -1), nextG === 'hour'))
             return n
           },
           { replace: true },
         )
+      }
       if (immediate) write()
       else urlTimer.current = setTimeout(write, 400)
     },
     [setSp],
   )
   useEffect(() => () => clearTimeout(urlTimer.current), [])
+
+  useEffect(() => {
+    if (!bounds || lastKey.current === boundsKey) return
+    lastKey.current = boundsKey
+    const prev = lastBounds.current
+    lastBounds.current = { g, b: bounds }
+    const cur = periodRef.current
+    // начался новый интервал при том же шаге: выбор не сбрасываем, а период «по сейчас» сдвигаем вперёд
+    if (prev && prev.g === g && cur) {
+      if (cur.to !== prev.b.to) return
+      let shifted = cur
+      while (shifted.to < bounds.to) shifted = { from: step(shifted.from, g), to: step(shifted.to, g) }
+      const next = clampPeriod(shifted, g, bounds)
+      setPeriodState(next)
+      if (fromUrl) writeUrl(next, g, true)
+      return
+    }
+    setPeriodState(initial(bounds))
+  }, [bounds, boundsKey, initial, g, fromUrl, writeUrl])
+
+  // адрес поменяли снаружи («Назад» в браузере, ручная правка): период идёт за ним.
+  // Пока ждёт отложенная запись, адрес отстаёт от ползунка - тогда его не слушаем
+  useEffect(() => {
+    if (!fromUrl || !bounds || lastKey.current !== boundsKey || urlTimer.current) return
+    const c = clampPeriod(fromUrl, g, bounds)
+    setPeriodState((cur) => (cur && cur.from === c.from && cur.to === c.to ? cur : c))
+  }, [fromUrl, bounds, boundsKey, g])
 
   const setPeriod = useCallback(
     (p: Period, immediate = false) => {
@@ -178,7 +225,10 @@ export function useStatsPeriod() {
 
   const setGranularity = useCallback(
     (next: Granularity) => {
-      // новый шаг — новый период по умолчанию; границы пересчитаются эффектом выше
+      // отложенная запись от ползунка иначе вернула бы в адрес старый шаг
+      clearTimeout(urlTimer.current)
+      urlTimer.current = undefined
+      // новый шаг - новый период по умолчанию; границы пересчитаются эффектом выше
       setSp(
         (prev) => {
           const n = new URLSearchParams(prev)
@@ -198,7 +248,7 @@ export function useStatsPeriod() {
     [bounds, g],
   )
 
-  // период в state может отставать от шага на один рендер — тогда ещё не готов
+  // период в state может отставать от шага на один рендер - тогда ещё не готов
   const ready = period && bounds && lastKey.current === boundsKey ? period : null
 
   return { g, bounds, period: ready, setPeriod, setGranularity, query, rangeError: range.error, refetchRange: range.refetch }
@@ -239,7 +289,7 @@ export function bucketLabel(ms: number, g: Granularity) {
   return String(d.getFullYear())
 }
 
-/** Подпись деления оси: коротко; на 1 января — год */
+/** Подпись деления оси: коротко; на 1 января - год */
 export function tickLabel(ms: number, g: Granularity) {
   const d = new Date(ms)
   if (g === 'year') return String(d.getFullYear())
@@ -249,7 +299,7 @@ export function tickLabel(ms: number, g: Granularity) {
   return `${d.getDate()} ${MONTHS_SHORT[d.getMonth()]}`
 }
 
-/** Период словами: «2 окт — 1 ноя 2026» */
+/** Период словами: «2 окт - 1 ноя 2026» */
 export function periodLabel(p: Period, g: Granularity) {
   const last = g === 'hour' ? p.to - HOUR : step(p.to, g, -1)
   if (g === 'year') {

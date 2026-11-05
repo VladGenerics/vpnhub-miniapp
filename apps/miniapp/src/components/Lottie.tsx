@@ -1,21 +1,45 @@
 import { useEffect, useRef, useState } from 'react'
 import type { AnimationItem } from 'lottie-web/build/player/lottie_light'
+import { strFromU8, unzipSync } from 'fflate'
 import { emojiFolder } from '../lib/palette'
 import { useApp } from '../store/AppStore'
+
+// Эмодзи лежат в формате .lottie (dotLottie): zip с manifest.json и animations/<id>.json.
+// Распаковываем сами и отдаём json в lottie-web.
+function readDotLottie(buf: ArrayBuffer) {
+  const files = unzipSync(new Uint8Array(buf))
+  let id: string | undefined
+  try {
+    id = JSON.parse(strFromU8(files['manifest.json'])).animations?.[0]?.id
+  } catch {
+    /* манифеста нет - берём первую анимацию */
+  }
+  const file = (id && files[`animations/${id}.json`]) || Object.entries(files).find(([k]) => k.startsWith('animations/') && k.endsWith('.json'))?.[1]
+  if (!file) throw new Error('в .lottie нет анимации')
+  return JSON.parse(strFromU8(file))
+}
 
 // кэш анимаций: один fetch на файл, каждому экземпляру клон (lottie-web мутирует объект)
 const cache = new Map<string, Promise<unknown>>()
 
 // плеер (~150 КБ) грузим отдельно: первый экран не ждёт его, эмодзи проявляются позже
 let player: Promise<typeof import('lottie-web/build/player/lottie_light').default> | null = null
-const loadPlayer = () => (player ??= import('lottie-web/build/player/lottie_light').then((m) => m.default))
+// чанк плеера мог не скачаться (обрыв сети, новый релиз), тогда при следующем эмодзи пробуем снова
+const loadPlayer = () =>
+  (player ??= import('lottie-web/build/player/lottie_light').then(
+    (m) => m.default,
+    (e) => {
+      player = null
+      throw e
+    },
+  ))
 
 function load(path: string) {
   let p = cache.get(path)
   if (!p) {
-    p = fetch(`${import.meta.env.BASE_URL}${path}.json`).then((r) => {
+    p = fetch(`${import.meta.env.BASE_URL}${path}.lottie`).then(async (r) => {
       if (!r.ok) throw new Error(`HTTP ${r.status}`)
-      return r.json()
+      return readDotLottie(await r.arrayBuffer())
     })
     // ошибку не кэшируем, в следующий раз попробуем снова
     p.catch(() => cache.delete(path))

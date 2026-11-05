@@ -5,6 +5,7 @@ import { Button } from '../components/Controls'
 import { E } from '../data/emoji'
 import { HELP_ARTICLES, INFO_ARTICLES, SUPPORT_URL } from '../data/articles'
 import { openSupport } from '../lib/telegram'
+import { useSettings } from '../api/queries'
 
 const CONFIG = {
   info: {
@@ -39,6 +40,8 @@ export function ArticlesPage({ kind }: { kind: ArticlesKind }) {
 }
 
 export function SupportBlock() {
+  // ссылку задаёт админка (настройки), своя - только запасная, пока настройки не пришли
+  const { data: settings } = useSettings()
   return (
     <div className="support-block">
       <Lottie name={E.handshake} size={44} />
@@ -46,7 +49,7 @@ export function SupportBlock() {
         <div className="cell-title">Не нашли ответ?</div>
         <div className="cell-subtitle">Поддержка отвечает в течение 15 минут</div>
       </div>
-      <Button size="m" onClick={() => openSupport(SUPPORT_URL)}>
+      <Button size="m" onClick={() => openSupport(settings?.support_link || SUPPORT_URL)}>
         Написать
       </Button>
     </div>

@@ -5,7 +5,7 @@ export const STALE_MS = 36e5
 
 export const isStale = (i: { status: string; created_at: string }, now = Date.now()) => i.status === 'UNPAID' && now - Date.parse(i.created_at) > STALE_MS
 
-/** «3 ч», «2 дн» — сколько счёт уже ждёт */
+/** «3 ч», «2 дн» - сколько счёт уже ждёт */
 export function waited(created_at: string, now = Date.now()) {
   const h = Math.floor((now - Date.parse(created_at)) / 36e5)
   return h < 24 ? `${h} ч` : `${Math.floor(h / 24)} дн`

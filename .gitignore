@@ -1,9 +1,21 @@
 node_modules/
 dist/
-.DS_Store
+*.tsbuildinfo
+.vite/
+coverage/
 *.log
+
+# настройки окружения: в git только образец
 .env
-.env.local
+.env.*
+!.env.example
+
+# редакторы и система
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
 
 # материалы заказчика и локальные настройки
 Reference/

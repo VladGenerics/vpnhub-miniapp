@@ -114,6 +114,9 @@ export function AutoRenewSheet({ sub, open, onClose }: { sub: Subscription; open
         <Button stretched onClick={submit} disabled={save.isPending}>
           {save.isPending ? 'Сохраняем…' : 'Сохранить'}
         </Button>
+        <Button stretched variant="ghost" onClick={onClose}>
+          Назад
+        </Button>
       </div>
     </Sheet>
   )

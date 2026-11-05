@@ -1,5 +1,5 @@
-import { useEffect, useState, type FormEvent } from 'react'
-import type { AdminSettings } from '@vpnhub/shared'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
+import type { AdminSettings, AdminSettingsPatch } from '@vpnhub/shared'
 import { useSettings, useUpdateSettings } from '../api/queries'
 import { useAuth } from '../auth/AuthProvider'
 import { Segmented } from '../components/Segmented'
@@ -10,7 +10,7 @@ import { setThemeMode, useThemeMode, type ThemeMode } from '../lib/theme'
 
 const MAX_BONUS = 100_000
 
-/** «@vpnhub_support» и «t.me/…» достраиваем до полной ссылки, их обычно так и вставляют */
+/** «@vpnhub_support» и «t.me/...» достраиваем до полной ссылки, их обычно так и вставляют */
 function normalizeLink(v: string) {
   const t = v.trim()
   if (/^@\w{3,}$/.test(t)) return `https://t.me/${t.slice(1)}`
@@ -18,7 +18,7 @@ function normalizeLink(v: string) {
   return t
 }
 
-/** Ссылка поддержки: https://t.me/…, любая https-ссылка или tg:// */
+/** Ссылка поддержки: https://t.me/..., любая https-ссылка или tg:// */
 function linkError(v: string) {
   if (!v.trim()) return 'Укажите ссылку'
   try {
@@ -41,8 +41,16 @@ function SettingsForm({ s }: { s: AdminSettings }) {
   const referral = useMoneyInput(String(s.referral_bonus))
   const [touched, setTouched] = useState(false)
 
-  // после сохранения подставляем то, что вернул сервер
-  useEffect(() => setLink(s.support_link), [s.support_link])
+  // пришли новые данные (сохранение, другой админ, фоновое обновление): поля, которые здесь не трогали,
+  // подтягивают их, иначе при сохранении другого поля ушло бы старое значение
+  const base = useRef(s)
+  useEffect(() => {
+    const prev = base.current
+    base.current = s
+    if (normalizeLink(link) === prev.support_link) setLink(s.support_link)
+    if (invited.value === prev.invited_bonus) invited.reset()
+    if (referral.value === prev.referral_bonus) referral.reset()
+  }, [s])
 
   const errors = {
     link: linkError(link),
@@ -63,21 +71,19 @@ function SettingsForm({ s }: { s: AdminSettings }) {
     e.preventDefault()
     setTouched(true)
     if (hasErrors || !dirty) return
-    update.mutate(
-      {
-        support_link: normalizeLink(link),
-        invited_bonus: invited.value,
-        referral_bonus: referral.value,
+    // отправляем только изменённые поля
+    const patch: AdminSettingsPatch = {}
+    if (normalizeLink(link) !== s.support_link) patch.support_link = normalizeLink(link)
+    if (invited.value !== s.invited_bonus) patch.invited_bonus = invited.value
+    if (referral.value !== s.referral_bonus) patch.referral_bonus = referral.value
+    update.mutate(patch, {
+      onSuccess: (r) => {
+        setLink(r.support_link)
+        setTouched(false)
+        toast('Настройки сохранены')
       },
-      {
-        onSuccess: (r) => {
-          setLink(r.support_link)
-          setTouched(false)
-          toast('Настройки сохранены')
-        },
-        onError: (err) => toast((err as Error).message, 'error'),
-      },
-    )
+      onError: (err) => toast((err as Error).message, 'error'),
+    })
   }
 
   const show = (k: keyof typeof errors) => (touched ? errors[k] : null)

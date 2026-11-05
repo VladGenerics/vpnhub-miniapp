@@ -1,6 +1,6 @@
 import type { DeviceSlot, InvoiceStatus, LedgerEntryType, PaymentMethod, PaymentProvider, PurchaseKind, UserRole } from '@vpnhub/shared'
 
-// Демо-база примерно за 14 месяцев. Генератор с seed, поэтому цифры не скачут между перезагрузками.
+// Тестовая база примерно за 14 месяцев. Генератор с seed, поэтому цифры не скачут между перезагрузками.
 // Порядок как в БД: пользователи → счета → покупки → кошелёк.
 
 export const DAY = 864e5
@@ -138,7 +138,7 @@ const REF_LINKS = [
   { code: 'promo2026', description: 'Промокампания 2026' },
 ]
 
-/** Цена дня одного устройства по длительности и скидки за устройства — как в prices / device_count_discounts */
+/** Цена дня одного устройства по длительности и скидки за устройства - как в prices / device_count_discounts */
 export const PRICES = [
   { min_days: 1, price_per_day: 6 },
   { min_days: 30, price_per_day: 5 },
@@ -244,7 +244,7 @@ function generate() {
       earnings.push({ user_id: u.referrer_id, amount: settings.referral_bonus, reason: 'BONUS_FROM_INVITE', created_at: u.registered_at })
     }
 
-    // попытки оплаты: первая — в первые дни, дальше — с интервалами
+    // попытки оплаты: первая - в первые дни, дальше - с интервалами
     const payer = rnd() < (u.is_blocked_bot ? 0.3 : 0.62)
     const times: number[] = []
     if (payer) {
@@ -361,7 +361,7 @@ function generate() {
     u.balance = balance
   }
 
-  // реферальные бонусы — в кошелёк пригласившего
+  // реферальные бонусы - в кошелёк пригласившего
   for (const e of earnings) {
     const u = users[e.user_id - 1]
     u.balance = round2(u.balance + e.amount)
@@ -400,7 +400,7 @@ const PLATFORMS = [
   ['Android', 'Galaxy S24', '14', 'Hiddify'],
 ] as const
 
-/** Слоты устройств подписки — строятся при открытии карточки */
+/** Слоты устройств подписки - строятся при открытии карточки */
 export function slotsFor(sub: MSubscription): DeviceSlot[] {
   const r = mulberry32(sub.id)
   return Array.from({ length: sub.devices }, (_, i) => {
