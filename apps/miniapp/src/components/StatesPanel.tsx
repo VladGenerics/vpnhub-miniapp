@@ -100,12 +100,25 @@ export default function StatesPanel() {
         />
       </div>
       <div className="states-row">
-        <span>Занято слотов</span>
+        <span>Всего слотов</span>
         <Opts
           items={[
-            [0, '0'],
-            [2, '2'],
-            [5, '5 из 5'],
+            [1, '1'],
+            [5, '5'],
+            [20, '20'],
+            [100, '100'],
+          ]}
+          value={st.hasSub ? st.total : null}
+          onChange={(v) => apply(() => demoState.setSlots(v))}
+        />
+      </div>
+      <div className="states-row">
+        <span>Занято{st.hasSub ? `: ${st.occupied} из ${st.total}` : ''}</span>
+        <Opts
+          items={[
+            [0, 'Нет'],
+            [Math.max(1, Math.floor(st.total / 2)), 'Половина'],
+            [st.total, 'Все'],
           ]}
           value={st.hasSub ? st.occupied : null}
           onChange={(v) => apply(() => demoState.setOccupied(v))}

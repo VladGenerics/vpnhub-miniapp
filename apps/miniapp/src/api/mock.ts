@@ -42,6 +42,14 @@ const emptySlot = (id: number): DeviceSlot => ({ ...slot(id, '', '', '', '', 0),
 
 const expiresIn = Number(params.get('expires'))
 
+const DEMO_DEVICES = [
+  ['macOS', 'MacBook', '26.7', 'Happ/5.3.0', 14],
+  ['iOS', 'iPhone 17 Pro', '26.6', 'Happ/5.3.0', 13],
+  ['Android', 'Pixel 10', '17', 'v2rayNG/1.10.8', 9],
+  ['Windows', 'Desktop PC', '11 24H2', 'Hiddify/2.5.7', 5],
+  ['Linux', 'ThinkPad X1', 'Ubuntu 26.04', 'Clash.Meta/1.19.4', 2],
+]
+
 const DEMO_SLOTS = () => [
   slot(1, 'macOS', 'MacBook', '26.7', 'Happ/5.3.0', 14),
   slot(2, 'iOS', 'iPhone 17 Pro', '26.6', 'Happ/5.3.0', 13),
@@ -260,6 +268,7 @@ export const demoState = {
       balance: me.balance,
       unpaid: unpaid > 0,
       occupied: subscription?.slots.filter((s) => s.is_occupied).length ?? 0,
+      total: subscription?.slots.length ?? 0,
     }
   },
   setSub(on: boolean) {
@@ -284,9 +293,18 @@ export const demoState = {
     for (const [id, inv] of invoices) if (inv.status === 'UNPAID') invoices.delete(id)
     if (on) seedInvoices()
   },
-  /** сколько из пяти слотов занято */
+  /** сколько слотов занято из имеющихся */
   setOccupied(n: number) {
     if (!subscription) return
-    subscription.slots = DEMO_SLOTS().map((s, i) => (i < n ? s : { ...s, ...FREE }))
+    subscription.slots.forEach((s, i) => {
+      if (i < n && !s.is_occupied) Object.assign(s, slot(s.id, ...(DEMO_DEVICES[i % DEMO_DEVICES.length] as [string, string, string, string, number])))
+      if (i >= n) Object.assign(s, FREE)
+    })
+  },
+  /** сколько всего слотов в подписке: лишние убираются с конца, недостающие добавляются пустыми */
+  setSlots(total: number) {
+    if (!subscription) return
+    const s = subscription.slots
+    subscription.slots = total <= s.length ? s.slice(0, total) : [...s, ...Array.from({ length: total - s.length }, (_, i) => emptySlot(s.length + i + 1))]
   },
 }

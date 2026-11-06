@@ -600,10 +600,19 @@ p {
 
 .stepper-value {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: center;
-  min-width: 58px;
-  padding: 0 4px;
+  min-width: 80px;
+  height: 40px;
+  padding: 0 10px;
+  margin: 0 2px;
+  /* выглядит как поле ввода: подложка, рамка, карандаш */
+  border: 1.5px solid color-mix(in srgb, var(--hint) 38%, transparent);
+  border-radius: 12px;
+  background: var(--chip);
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
   font-size: 18px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
@@ -616,21 +625,18 @@ p {
   max-width: 7ch;
   padding: 2px 0;
   border: 0;
-  border-bottom: 2px solid transparent;
   outline: 0;
   background: none;
   color: var(--text);
   font: inherit;
   text-align: center;
   caret-color: var(--accent);
-  transition: border-color 0.2s;
 }
-.stepper-value:hover input {
-  border-bottom-color: var(--sep);
+.stepper-value:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-glow);
 }
-.stepper-value input:focus {
-  border-bottom-color: var(--accent);
-}
+
 
 .stepper-value small {
   font-size: 13px;
@@ -2709,3 +2715,14 @@ body:has(.app.is-sidebar-collapsed) .is-modal .sheet {
   font-size: 13px;
 }
 
+/* окна с настройками: между блоками больше воздуха, подпись не прижата к предыдущей карточке */
+.sheet-body > .section-title {
+  margin-top: 22px;
+}
+.sheet-body > .section-title:first-of-type {
+  margin-top: 16px;
+}
+
+.plan-row > .cell-title {
+  white-space: nowrap;
+}

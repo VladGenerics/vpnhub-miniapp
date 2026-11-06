@@ -43,7 +43,7 @@ function RotatingTitle() {
 const FEATURES = [
   { emoji: E.rocket, title: 'Высокая скорость', subtitle: 'Без ограничений по трафику' },
   { emoji: E.globe, title: 'Серверы в 12 странах', subtitle: 'Выбирайте ближайший' },
-  { emoji: E.phone, title: `До ${MAX_DEVICES} устройств`, subtitle: 'Одна ссылка на все устройства' },
+  { emoji: E.phone, title: 'Сколько нужно устройств', subtitle: 'Одна ссылка на все, число выбираете сами' },
   { emoji: E.handshake, title: 'Поддержка 24/7', subtitle: 'Ответим в течение 15 минут' },
 ]
 
