@@ -1157,12 +1157,28 @@ p {
   margin: 0;
 }
 
+.amount-hint {
+  padding: 14px 16px 0;
+  text-align: center;
+  font-size: 13px;
+  color: var(--hint);
+}
+
+/* поле суммы - явно поле ввода: подложка, рамка при фокусе, карандаш */
 .amount-input {
+  position: relative;
   display: flex;
   align-items: baseline;
   justify-content: center;
   gap: 6px;
-  padding: 18px 16px 4px;
+  margin: 8px 16px 0;
+  padding: 8px 44px;
+  border: 1.5px solid var(--sep);
+  border-radius: 14px;
+  background: var(--chip);
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
   font-size: clamp(34px, calc(11vw / var(--z)), 44px);
   font-weight: 700;
   line-height: 1.2;
@@ -1213,9 +1229,29 @@ p {
   color: var(--hint);
 }
 
-.amount-input > span:last-child {
+.amount-input:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+}
+
+.amount-currency {
   flex: none;
   color: var(--hint);
+}
+
+.amount-edit {
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--hint);
+}
+.amount-input:focus-within .amount-edit {
+  color: var(--accent);
+}
+
+.amount-hint + .amount-presets {
+  padding-top: 8px;
 }
 
 .amount-input.has-error input {
@@ -1252,39 +1288,6 @@ p {
 }
 
 /* ============ Профиль ============ */
-.profile-head {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  padding: 20px 0 0;
-}
-
-.avatar {
-  width: 92px;
-  height: 92px;
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  object-fit: cover;
-  background: linear-gradient(140deg, var(--accent-2), var(--accent-deep));
-  color: var(--on-accent);
-  font-size: 34px;
-  font-weight: 700;
-  box-shadow: 0 10px 28px var(--accent-glow);
-}
-
-.profile-head h1 {
-  margin-top: 14px;
-  font-size: 24px;
-  font-weight: 700;
-}
-
-.profile-head p {
-  color: var(--hint);
-  margin-top: 2px;
-}
-
 .app-version {
   text-align: center;
   font-size: 13px;
@@ -1538,12 +1541,11 @@ p {
 }
 
 /* мобильные: выдвижная панель */
+/* шторка всегда на всю ширину экрана */
 .is-sheet .sheet {
   left: 0;
   right: 0;
   bottom: 0;
-  max-width: 560px;
-  margin: 0 auto;
   max-height: calc(92dvh / var(--z));
   border-radius: 22px 22px 0 0;
   padding: 0 16px calc(16px + var(--safe-bottom));
@@ -1559,6 +1561,8 @@ p {
   height: calc(100dvh / var(--z));
   max-height: calc(100dvh / var(--z));
   border-radius: 0;
+  /* на весь экран: не залезать под вырез и строку состояния */
+  padding-top: env(safe-area-inset-top);
 }
 
 .sheet-grip {
@@ -1860,8 +1864,7 @@ p {
   }
 }
 
-.hero-device,
-.avatar {
+.hero-device {
   animation: pop-in 0.7s var(--spring-bouncy) backwards;
 }
 
@@ -2127,6 +2130,146 @@ p {
 .has-sidebar .page.has-nav {
   padding-bottom: 40px;
   --cta-bottom: 16px;
+}
+
+/* ============ ПК: две колонки ============ */
+/* на телефоне и в узком окне обёртки колонок не участвуют в раскладке */
+.cols,
+.col {
+  display: contents;
+}
+/* две колонки - вместе с боковой панелью, с 960 px */
+@media (min-width: 960px) {
+  .has-sidebar .page.is-wide {
+    max-width: 1120px;
+    padding: 28px 28px 40px;
+  }
+  .has-sidebar .page.is-wide .cols {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 0 28px;
+    align-items: start;
+  }
+  .has-sidebar .page.is-wide .col {
+    display: block;
+    min-width: 0;
+  }
+  .has-sidebar .page.is-wide .col > :first-child,
+  .has-sidebar .page.is-wide .col > .tab-content:first-child > :first-child {
+    margin-top: 0;
+  }
+
+  /* шапка по центру, как на телефоне, но компактнее: над двумя колонками смотрится ровно */
+  .has-sidebar .page.is-wide > .hero {
+    padding: 0 0 26px;
+  }
+  .has-sidebar .page.is-wide > .hero > .hero-emoji {
+    zoom: 0.8;
+  }
+  .has-sidebar .page.is-wide > .hero .hero-subtitle {
+    max-width: none;
+  }
+
+  /* главное страницы (статус подписки, баланс) - полосой во всю ширину над колонками */
+  .has-sidebar .page.is-wide .balance-hero + .cols,
+  .has-sidebar .page.is-wide .balance-card + .cols,
+  .has-sidebar .page.is-wide .load-error + .cols {
+    margin-top: 26px;
+  }
+  /* подписка: карточки статуса и автопродления внутри колонок */
+  .has-sidebar .page.is-wide .col .status-card {
+    margin-top: 0;
+  }
+  .has-sidebar .page.is-wide .status-tariff {
+    margin-top: -2px;
+    font-size: 14px;
+    color: var(--hint);
+  }
+  .has-sidebar .page.is-wide .renew-card .renew-status {
+    padding: 12px 14px;
+  }
+  .has-sidebar .page.is-wide .balance-hero {
+    padding: 0;
+  }
+  .has-sidebar .page.is-wide > .balance-card {
+    margin-top: 0;
+    padding: 16px 20px 16px 22px;
+  }
+  .has-sidebar .page.is-wide .cols + .section-footer {
+    margin-top: 8px;
+  }
+
+  /* выход - под обеими колонками, по центру */
+  .has-sidebar .page.is-wide > .logout .section {
+    margin-top: 26px;
+  }
+  .has-sidebar .page.is-wide > .logout .cell {
+    justify-content: center;
+  }
+  .has-sidebar .page.is-wide > .logout .cell-main {
+    flex: none;
+  }
+
+  /* кнопка оплаты - внизу своей колонки, а не прилипшая к низу окна */
+  .has-sidebar .page.is-wide .cols .sticky-cta {
+    position: static;
+  }
+  .has-sidebar .page.is-wide .cols .sticky-cta::before {
+    display: none;
+  }
+
+  /* пополнение без неоплаченных счетов: форма на всю ширину */
+  .has-sidebar .page.is-wide .topup-form {
+    margin-top: 26px;
+  }
+  .has-sidebar .page.is-wide .topup-form > :first-child {
+    margin-top: 0;
+  }
+  .has-sidebar .page.is-wide .topup-form .sticky-cta {
+    position: static;
+  }
+  .has-sidebar .page.is-wide .topup-form .sticky-cta::before {
+    display: none;
+  }
+  /* «Оформление»: настроек мало - одна карточка по центру */
+  .has-sidebar .page.is-wide.is-narrow {
+    max-width: 680px;
+  }
+  /* статьи плиткой: каждая - отдельная карточка */
+  .has-sidebar .page.is-wide > .hero + .article-grid > .section:first-child {
+    margin-top: 0;
+  }
+  .has-sidebar .page.is-wide :is(.article-grid, .tile-grid) .section-card {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    background: none;
+    overflow: visible;
+  }
+  .has-sidebar .page.is-wide :is(.article-grid, .tile-grid) .cell {
+    min-height: 76px;
+    border-radius: 18px;
+    background: var(--card);
+  }
+  .has-sidebar .page.is-wide :is(.article-grid, .tile-grid) .cell.is-interactive:hover {
+    background: var(--card-hover);
+  }
+  .has-sidebar .page.is-wide :is(.article-grid, .tile-grid) .cell::before {
+    display: none;
+  }
+}
+
+@media (min-width: 1180px) {
+  .has-sidebar .page.is-wide {
+    padding: 36px 40px 48px;
+  }
+}
+/* Full HD и шире: контент почти во всю ширину, поля по бокам ~80 px (просьба заказчика); на 2K дальше не растягиваем */
+@media (min-width: 1440px) {
+  .has-sidebar .page.is-wide:not(.is-narrow) {
+    max-width: 1760px;
+    padding: 36px 80px 48px;
+  }
 }
 
 /* тост - по центру области контента, а не всего окна */
@@ -2493,3 +2636,50 @@ body:has(.app.is-sidebar-collapsed) .is-modal .sheet {
   display: grid;
   place-items: center;
 }
+
+/* ============ Панель состояний (только тестовые данные, ?states=1) ============ */
+.states-fab {
+  position: fixed;
+  top: 12px;
+  right: 12px;
+  z-index: 90;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: var(--card);
+  color: var(--accent);
+  box-shadow: 0 6px 20px rgb(0 0 0 / 0.18);
+}
+.states-panel {
+  position: fixed;
+  top: 12px;
+  right: 12px;
+  z-index: 90;
+  width: min(340px, calc(100vw / var(--z) - 24px));
+  max-height: calc(100dvh / var(--z) - 24px);
+  overflow-y: auto;
+  padding: 12px 14px 14px;
+  border-radius: 18px;
+  background: var(--card);
+  box-shadow: 0 12px 40px rgb(0 0 0 / 0.25);
+}
+.states-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+.states-row {
+  display: grid;
+  gap: 6px;
+  margin-top: 10px;
+  font-size: 13px;
+  color: var(--hint);
+}
+.states-row .chip {
+  padding: 6px 8px;
+  font-size: 13px;
+}
+

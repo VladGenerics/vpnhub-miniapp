@@ -5,6 +5,7 @@ import { isTelegram, useTelegramBackButton } from '../lib/telegram'
 import { useIsWide } from '../hooks/useMediaQuery'
 import { Lottie } from './Lottie'
 import { SIDEBAR_PAGES } from './Sidebar'
+import { NAV_ROUTES } from './nav'
 
 // Назад по истории приложения. Если страницу открыли напрямую (ссылкой, после входа), идём на главную,
 // а не уходим с сайта. history.length не подходит, он считает и чужие страницы вкладки.
@@ -14,16 +15,20 @@ export function useGoBack() {
 }
 
 // Обёртка страницы. Для вложенных (back) в Telegram показываем родную кнопку «Назад», в браузере - свою.
-// При боковой панели «Информация», «Помощь» и «Оформление» - разделы меню, «Назад» там лишний
-export function Page({ back: nested, children, className }: { back?: boolean; children: ReactNode; className?: string }) {
+// При боковой панели «Информация», «Помощь» и «Оформление» - разделы меню, «Назад» там лишний.
+// Отступ снизу под нижнюю панель - по адресу: «Пополнить» бывает и с «Назад», а панель там всё равно есть.
+// wide - страница раскладывается на ПК в две колонки (см. Cols), шапка становится строкой
+export function Page({ back: nested, wide: twoCol, children, className }: { back?: boolean; wide?: boolean; children: ReactNode; className?: string }) {
   const goBack = useGoBack()
   const wide = useIsWide()
-  const { pathname } = useLocation()
-  const back = nested && !(wide && SIDEBAR_PAGES.includes(pathname))
+  const { pathname, state } = useLocation()
+  // пришли не из меню, а по ссылке со страницы (state.back) - «Назад» нужен и при боковой панели
+  const fromPage = !!(state as { back?: boolean } | null)?.back
+  const back = nested && !(wide && SIDEBAR_PAGES.includes(pathname) && !fromPage)
   useTelegramBackButton(back ? goBack : null)
 
   return (
-    <main className={`page ${back ? 'is-nested' : 'has-nav'} ${className ?? ''}`}>
+    <main className={`page ${NAV_ROUTES.includes(pathname) ? 'has-nav' : 'is-nested'} ${twoCol ? 'is-wide' : ''} ${className ?? ''}`}>
       {back && !isTelegram && (
         <button className="web-back" onClick={goBack}>
           <LuChevronLeft size={20} />
@@ -32,6 +37,19 @@ export function Page({ back: nested, children, className }: { back?: boolean; ch
       )}
       {children}
     </main>
+  )
+}
+
+/**
+ * Две колонки на ПК. На телефоне и в узком окне обёртки «прозрачные» (display: contents),
+ * и блоки идут одним столбцом, как без них
+ */
+export function Cols({ left, right }: { left: ReactNode; right: ReactNode }) {
+  return (
+    <div className="cols">
+      <div className="col">{left}</div>
+      <div className="col">{right}</div>
+    </div>
   )
 }
 

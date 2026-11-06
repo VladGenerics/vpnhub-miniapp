@@ -10,13 +10,15 @@ interface Props {
   children: ReactNode
   /** Можно ли растянуть на весь экран свайпом вверх */
   expandable?: boolean
+  /** На телефоне сразу во весь экран (настройки с длинным содержимым) */
+  full?: boolean
 }
 
 const CLOSE_MS = 260
 const FOCUSABLE = 'a[href], button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex]:not([tabindex="-1"])'
 
 // На телефоне - шторка снизу (вверх разворачивается, вниз закрывается), на ПК - обычная модалка
-export function Sheet({ open, onClose, children, expandable = true }: Props) {
+export function Sheet({ open, onClose, children, expandable = true, full = false }: Props) {
   const isDesktop = useIsDesktop()
   const [mounted, setMounted] = useState(open)
   const [closing, setClosing] = useState(false)
@@ -31,7 +33,7 @@ export function Sheet({ open, onClose, children, expandable = true }: Props) {
     if (open) {
       setMounted(true)
       setClosing(false)
-      setExpanded(false)
+      setExpanded(full)
     } else if (mounted) {
       setClosing(true)
       const t = setTimeout(() => {
@@ -98,7 +100,7 @@ export function Sheet({ open, onClose, children, expandable = true }: Props) {
         haptic.tap('soft')
       }
     } else if (dy > 90 || (fast && dy > 30)) {
-      if (expanded) setExpanded(false)
+      if (expanded && !full) setExpanded(false)
       else onClose()
     }
   }

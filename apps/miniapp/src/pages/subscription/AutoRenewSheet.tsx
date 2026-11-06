@@ -51,7 +51,7 @@ export function AutoRenewSheet({ sub, open, onClose }: { sub: Subscription; open
     )
 
   return (
-    <Sheet open={open} onClose={onClose}>
+    <Sheet open={open} onClose={onClose} full>
       <div className="sheet-head">
         <Lottie name={E.renewTile} size={72} />
         <h2>Автопродление</h2>

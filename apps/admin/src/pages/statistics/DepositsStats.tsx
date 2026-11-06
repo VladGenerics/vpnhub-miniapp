@@ -26,7 +26,7 @@ export default function DepositsStats() {
 
   const series = useMemo(() => {
     const d = q.data
-    if (!d) return { cumulative: [] as Series[], byProvider: [] as Series[] }
+    if (!d) return { cumulative: [] as Series[], daily: [] as Series[], byProvider: [] as Series[] }
     let acc = d.total_before
     const cumulative: Series = {
       key: 'sum',
@@ -40,7 +40,9 @@ export default function DepositsStats() {
       slot: slotOf(i),
       data: d.points.map((p) => [new Date(p.t).getTime(), p.by_provider[pr]?.amount ?? 0]),
     })).filter((x) => x.data.some(([, v]) => v > 0))
-    return { cumulative: [cumulative], byProvider }
+    // та же сумма без накопления: сколько пополнили за каждый день (час, месяц)
+    const daily: Series = { key: 'daily', name: 'Пополнено', slot: 1, data: d.points.map((p) => [new Date(p.t).getTime(), p.amount]) }
+    return { cumulative: [cumulative], daily: [daily], byProvider }
   }, [q.data])
 
   return (
@@ -79,8 +81,9 @@ export default function DepositsStats() {
                 className="is-wide"
                 {...props}
               />
+              <TimeSeriesCard title={`Сумма пополнений ${PER[s.g]}`} type="area" series={series.daily} format={rub} className="is-wide" {...props} />
               <TimeSeriesCard
-                title={`Пополнения ${PER[s.g]}`}
+                title={`Пополнения ${PER[s.g]} по способам оплаты`}
                 type="bar"
                 stacked
                 series={series.byProvider}

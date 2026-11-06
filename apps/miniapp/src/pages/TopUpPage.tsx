@@ -1,9 +1,10 @@
 import { useEffect, useState, type ReactNode } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useLocation, useSearchParams } from 'react-router-dom'
 import type { Invoice, PaymentMethod } from '@vpnhub/shared'
 import { AnimatedNumber } from '../components/AnimatedNumber'
-import { Page } from '../components/Page'
+import { Cols, Page } from '../components/Page'
 import { Section, Cell, Chevron } from '../components/List'
+import { LuPencil } from 'react-icons/lu'
 import { Lottie } from '../components/Lottie'
 import { LoadError } from '../components/LoadError'
 import { Button, Chips } from '../components/Controls'
@@ -14,8 +15,9 @@ import { PROVIDER_LOOK, TOPUP_PRESETS } from '../data/content'
 import { useCreateInvoice, useInvoice, useMe, usePaymentMethods, useUnpaidInvoices } from '../api/queries'
 import { rub } from '../lib/format'
 import { haptic, isTelegram, openPayment, safeExternalUrl } from '../lib/telegram'
+import { useIsTwoCol } from '../hooks/useMediaQuery'
 
-const MAX = 100_000
+const MAX = 1_000_000
 
 /** Ссылка на оплату. В Telegram открываем его средствами, в браузере - обычная ссылка в новой вкладке */
 function PayLink({ url: raw, className, children, onOpen }: { url: string; className: string; children: ReactNode; onOpen?(): void }) {
@@ -278,6 +280,12 @@ export function TopUpPage() {
   const create = useCreateInvoice()
   const toast = useToast()
   const [sp] = useSearchParams()
+  // открыли из меню - это раздел, «Назад» не нужен; перешли с подписки или профиля - нужен
+  const { state } = useLocation()
+  const twoCol = useIsTwoCol()
+  // счетов нет - справа пусто: форма одной колонкой по центру
+  const { data: unpaidList, error: unpaidError } = useUnpaidInvoices()
+  const hasUnpaid = !!unpaidList?.length || (!!unpaidError && !unpaidList)
   const [raw, setRaw] = useState(() => initialAmount(sp.get('amount')))
   const [providerId, setProviderId] = useState<number | null>(null)
   const [invoice, setInvoice] = useState<Invoice | null>(null)
@@ -305,16 +313,11 @@ export function TopUpPage() {
     )
   }
 
-  return (
-    <Page>
-      <header className="balance-hero">
-        <Lottie name={E.walletTile} size={64} />
-        <div className="balance-label">Текущий баланс</div>
-        <div className="balance-value">{me ? <AnimatedNumber value={me.balance} format={rub} from={0} duration={900} /> : meError ? '—' : '...'}</div>
-      </header>
-      {meError && !me && <LoadError text="Не удалось загрузить баланс" onRetry={() => refetchMe()} busy={meFetching} />}
-
+  const amountBlock = (
+    <>
       <Section title="Сумма пополнения" footer={error ? <span className="error">{error}</span> : `От ${rub(min)} до ${rub(MAX)}`}>
+        {/* сумму можно ввести самому: поле выглядит как поле ввода, с карандашом и подсказкой; пресеты - вторым вариантом */}
+        <div className="amount-hint">Введите свою сумму</div>
         <label className={`amount-input ${error ? 'has-error' : ''}`}>
           {/* ширину поля задаёт невидимая копия текста: так оно ровно по цифрам в любом шрифте */}
           <span className="amount-field">
@@ -326,19 +329,22 @@ export function TopUpPage() {
               value={raw}
               placeholder="0"
               // только цифры и без ведущих нулей: «0111» превращается в «111», а не висит в поле
-              onChange={(e) => setRaw(e.target.value.replace(/\D/g, '').replace(/^0+/, '').slice(0, 6))}
+              onChange={(e) => setRaw(e.target.value.replace(/\D/g, '').replace(/^0+/, '').slice(0, 7))}
               aria-label="Сумма пополнения"
             />
           </span>
-          <span>₽</span>
+          <span className="amount-currency">₽</span>
+          <LuPencil className="amount-edit" size={18} aria-hidden />
         </label>
-        <div className="plan-row is-column">
+        <div className="amount-hint">или выберите</div>
+        <div className="plan-row is-column amount-presets">
           <Chips items={TOPUP_PRESETS} value={amount} onChange={(v) => setRaw(String(v))} render={(v) => rub(v)} />
         </div>
       </Section>
-
-      <UnpaidInvoices methods={methods} onWatch={watch} />
-
+    </>
+  )
+  const methodsBlock = (
+    <>
       <Section title="Способ оплаты">
         {methods?.map((m) => {
           const look = PROVIDER_LOOK[m.provider]
@@ -359,12 +365,53 @@ export function TopUpPage() {
         )}
       </Section>
       {methodsError && !methods && <LoadError text="Не удалось загрузить способы оплаты" onRetry={() => refetchMethods()} busy={methodsFetching} />}
+    </>
+  )
+  const cta = (
+    <div className="sticky-cta">
+      <Button stretched disabled={!valid || create.isPending} onClick={pay}>
+        {create.isPending ? 'Создаём счёт…' : methods?.length === 0 ? 'Оплата недоступна' : valid ? `Пополнить на ${rub(amount)}` : 'Введите сумму'}
+      </Button>
+    </div>
+  )
+  const unpaidBlock = <UnpaidInvoices methods={methods} onWatch={watch} />
 
-      <div className="sticky-cta">
-        <Button stretched disabled={!valid || create.isPending} onClick={pay}>
-          {create.isPending ? 'Создаём счёт…' : methods?.length === 0 ? 'Оплата недоступна' : valid ? `Пополнить на ${rub(amount)}` : 'Введите сумму'}
-        </Button>
-      </div>
+  return (
+    <Page wide back={!!(state as { back?: boolean } | null)?.back}>
+      <header className="balance-hero">
+        <Lottie name={E.walletTile} size={64} />
+        <div className="balance-label">Текущий баланс</div>
+        <div className="balance-value">{me ? <AnimatedNumber value={me.balance} format={rub} from={0} duration={900} /> : meError ? '—' : '...'}</div>
+      </header>
+      {meError && !me && <LoadError text="Не удалось загрузить баланс" onRetry={() => refetchMe()} busy={meFetching} />}
+
+      {!twoCol ? (
+        <>
+          {amountBlock}
+          {unpaidBlock}
+          {methodsBlock}
+          {cta}
+        </>
+      ) : hasUnpaid ? (
+        // на ПК форма целиком слева (сумма, способ, кнопка), неоплаченные счета - справа
+        <Cols
+          left={
+            <>
+              {amountBlock}
+              {methodsBlock}
+              {cta}
+            </>
+          }
+          right={unpaidBlock}
+        />
+      ) : (
+        // счетов нет - форма на всю ширину, способы оплаты плитками
+        <div className="topup-form">
+          {amountBlock}
+          <div className="tile-grid">{methodsBlock}</div>
+          {cta}
+        </div>
+      )}
 
       <InvoiceSheet invoiceId={invoice?.id ?? null} onClose={() => setInvoice(null)} onWatch={watch} />
     </Page>

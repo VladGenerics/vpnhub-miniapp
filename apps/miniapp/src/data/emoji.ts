@@ -43,6 +43,12 @@ export const E = {
   mail: T(72),
   sponge: T(74),
   sparkles: T(82),
+  // звезда Telegram Stars из пака CryptoBot Assets: свои цвета, палитра её не перекрашивает (public/emoji-fixed)
+  tgStar: 'cryptobot_star',
+  // способы оплаты: анимированные эмодзи из паков Finance Emoji и Russian Banks (логотип СБП)
+  payCard: 'pay_card',
+  payCrypto: 'pay_usdt',
+  paySbp: 'pay_sbp',
   fire: T(83),
   diamond: T(84),
   party: T(91),
@@ -51,3 +57,6 @@ export const E = {
 
 /** Пул для случайного эмодзи на главной без подписки */
 export const HERO_POOL = [E.globe, E.medal, E.vCircle, E.catLaptop, E.signal, E.gift, E.phone, E.vDiamond, E.rocket]
+
+/** Эмодзи со своими цветами: лежат в public/emoji-fixed, одинаковые во всех палитрах */
+export const FIXED_EMOJI = new Set<string>([E.tgStar, E.payCard, E.payCrypto, E.paySbp])

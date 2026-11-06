@@ -19,22 +19,27 @@ const PLATFORMS = Object.keys(PLATFORM_LABEL) as Platform[]
 
 type Seg = 'one' | 'two' | 'three'
 
+const THEME_HINT = 'Настройки сохраняются на этом устройстве. «Авто» — как в Telegram или в системе'
+
 function ColorProfile() {
   const { themeMode, setThemeMode } = useApp()
+  const theme = (
+    <Segmented<ThemeMode>
+      label="Тема"
+      value={themeMode}
+      onChange={setThemeMode}
+      options={[
+        { value: 'auto', label: 'Авто' },
+        { value: 'dark', label: 'Тёмная' },
+        { value: 'light', label: 'Светлая' },
+      ]}
+    />
+  )
   return (
-    <Section title="Цветовой профиль" footer="Настройки сохраняются на этом устройстве. «Авто» — как в Telegram или в системе">
+    <Section title="Цветовой профиль" footer={THEME_HINT}>
       <div className="plan-row is-column">
         <div className="cell-title">Тема</div>
-        <Segmented<ThemeMode>
-          label="Тема"
-          value={themeMode}
-          onChange={setThemeMode}
-          options={[
-            { value: 'auto', label: 'Авто' },
-            { value: 'dark', label: 'Тёмная' },
-            { value: 'light', label: 'Светлая' },
-          ]}
-        />
+        {theme}
       </div>
       <div className="plan-row is-column">
         <div className="cell-title">Палитра</div>
@@ -247,7 +252,7 @@ const SHOWCASE = import.meta.env.DEV
 /** Оформление: тема и палитра. При разработке - ещё все компоненты */
 export function UiKitPage() {
   return (
-    <Page back>
+    <Page back wide className="is-narrow">
       <Hero emoji={E.gearTile} title="Оформление" subtitle="Тема и цвета приложения" size={96} />
       <ColorProfile />
       {SHOWCASE && (

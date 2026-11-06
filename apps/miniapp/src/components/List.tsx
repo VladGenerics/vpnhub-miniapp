@@ -19,6 +19,8 @@ interface CellProps {
   subtitle?: ReactNode
   after?: ReactNode
   to?: string
+  /** состояние перехода (например, { back: true } - показать «Назад» на открытой странице) */
+  state?: unknown
   onClick?(): void
   chevron?: boolean
   tone?: 'default' | 'accent' | 'danger'
@@ -27,7 +29,7 @@ interface CellProps {
   disabled?: boolean
 }
 
-export function Cell({ icon, title, subtitle, after, to, onClick, chevron, tone = 'default', multiline, disabled }: CellProps) {
+export function Cell({ icon, title, subtitle, after, to, state, onClick, chevron, tone = 'default', multiline, disabled }: CellProps) {
   const interactive = !!(to || onClick)
   const inner = (
     <>
@@ -47,7 +49,7 @@ export function Cell({ icon, title, subtitle, after, to, onClick, chevron, tone 
   }
   if (to)
     return (
-      <Link className={cls} to={to} onClick={tap}>
+      <Link className={cls} to={to} state={state} onClick={tap}>
         {inner}
       </Link>
     )

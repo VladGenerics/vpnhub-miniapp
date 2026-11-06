@@ -27,13 +27,16 @@ export type ArticlesKind = keyof typeof CONFIG
 export function ArticlesPage({ kind }: { kind: ArticlesKind }) {
   const c = CONFIG[kind]
   return (
-    <Page back>
+    <Page back wide>
       <Hero emoji={c.emoji} title={c.title} subtitle={c.subtitle} size={128} />
-      <Section>
-        {c.articles.map((a) => (
-          <Cell key={a.slug} to={`/${kind}/${a.slug}`} icon={<Lottie name={a.emoji} size={32} />} title={a.title} subtitle={a.lead} />
-        ))}
-      </Section>
+      {/* на ПК статьи плиткой в две колонки, на телефоне - обычным списком */}
+      <div className="article-grid">
+        <Section>
+          {c.articles.map((a) => (
+            <Cell key={a.slug} to={`/${kind}/${a.slug}`} icon={<Lottie name={a.emoji} size={32} />} title={a.title} subtitle={a.lead} />
+          ))}
+        </Section>
+      </div>
       {kind === 'help' && <SupportBlock />}
     </Page>
   )

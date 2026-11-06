@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom'
 import { quote } from '@vpnhub/shared'
 import { AnimatedNumber } from '../../components/AnimatedNumber'
 import { Lottie } from '../../components/Lottie'
+import { Cols } from '../../components/Page'
+import { useIsTwoCol } from '../../hooks/useMediaQuery'
 import { LoadError } from '../../components/LoadError'
 import { Section, Cell } from '../../components/List'
 import { Button, Chips, Stepper } from '../../components/Controls'
@@ -59,6 +61,7 @@ export function NoSubscription() {
   const enough = q && balance !== undefined ? q.total <= balance : false
   const lacking = q && balance !== undefined && !enough ? Math.ceil(q.total - balance) : 0
   const noPrice = !!tariffs && !q
+  const twoCol = useIsTwoCol()
 
   const subscribe = () =>
     purchase.mutate(
@@ -85,50 +88,57 @@ export function NoSubscription() {
         <p className="hero-subtitle">Оформите подписку и пользуйтесь VPN на всех своих устройствах</p>
       </header>
 
-      <Section>
-        {FEATURES.map((f) => (
-          <Cell key={f.title} icon={<Lottie name={f.emoji} size={34} />} title={f.title} subtitle={f.subtitle} />
-        ))}
-      </Section>
+      <Cols
+        left={
+          <Section title={twoCol ? 'Что входит' : undefined}>
+            {FEATURES.map((f) => (
+              <Cell key={f.title} icon={<Lottie name={f.emoji} size={34} />} title={f.title} subtitle={f.subtitle} />
+            ))}
+          </Section>
+        }
+        right={
+          <>
+            <Section title="Тариф" footer={q ? `${rub(q.pricePerDay)} в сутки за одно устройство` : undefined}>
+              <div className="plan-row">
+                <div>
+                  <div className="cell-title">Устройства</div>
+                  <div className="cell-subtitle">
+                    {devices} {devicesWord(devices)}
+                  </div>
+                </div>
+                <Stepper value={devices} min={1} max={MAX_DEVICES} onChange={setDevices} />
+              </div>
+              <div className="plan-row is-column">
+                <div className="cell-title">Период</div>
+                <Chips items={PERIODS} value={period} onChange={setPeriod} render={(d) => days(d)} />
+              </div>
+            </Section>
+            {tariffsError && !tariffs && <LoadError text="Не удалось загрузить цены" onRetry={() => refetchTariffs()} busy={tariffsFetching} />}
+            {noPrice && <LoadError text="Тариф на этот срок пока недоступен" onRetry={() => refetchTariffs()} busy={tariffsFetching} />}
+            {meError && !me && <LoadError text="Не удалось загрузить баланс" onRetry={() => refetchMe()} busy={meFetching} />}
 
-      <Section title="Тариф" footer={q ? `${rub(q.pricePerDay)} в сутки за одно устройство` : undefined}>
-        <div className="plan-row">
-          <div>
-            <div className="cell-title">Устройства</div>
-            <div className="cell-subtitle">
-              {devices} {devicesWord(devices)}
+            <div className="sticky-cta">
+              <div className="sticky-cta-meta">
+                <span>
+                  Баланс: <b>{balance !== undefined ? rub(balance) : '...'}</b>
+                </span>
+                <Link to="/topup" state={{ back: true }} className="link" onClick={() => haptic.tap()}>
+                  Пополнить
+                </Link>
+              </div>
+              {lacking > 0 ? (
+                <Link to={`/topup?amount=${lacking}`} state={{ back: true }} className="btn btn-primary btn-l is-stretched" onClick={() => haptic.tap()}>
+                  Пополнить на {rub(lacking)}
+                </Link>
+              ) : (
+                <Button stretched onClick={subscribe} disabled={!q || !enough || purchase.isPending}>
+                  Оформить за <AnimatedNumber value={q?.total ?? 0} format={rub} duration={400} />
+                </Button>
+              )}
             </div>
-          </div>
-          <Stepper value={devices} min={1} max={MAX_DEVICES} onChange={setDevices} />
-        </div>
-        <div className="plan-row is-column">
-          <div className="cell-title">Период</div>
-          <Chips items={PERIODS} value={period} onChange={setPeriod} render={(d) => days(d)} />
-        </div>
-      </Section>
-      {tariffsError && !tariffs && <LoadError text="Не удалось загрузить цены" onRetry={() => refetchTariffs()} busy={tariffsFetching} />}
-      {noPrice && <LoadError text="Тариф на этот срок пока недоступен" onRetry={() => refetchTariffs()} busy={tariffsFetching} />}
-      {meError && !me && <LoadError text="Не удалось загрузить баланс" onRetry={() => refetchMe()} busy={meFetching} />}
-
-      <div className="sticky-cta">
-        <div className="sticky-cta-meta">
-          <span>
-            Баланс: <b>{balance !== undefined ? rub(balance) : '...'}</b>
-          </span>
-          <Link to="/topup" className="link" onClick={() => haptic.tap()}>
-            Пополнить
-          </Link>
-        </div>
-        {lacking > 0 ? (
-          <Link to={`/topup?amount=${lacking}`} className="btn btn-primary btn-l is-stretched" onClick={() => haptic.tap()}>
-            Пополнить на {rub(lacking)}
-          </Link>
-        ) : (
-          <Button stretched onClick={subscribe} disabled={!q || !enough || purchase.isPending}>
-            Оформить за <AnimatedNumber value={q?.total ?? 0} format={rub} duration={400} />
-          </Button>
-        )}
-      </div>
+          </>
+        }
+      />
     </>
   )
 }

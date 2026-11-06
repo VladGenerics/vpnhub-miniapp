@@ -51,7 +51,7 @@ export function RenewSheet({ sub, open, onClose }: { sub: Subscription; open: bo
     })
 
   return (
-    <Sheet open={open} onClose={onClose}>
+    <Sheet open={open} onClose={onClose} full>
       <div className="sheet-head">
         <Lottie name={E.rocket} size={72} />
         <h2>Продление</h2>
@@ -109,6 +109,7 @@ export function RenewSheet({ sub, open, onClose }: { sub: Subscription; open: bo
         {lacking > 0 ? (
           <Link
             to={`/topup?amount=${Math.ceil(lacking)}`}
+            state={{ back: true }}
             className="btn btn-primary btn-l is-stretched"
             onClick={() => {
               haptic.tap()

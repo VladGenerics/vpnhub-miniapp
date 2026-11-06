@@ -9,12 +9,12 @@ export const NO_SUB_TITLES = ['Интернет без границ', 'Быст�
 
 /** Эмодзи и подпись для каждого способа оплаты */
 export const PROVIDER_LOOK: Record<PaymentProvider, { emoji: string; subtitle: string }> = {
-  yookassa: { emoji: E.cardTile, subtitle: 'Visa, Mastercard, МИР' },
-  WATA: { emoji: E.dollarTile, subtitle: 'Без комиссии, моментально' },
+  yookassa: { emoji: E.payCard, subtitle: 'Visa, Mastercard, МИР' },
+  WATA: { emoji: E.paySbp, subtitle: 'Без комиссии, моментально' },
   rollypay: { emoji: E.dollarTile, subtitle: 'Карты и СБП' },
-  tg_stars: { emoji: E.sparkles, subtitle: 'Оплата звёздами в Telegram' },
-  cryptobot: { emoji: E.diamond, subtitle: 'USDT, TON, BTC' },
-  heleket: { emoji: E.diamond, subtitle: 'Криптовалюта' },
+  tg_stars: { emoji: E.tgStar, subtitle: 'Оплата звёздами в Telegram' },
+  cryptobot: { emoji: E.payCrypto, subtitle: 'USDT, TON, BTC' },
+  heleket: { emoji: E.payCrypto, subtitle: 'Криптовалюта' },
   lolz: { emoji: E.money, subtitle: 'Баланс LOLZ' },
 }
 

@@ -28,6 +28,11 @@ const TestPayPage =
   import.meta.env.VITE_USE_MOCKS === 'true' || (import.meta.env.DEV && !import.meta.env.VITE_API_URL)
     ? lazy(() => import('./pages/TestPayPage').then((m) => ({ default: m.TestPayPage })))
     : () => null
+// панель состояний для показа на тестовых данных (?states=1); условие то же, что у TestPayPage, чтобы чанк выпадал из боевой сборки
+const StatesPanel =
+  import.meta.env.VITE_USE_MOCKS === 'true' || (import.meta.env.DEV && !import.meta.env.VITE_API_URL)
+    ? lazy(() => import('./components/StatesPanel'))
+    : () => null
 // галерея эмодзи только для разработки, в прод-сборку не попадает
 const EmojiGalleryPage = import.meta.env.DEV ? lazy(() => import('./pages/EmojiGalleryPage').then((m) => ({ default: m.EmojiGalleryPage }))) : () => null
 
@@ -135,6 +140,9 @@ export default function App() {
           </div>
         </div>
         {!wide && NAV_ROUTES.includes(pathname) && <BottomNav />}
+        <Suspense fallback={null}>
+          <StatesPanel />
+        </Suspense>
       </div>
     </RequireAuth>
   )

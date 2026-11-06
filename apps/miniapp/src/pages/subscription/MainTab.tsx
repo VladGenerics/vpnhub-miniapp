@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import { quote, type Subscription } from '@vpnhub/shared'
 import { LuCheck, LuCopy, LuQrCode } from 'react-icons/lu'
 import { Lottie } from '../../components/Lottie'
+import { Cols } from '../../components/Page'
 import { Button } from '../../components/Controls'
 import { Section, Cell } from '../../components/List'
 import { QrCode } from '../../components/QrCode'
@@ -27,15 +28,47 @@ function useRenewal(sub: Subscription) {
   return { cost, balance: me.balance, lacking: Math.max(0, cost - me.balance) }
 }
 
-function StatusCard({ sub, onRenew }: { sub: Subscription; onRenew(): void }) {
+/** Автопродление: включено ли и хватает ли на него денег */
+function RenewStatus({ sub }: { sub: Subscription }) {
+  const renewal = useRenewal(sub)
+  const { is_enabled, days: renewDays } = sub.auto_renewal
+  return (
+    <div className={`renew-status ${!is_enabled ? 'is-off' : renewal?.lacking ? 'is-warn' : 'is-ok'}`}>
+      <div className="renew-status-row">
+        <span>Автопродление</span>
+        <b>{is_enabled ? `включено · на ${days(renewDays)}` : 'выключено'}</b>
+      </div>
+      {is_enabled && renewal && (
+        <div className="renew-status-row">
+          {renewal.lacking > 0 ? (
+            <>
+              <span>
+                Не хватает <b className="renew-lacking">{rub(renewal.lacking)}</b> из {rub(renewal.cost)}
+              </span>
+              <Link to="/topup" state={{ back: true }} className="link" onClick={() => haptic.tap()}>
+                Пополнить
+              </Link>
+            </>
+          ) : (
+            <span>Средств на балансе хватает · спишется {rub(renewal.cost)}</span>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// wide - на ПК: автопродление показываем отдельной карточкой, здесь вместо него тариф
+function StatusCard({ sub, onRenew, wide = false }: { sub: Subscription; onRenew(): void; wide?: boolean }) {
   const qc = useQueryClient()
   // таймер дошёл до нуля, перезапрашиваем подписку: вдруг продлилась
   const left = useCountdown(sub.expires_at, () => {
     qc.invalidateQueries({ queryKey: keys.subscription })
     qc.invalidateQueries({ queryKey: keys.me })
   })
-  const renewal = useRenewal(sub)
-  const { is_enabled, days: renewDays } = sub.auto_renewal
+  const { data: tariffs } = useTariffs()
+  const q = tariffs ? quote(tariffs, 1, 1) : null
+  const tariff = q ? `${rub(q.pricePerDay)} в сутки за устройство` : null
 
   return (
     <div className="status-card">
@@ -52,28 +85,8 @@ function StatusCard({ sub, onRenew }: { sub: Subscription; onRenew(): void }) {
         </b>
       </div>
 
-      <div className={`renew-status ${!is_enabled ? 'is-off' : renewal?.lacking ? 'is-warn' : 'is-ok'}`}>
-        <div className="renew-status-row">
-          <span>Автопродление</span>
-          <b>{is_enabled ? `включено · на ${days(renewDays)}` : 'выключено'}</b>
-        </div>
-        {is_enabled && renewal && (
-          <div className="renew-status-row">
-            {renewal.lacking > 0 ? (
-              <>
-                <span>
-                  Не хватает <b className="renew-lacking">{rub(renewal.lacking)}</b> из {rub(renewal.cost)}
-                </span>
-                <Link to="/topup" className="link" onClick={() => haptic.tap()}>
-                  Пополнить
-                </Link>
-              </>
-            ) : (
-              <span>Средств на балансе хватает · спишется {rub(renewal.cost)}</span>
-            )}
-          </div>
-        )}
-      </div>
+      {!wide && <RenewStatus sub={sub} />}
+      {wide && tariff && <div className="status-tariff">Тариф: {tariff}</div>}
 
       <Button stretched className="status-renew" onClick={onRenew}>
         Продлить
@@ -82,7 +95,8 @@ function StatusCard({ sub, onRenew }: { sub: Subscription; onRenew(): void }) {
   )
 }
 
-export function MainTab({ sub }: { sub: Subscription }) {
+// aside - устройства: на ПК идут правой колонкой под ссылкой подписки
+export function MainTab({ sub, aside }: { sub: Subscription; aside?: ReactNode }) {
   const { data: me } = useMe()
   const { data: tariffs } = useTariffs()
   const toast = useToast()
@@ -108,51 +122,92 @@ export function MainTab({ sub }: { sub: Subscription }) {
     toast('Ссылка скопирована', E.link)
   }
 
+  const link = sub.url && (
+    <Section title="Ссылка подписки" footer="Добавьте ссылку в приложение-клиент на любом устройстве">
+      <div className="url-row">
+        <button className="url-copy" onClick={copy} aria-label="Скопировать ссылку">
+          <Lottie name={E.link} size={30} />
+          <span className="url-text">{sub.url.replace('https://', '')}</span>
+          <span className={`copy-btn ${copied ? 'is-done' : ''}`} aria-label={copied ? 'Скопировано' : 'Скопировать'}>
+            {copied ? <LuCheck key="done" className="copy-check" size={18} strokeWidth={2.6} /> : <LuCopy key="copy" size={18} />}
+          </span>
+        </button>
+        <button
+          className="copy-btn"
+          onClick={() => {
+            haptic.tap()
+            setQrOpen(true)
+          }}
+          aria-label="Показать QR-код"
+        >
+          <LuQrCode size={18} />
+        </button>
+      </div>
+    </Section>
+  )
+
+  const settings = (
+    <Section>
+      <Cell
+        icon={<Lottie name={E.renewTile} size={32} />}
+        title="Настройка автопродления"
+        subtitle={sub.auto_renewal.is_enabled ? `Включено · на ${days(sub.auto_renewal.days)}` : 'Выключено'}
+        onClick={() => setRenewOpen(true)}
+        chevron
+      />
+      <Cell
+        icon={<Lottie name={E.walletTile} size={32} />}
+        title="Пополнить баланс"
+        subtitle={me ? `На балансе ${rub(me.balance)}` : ' '}
+        to="/topup"
+        state={{ back: true }}
+      />
+      {tariffs && quote(tariffs, 1, 1) && (
+        <Cell
+          icon={<Lottie name={E.dollarTile} size={32} />}
+          title="Тариф"
+          after={<span className="muted">{rub(quote(tariffs, 1, 1)!.pricePerDay)} / сутки за устройство</span>}
+        />
+      )}
+    </Section>
+  )
+
   return (
     <div className="tab-content">
-      <StatusCard sub={sub} onRenew={() => setExtendOpen(true)} />
-
-      {sub.url && (
-        <Section title="Ссылка подписки" footer="Добавьте ссылку в приложение-клиент на любом устройстве">
-          <div className="url-row">
-            <button className="url-copy" onClick={copy} aria-label="Скопировать ссылку">
-              <Lottie name={E.link} size={30} />
-              <span className="url-text">{sub.url.replace('https://', '')}</span>
-              <span className={`copy-btn ${copied ? 'is-done' : ''}`} aria-label={copied ? 'Скопировано' : 'Скопировать'}>
-                {copied ? <LuCheck key="done" className="copy-check" size={18} strokeWidth={2.6} /> : <LuCopy key="copy" size={18} />}
-              </span>
-            </button>
-            <button
-              className="copy-btn"
-              onClick={() => {
-                haptic.tap()
-                setQrOpen(true)
-              }}
-              aria-label="Показать QR-код"
-            >
-              <LuQrCode size={18} />
-            </button>
-          </div>
-        </Section>
-      )}
-
-      <Section>
-        <Cell
-          icon={<Lottie name={E.renewTile} size={32} />}
-          title="Настройка автопродления"
-          subtitle={sub.auto_renewal.is_enabled ? `Включено · на ${days(sub.auto_renewal.days)}` : 'Выключено'}
-          onClick={() => setRenewOpen(true)}
-          chevron
+      {aside ? (
+        // ПК: слева подписка и автопродление, справа ссылка и устройства
+        <Cols
+          left={
+            <>
+              <section className="section">
+                <h3 className="section-title">Подписка</h3>
+                <StatusCard sub={sub} onRenew={() => setExtendOpen(true)} wide />
+              </section>
+              <section className="section">
+                <h3 className="section-title">Автопродление</h3>
+                <div className="status-card renew-card">
+                  <RenewStatus sub={sub} />
+                  <Button stretched variant="secondary" className="status-renew" onClick={() => setRenewOpen(true)}>
+                    Настроить автопродление
+                  </Button>
+                </div>
+              </section>
+            </>
+          }
+          right={
+            <>
+              {link}
+              {aside}
+            </>
+          }
         />
-        <Cell icon={<Lottie name={E.walletTile} size={32} />} title="Пополнить баланс" subtitle={me ? `На балансе ${rub(me.balance)}` : ' '} to="/topup" />
-        {tariffs && quote(tariffs, 1, 1) && (
-          <Cell
-            icon={<Lottie name={E.dollarTile} size={32} />}
-            title="Тариф"
-            after={<span className="muted">{rub(quote(tariffs, 1, 1)!.pricePerDay)} / сутки за устройство</span>}
-          />
-        )}
-      </Section>
+      ) : (
+        <>
+          <StatusCard sub={sub} onRenew={() => setExtendOpen(true)} />
+          {link}
+          {settings}
+        </>
+      )}
 
       <RenewSheet sub={sub} open={extendOpen} onClose={() => setExtendOpen(false)} />
       <AutoRenewSheet sub={sub} open={renewOpen} onClose={() => setRenewOpen(false)} />

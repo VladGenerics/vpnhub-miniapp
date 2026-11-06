@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { LuCopy } from 'react-icons/lu'
 import { AnimatedNumber } from '../components/AnimatedNumber'
-import { Page } from '../components/Page'
+import { Cols, Hero, Page } from '../components/Page'
 import { Section, Cell } from '../components/List'
 import { Lottie } from '../components/Lottie'
 import { LoadError } from '../components/LoadError'
@@ -13,25 +13,8 @@ import { E } from '../data/emoji'
 import { useBindEmail, useMe } from '../api/queries'
 import { useAuth } from '../auth/AuthProvider'
 import { copyText, rub } from '../lib/format'
-import { getTgUser, haptic, isTelegram } from '../lib/telegram'
-
-function ProfileHeader() {
-  const u = getTgUser()
-  const name = u ? [u.first_name, u.last_name].filter(Boolean).join(' ') : 'Гость'
-  const initials = name
-    .split(' ')
-    .map((p) => p[0])
-    .slice(0, 2)
-    .join('')
-    .toUpperCase()
-  return (
-    <header className="profile-head">
-      {u?.photo_url ? <img className="avatar" src={u.photo_url} alt="" /> : <div className="avatar">{initials}</div>}
-      <h1>{name}</h1>
-      <p>{u?.username ? `@${u.username}` : 'Веб-версия'}</p>
-    </header>
-  )
-}
+import { haptic, isTelegram } from '../lib/telegram'
+import { useIsTwoCol } from '../hooks/useMediaQuery'
 
 // почта уходит в PUT /me/email, см. docs/api.md
 function EmailSheet({ open, onClose }: { open: boolean; onClose(): void }) {
@@ -83,6 +66,8 @@ export function ProfilePage() {
   const toast = useToast()
   const [emailOpen, setEmailOpen] = useState(false)
   const email = me?.email
+  // на ПК у колонок подписи сверху, чтобы они начинались вровень
+  const twoCol = useIsTwoCol()
 
   const copy = async (v: string | number, label: string) => {
     if (!(await copyText(String(v)))) {
@@ -94,8 +79,8 @@ export function ProfilePage() {
   }
 
   return (
-    <Page>
-      <ProfileHeader />
+    <Page wide>
+      <Hero emoji={E.laptopGirl} title="Мой профиль" size={120} />
 
       <div className="balance-card">
         <div>
@@ -104,66 +89,77 @@ export function ProfilePage() {
             {me ? <AnimatedNumber value={me.balance} format={rub} from={0} duration={900} /> : meError ? '—' : '...'}
           </div>
         </div>
-        <Link to="/topup" className="btn btn-primary btn-m" onClick={() => haptic.tap()}>
+        <Link to="/topup" state={{ back: true }} className="btn btn-primary btn-m" onClick={() => haptic.tap()}>
           Пополнить
         </Link>
       </div>
 
       {meError && !me && <LoadError text="Не удалось загрузить профиль" onRetry={() => refetchMe()} busy={meFetching} />}
 
-      <Section title="Аккаунт">
-        <Cell
-          icon={<Lottie name={E.mail} size={32} />}
-          title="Электронная почта"
-          subtitle={email ?? 'Не привязана'}
-          after={
-            email ? undefined : (
-              <Button size="s" variant="secondary" onClick={() => setEmailOpen(true)}>
-                Привязать
-              </Button>
-            )
-          }
-        />
-        {me && (
+      <Cols
+        left={
           <>
-            <Cell
-              icon={<Lottie name={E.vCircle} size={32} />}
-              title="Ваш ID"
-              subtitle={String(me.id)}
-              after={
-                <span className="icon-btn">
-                  <LuCopy size={18} />
-                </span>
-              }
-              onClick={() => copy(me.id, 'ID')}
-              chevron={false}
-            />
-            <Cell
-              icon={<Lottie name={E.megaphoneTile} size={32} />}
-              title="Telegram ID"
-              subtitle={String(me.tg_user_id)}
-              after={
-                <span className="icon-btn">
-                  <LuCopy size={18} />
-                </span>
-              }
-              onClick={() => copy(me.tg_user_id, 'Telegram ID')}
-              chevron={false}
-            />
+            <Section title="Аккаунт">
+              <Cell
+                icon={<Lottie name={E.mail} size={32} />}
+                title="Электронная почта"
+                subtitle={email ?? 'Не привязана'}
+                after={
+                  email ? undefined : (
+                    <Button size="s" variant="secondary" onClick={() => setEmailOpen(true)}>
+                      Привязать
+                    </Button>
+                  )
+                }
+              />
+              {me && (
+                <>
+                  <Cell
+                    icon={<Lottie name={E.vCircle} size={32} />}
+                    title="Ваш ID"
+                    subtitle={String(me.id)}
+                    after={
+                      <span className="icon-btn">
+                        <LuCopy size={18} />
+                      </span>
+                    }
+                    onClick={() => copy(me.id, 'ID')}
+                    chevron={false}
+                  />
+                  <Cell
+                    icon={<Lottie name={E.megaphoneTile} size={32} />}
+                    title="Telegram ID"
+                    subtitle={String(me.tg_user_id)}
+                    after={
+                      <span className="icon-btn">
+                        <LuCopy size={18} />
+                      </span>
+                    }
+                    onClick={() => copy(me.tg_user_id, 'Telegram ID')}
+                    chevron={false}
+                  />
+                </>
+              )}
+            </Section>
           </>
-        )}
-      </Section>
-
-      <Section>
-        <Cell icon={<Lottie name={E.bulbTile} size={32} />} title="Информация" subtitle="Ответы на частые вопросы" to="/info" />
-        <Cell icon={<Lottie name={E.questionTile} size={32} />} title="Помощь" subtitle="Если что-то не работает" to="/help" />
-        <Cell icon={<Lottie name={E.gearTile} size={32} />} title="Оформление" subtitle="Тема и палитра" to="/ui" />
-      </Section>
+        }
+        right={
+          <>
+            <Section title={twoCol ? 'Приложение' : undefined}>
+              <Cell icon={<Lottie name={E.bulbTile} size={32} />} title="Информация" subtitle="Ответы на частые вопросы" to="/info" state={{ back: true }} />
+              <Cell icon={<Lottie name={E.questionTile} size={32} />} title="Помощь" subtitle="Если что-то не работает" to="/help" state={{ back: true }} />
+              <Cell icon={<Lottie name={E.gearTile} size={32} />} title="Оформление" subtitle="Тема и палитра" to="/ui" state={{ back: true }} />
+            </Section>
+          </>
+        }
+      />
 
       {!isTelegram && (
-        <Section>
-          <Cell tone="danger" icon={<Lottie name={E.wave} size={30} />} title="Выйти из аккаунта" onClick={logout} chevron={false} />
-        </Section>
+        <div className="logout">
+          <Section>
+            <Cell tone="danger" icon={<Lottie name={E.wave} size={30} />} title="Выйти из аккаунта" onClick={logout} chevron={false} />
+          </Section>
+        </div>
       )}
 
       <p className="app-version">VPNHub · v{__APP_VERSION__}</p>

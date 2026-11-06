@@ -42,24 +42,25 @@ const emptySlot = (id: number): DeviceSlot => ({ ...slot(id, '', '', '', '', 0),
 
 const expiresIn = Number(params.get('expires'))
 
-let subscription: Subscription | null =
-  params.get('sub') === '0'
-    ? null
-    : {
-        id: 1,
-        status: 'ACTIVE',
-        purchased_at: iso(Date.now() - 14 * DAY),
-        expires_at: iso(Date.now() + (expiresIn > 0 ? expiresIn * 1000 : 16 * DAY + 13.7 * 36e5)),
-        url: 'https://sub.vpnhub.app/s/8Kf2xQ9mZt4pLw7R',
-        auto_renewal: { is_enabled: true, days: 30 },
-        slots: [
-          slot(1, 'macOS', 'MacBook', '26.7', 'Happ/5.3.0', 14),
-          slot(2, 'iOS', 'iPhone 17 Pro', '26.6', 'Happ/5.3.0', 13),
-          slot(3, 'Android', 'Pixel 10', '17', 'v2rayNG/1.10.8', 9),
-          slot(4, 'Windows', 'Desktop PC', '11 24H2', 'Hiddify/2.5.7', 5),
-          slot(5, 'Linux', 'ThinkPad X1', 'Ubuntu 26.04', 'Clash.Meta/1.19.4', 2),
-        ],
-      }
+const DEMO_SLOTS = () => [
+  slot(1, 'macOS', 'MacBook', '26.7', 'Happ/5.3.0', 14),
+  slot(2, 'iOS', 'iPhone 17 Pro', '26.6', 'Happ/5.3.0', 13),
+  slot(3, 'Android', 'Pixel 10', '17', 'v2rayNG/1.10.8', 9),
+  slot(4, 'Windows', 'Desktop PC', '11 24H2', 'Hiddify/2.5.7', 5),
+  slot(5, 'Linux', 'ThinkPad X1', 'Ubuntu 26.04', 'Clash.Meta/1.19.4', 2),
+]
+
+const demoSubscription = (expiresInMs = 16 * DAY + 13.7 * 36e5): Subscription => ({
+  id: 1,
+  status: 'ACTIVE',
+  purchased_at: iso(Date.now() - 14 * DAY),
+  expires_at: iso(Date.now() + expiresInMs),
+  url: 'https://sub.vpnhub.app/s/8Kf2xQ9mZt4pLw7R',
+  auto_renewal: { is_enabled: true, days: 30 },
+  slots: DEMO_SLOTS(),
+})
+
+let subscription: Subscription | null = params.get('sub') === '0' ? null : demoSubscription(expiresIn > 0 ? expiresIn * 1000 : undefined)
 
 const tariffs: Tariffs = {
   prices: [{ min_days: 1, price_per_day: 5 }],
@@ -105,12 +106,15 @@ function addInvoice(provider: Invoice['provider'], amount: number, createdAt = n
   return inv
 }
 
-// несколько старых неоплаченных счетов, чтобы было видно раздел и кнопку «Показать ещё»
-addInvoice('yookassa', 300, iso(Date.now() - 26 * 3600_000))
-addInvoice('cryptobot', 1000, iso(Date.now() - 5 * 3600_000))
-addInvoice('WATA', 750, iso(Date.now() - 3 * 3600_000))
-addInvoice('tg_stars', 200, iso(Date.now() - 2 * 3600_000))
-addInvoice('yookassa', 500, iso(Date.now() - 40 * 60_000))
+// несколько старых неоплаченных счетов, чтобы было видно раздел и кнопку «Показать ещё» (?unpaid=0 - без них)
+function seedInvoices() {
+  addInvoice('yookassa', 300, iso(Date.now() - 26 * 3600_000))
+  addInvoice('cryptobot', 1000, iso(Date.now() - 5 * 3600_000))
+  addInvoice('WATA', 750, iso(Date.now() - 3 * 3600_000))
+  addInvoice('tg_stars', 200, iso(Date.now() - 2 * 3600_000))
+  addInvoice('yookassa', 500, iso(Date.now() - 40 * 60_000))
+}
+if (params.get('unpaid') !== '0') seedInvoices()
 
 /** Итог тестовой оплаты из соседней вкладки */
 export function setTestPayResult(id: number, status: 'PAID' | 'FAILED') {
@@ -243,5 +247,46 @@ export const mockApi: UserApi = {
     if (sub.slots.length <= 1) throw new Error('Последний слот удалить нельзя, его можно только освободить')
     sub.slots = sub.slots.filter((x) => x.id !== id)
     await delay(null)
+  },
+}
+
+/** Панель состояний (components/StatesPanel): меняет тестовые данные на лету, чтобы посмотреть разные экраны */
+export const demoState = {
+  get() {
+    const unpaid = [...invoices.values()].filter((i) => i.status === 'UNPAID').length
+    return {
+      hasSub: subscription?.status === 'ACTIVE',
+      autoRenew: subscription?.auto_renewal.is_enabled ?? false,
+      balance: me.balance,
+      unpaid: unpaid > 0,
+      occupied: subscription?.slots.filter((s) => s.is_occupied).length ?? 0,
+    }
+  },
+  setSub(on: boolean) {
+    subscription = on ? demoSubscription() : null
+  },
+  /** сколько осталось; 0 - подписка истекла */
+  setExpires(ms: number) {
+    if (!subscription || subscription.status !== 'ACTIVE') subscription = demoSubscription()
+    if (ms > 0) subscription.expires_at = iso(Date.now() + ms)
+    else {
+      subscription.expires_at = iso(Date.now() - DAY)
+      subscription.status = 'DISABLED'
+    }
+  },
+  setAutoRenew(on: boolean) {
+    if (subscription) subscription.auto_renewal = { ...subscription.auto_renewal, is_enabled: on }
+  },
+  setBalance(v: number) {
+    me = { ...me, balance: v }
+  },
+  setUnpaid(on: boolean) {
+    for (const [id, inv] of invoices) if (inv.status === 'UNPAID') invoices.delete(id)
+    if (on) seedInvoices()
+  },
+  /** сколько из пяти слотов занято */
+  setOccupied(n: number) {
+    if (!subscription) return
+    subscription.slots = DEMO_SLOTS().map((s, i) => (i < n ? s : { ...s, ...FREE }))
   },
 }

@@ -17,3 +17,6 @@ export const useIsDesktop = () => useMediaQuery('(min-width: 768px) and (pointer
 /** Широкий экран: меню переезжает из нижней панели в боковую */
 export const WIDE_QUERY = '(min-width: 960px)'
 export const useIsWide = () => useMediaQuery(WIDE_QUERY)
+
+/** ПК: рядом с боковой панелью страницы раскладываются в две колонки */
+export const useIsTwoCol = useIsWide

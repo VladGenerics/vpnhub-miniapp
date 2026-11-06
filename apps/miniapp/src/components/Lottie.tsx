@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import type { AnimationItem } from 'lottie-web/build/player/lottie_light'
 import { strFromU8, unzipSync } from 'fflate'
+import { FIXED_EMOJI } from '../data/emoji'
 import { emojiSource } from '../lib/palette'
 import { recolorEmoji } from '../lib/recolorEmoji'
 import { useApp } from '../store/AppStore'
@@ -129,8 +130,9 @@ interface Props {
 export function Lottie({ name, size = 28, className }: Props) {
   const { palette, accent } = useApp()
   const src = emojiSource(palette, accent)
-  const folder = src.folder
-  const tint = useSettled(src.tint)
+  const own = FIXED_EMOJI.has(name)
+  const folder = own ? 'emoji-fixed' : src.folder
+  const tint = useSettled(own ? '' : src.tint)
   const box = useRef<HTMLDivElement>(null)
   const anim = useRef<AnimationItem | null>(null)
   const inView = useRef(true)
