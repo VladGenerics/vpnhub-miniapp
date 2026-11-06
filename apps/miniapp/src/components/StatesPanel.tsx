@@ -4,7 +4,7 @@ import { LuSlidersHorizontal, LuX } from 'react-icons/lu'
 import { demoState } from '../api/mock'
 
 // Панель состояний для показа на тестовых данных: подписка, срок, баланс, счета, слоты.
-// Включается ссылкой с ?states=1 (запоминается на устройстве), выключается ?states=0.
+// Сейчас видна всем на демо (временно, для показа заказчику), скрыть на устройстве - ?states=0, вернуть - ?states=1.
 // Отдельный чанк, только при тестовых данных: в боевую сборку не попадает.
 
 const KEY = 'vpnhub.states-panel'
@@ -13,11 +13,11 @@ const DAY = 864e5
 function enabled() {
   try {
     const p = new URLSearchParams(location.search).get('states')
-    if (p === '1') localStorage.setItem(KEY, '1')
-    if (p === '0') localStorage.removeItem(KEY)
-    return localStorage.getItem(KEY) === '1'
+    if (p === '1') localStorage.removeItem(KEY)
+    if (p === '0') localStorage.setItem(KEY, 'off')
+    return localStorage.getItem(KEY) !== 'off'
   } catch {
-    return false
+    return true
   }
 }
 
