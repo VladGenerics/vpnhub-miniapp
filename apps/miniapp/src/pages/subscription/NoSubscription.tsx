@@ -10,7 +10,7 @@ import { Section, Cell } from '../../components/List'
 import { Button, Chips, Stepper } from '../../components/Controls'
 import { useToast } from '../../components/Toast'
 import { E, HERO_POOL } from '../../data/emoji'
-import { MAX_DEVICES, NO_SUB_TITLES } from '../../data/content'
+import { MAX_DAYS, MAX_DEVICES, NO_SUB_TITLES } from '../../data/content'
 import { useMe, usePurchase, useTariffs } from '../../api/queries'
 import { days, devicesWord, rub } from '../../lib/format'
 import { haptic } from '../../lib/telegram'
@@ -108,9 +108,12 @@ export function NoSubscription() {
                 </div>
                 <Stepper value={devices} min={1} max={MAX_DEVICES} onChange={setDevices} />
               </div>
-              <div className="plan-row is-column">
+              <div className="plan-row">
                 <div className="cell-title">Период</div>
-                <Chips items={PERIODS} value={period} onChange={setPeriod} render={(d) => days(d)} />
+                <Stepper value={period} min={1} max={MAX_DAYS} onChange={setPeriod} suffix="дн." />
+              </div>
+              <div className="plan-row is-column">
+                <Chips items={PERIODS} value={PERIODS.includes(period) ? period : null} onChange={setPeriod} render={(d) => days(d)} />
               </div>
             </Section>
             {tariffsError && !tariffs && <LoadError text="Не удалось загрузить цены" onRetry={() => refetchTariffs()} busy={tariffsFetching} />}

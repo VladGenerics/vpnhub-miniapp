@@ -1,4 +1,4 @@
-import type { ButtonHTMLAttributes, ReactNode } from 'react'
+import { useState, type ButtonHTMLAttributes, type ReactNode } from 'react'
 import { haptic } from '../lib/telegram'
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -41,22 +41,39 @@ export function Switch({ checked, onChange, label }: { checked: boolean; onChang
   )
 }
 
+// Счётчик: кнопки и ввод числа руками. Пока печатают, поле может быть пустым; значение зажимается в min..max при вводе и уходе из поля
 export function Stepper({ value, min, max, onChange, suffix }: { value: number; min: number; max: number; onChange(v: number): void; suffix?: string }) {
+  const [draft, setDraft] = useState<string | null>(null)
   const set = (v: number) => {
     const c = Math.min(max, Math.max(min, v))
     if (c !== value) haptic.select()
     onChange(c)
   }
+  const shown = draft ?? String(value)
   return (
     <div className="stepper">
-      <button onClick={() => set(value - 1)} disabled={value <= min} aria-label="Меньше">
+      <button onClick={() => (setDraft(null), set(value - 1))} disabled={value <= min} aria-label="Меньше">
         −
       </button>
-      <div className="stepper-value">
-        {value}
+      <label className="stepper-value">
+        <input
+          inputMode="numeric"
+          value={shown}
+          style={{ width: `${shown.length + 0.6}ch` }}
+          onChange={(e) => {
+            const digits = e.target.value.replace(/\D/g, '').replace(/^0+/, '').slice(0, String(max).length)
+            if (!digits) return setDraft('')
+            const n = Math.min(max, Math.max(min, Number(digits)))
+            setDraft(String(n))
+            onChange(n)
+          }}
+          onFocus={(e) => e.target.select()}
+          onBlur={() => setDraft(null)}
+          aria-label="Значение"
+        />
         {suffix && <small>{suffix}</small>}
-      </div>
-      <button onClick={() => set(value + 1)} disabled={value >= max} aria-label="Больше">
+      </label>
+      <button onClick={() => (setDraft(null), set(value + 1))} disabled={value >= max} aria-label="Больше">
         +
       </button>
     </div>

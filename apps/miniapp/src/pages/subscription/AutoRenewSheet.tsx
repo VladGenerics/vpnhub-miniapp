@@ -6,6 +6,7 @@ import { Lottie } from '../../components/Lottie'
 import { Button, Chips, Stepper, Switch } from '../../components/Controls'
 import { useToast } from '../../components/Toast'
 import { E } from '../../data/emoji'
+import { MAX_DAYS } from '../../data/content'
 import { useMe, useSetAutoRenewal, useTariffs } from '../../api/queries'
 import { days, devicesWord, rub } from '../../lib/format'
 import { haptic } from '../../lib/telegram'
@@ -74,7 +75,7 @@ export function AutoRenewSheet({ sub, open, onClose }: { sub: Subscription; open
         <div className="section-card">
           <div className="plan-row">
             <div className="cell-title">Продлевать на</div>
-            <Stepper value={dayCount} min={1} max={365} onChange={setDayCount} suffix="дн." />
+            <Stepper value={dayCount} min={1} max={MAX_DAYS} onChange={setDayCount} suffix="дн." />
           </div>
           <div className="plan-row is-column">
             <Chips items={PRESETS} value={PRESETS.includes(dayCount) ? dayCount : null} onChange={setDayCount} render={(d) => days(d)} />

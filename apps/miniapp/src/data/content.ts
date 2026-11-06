@@ -3,7 +3,10 @@ import type { PaymentProvider } from '@vpnhub/shared'
 import { E } from './emoji'
 
 /** Максимум устройств при оформлении подписки */
-export const MAX_DEVICES = 5
+export const MAX_DEVICES = 1000
+
+/** Максимум дней в подписке, продлении и автопродлении */
+export const MAX_DAYS = 365
 
 export const NO_SUB_TITLES = ['Интернет без границ', 'Быстрый и надёжный VPN', 'Одна подписка на всё', 'Подключение за минуту', 'Ваши данные под защитой']
 

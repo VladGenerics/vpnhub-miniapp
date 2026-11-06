@@ -599,11 +599,37 @@ p {
 }
 
 .stepper-value {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
   min-width: 58px;
-  text-align: center;
+  padding: 0 4px;
   font-size: 18px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
+  cursor: text;
+}
+
+/* число можно вписать руками: поле без рамки, ширина по цифрам; подчёркивание при фокусе */
+.stepper-value input {
+  min-width: 1.6ch;
+  max-width: 7ch;
+  padding: 2px 0;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  outline: 0;
+  background: none;
+  color: var(--text);
+  font: inherit;
+  text-align: center;
+  caret-color: var(--accent);
+  transition: border-color 0.2s;
+}
+.stepper-value:hover input {
+  border-bottom-color: var(--sep);
+}
+.stepper-value input:focus {
+  border-bottom-color: var(--accent);
 }
 
 .stepper-value small {

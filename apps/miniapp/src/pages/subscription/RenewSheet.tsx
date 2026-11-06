@@ -8,6 +8,7 @@ import { LoadError } from '../../components/LoadError'
 import { Button, Chips, Stepper } from '../../components/Controls'
 import { useToast } from '../../components/Toast'
 import { E } from '../../data/emoji'
+import { MAX_DAYS } from '../../data/content'
 import { useMe, useRenew, useTariffs } from '../../api/queries'
 import { date, days, devicesWord, rub } from '../../lib/format'
 import { haptic } from '../../lib/telegram'
@@ -62,7 +63,7 @@ export function RenewSheet({ sub, open, onClose }: { sub: Subscription; open: bo
       <div className="section-card">
         <div className="plan-row">
           <div className="cell-title">Продлить на</div>
-          <Stepper value={dayCount} min={1} max={365} onChange={setDayCount} suffix="дн." />
+          <Stepper value={dayCount} min={1} max={MAX_DAYS} onChange={setDayCount} suffix="дн." />
         </div>
         <div className="plan-row is-column">
           <Chips items={PRESETS} value={PRESETS.includes(dayCount) ? dayCount : null} onChange={setDayCount} render={(d) => days(d)} />
