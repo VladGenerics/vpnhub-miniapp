@@ -12,6 +12,7 @@ import { MAX_DAYS } from '../../data/content'
 import { useMe, useRenew, useTariffs } from '../../api/queries'
 import { date, days, devicesWord, rub } from '../../lib/format'
 import { haptic } from '../../lib/telegram'
+import { consumeResume, draft, draftOf } from '../../lib/draft'
 
 const PRESETS = [7, 14, 30, 90]
 const DAY = 86_400_000
@@ -25,7 +26,10 @@ export function RenewSheet({ sub, open, onClose }: { sub: Subscription; open: bo
   const [dayCount, setDayCount] = useState(30)
 
   useEffect(() => {
-    if (open) setDayCount(sub.auto_renewal.days || 30)
+    if (!open) return
+    // вернулись с пополнения - то же значение, что выбирали
+    setDayCount(draftOf('renew')?.days ?? (sub.auto_renewal.days || 30))
+    consumeResume('renew')
   }, [open])
 
   const slots = sub.slots.length
@@ -41,6 +45,7 @@ export function RenewSheet({ sub, open, onClose }: { sub: Subscription; open: bo
   const submit = () =>
     renew.mutate(dayCount, {
       onSuccess: (s) => {
+        draft.clear()
         haptic.notify('success')
         toast(`Продлено до ${date(s.expires_at)}`, E.party)
         onClose()
@@ -110,9 +115,10 @@ export function RenewSheet({ sub, open, onClose }: { sub: Subscription; open: bo
         {lacking > 0 ? (
           <Link
             to={`/topup?amount=${Math.ceil(lacking)}`}
-            state={{ back: true }}
+            state={{ back: true, resume: true }}
             className="btn btn-primary btn-l is-stretched"
             onClick={() => {
+              draft.set({ kind: 'renew', days: dayCount, resume: true })
               haptic.tap()
               onClose()
             }}

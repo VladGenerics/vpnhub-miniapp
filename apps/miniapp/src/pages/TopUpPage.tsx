@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react'
-import { useLocation, useSearchParams } from 'react-router-dom'
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import type { Invoice, PaymentMethod } from '@vpnhub/shared'
 import { AnimatedNumber } from '../components/AnimatedNumber'
 import { Cols, Page } from '../components/Page'
@@ -57,7 +57,7 @@ function PayLink({ url: raw, className, children, onOpen }: { url: string; class
 }
 
 /** Окно счёта: ссылка на оплату, ручная проверка и ожидание статуса */
-function InvoiceSheet({ invoiceId, onClose, onWatch }: { invoiceId: number | null; onClose(): void; onWatch(id: number): void }) {
+function InvoiceSheet({ invoiceId, onClose, onWatch, onResume }: { invoiceId: number | null; onClose(): void; onWatch(id: number): void; onResume?(): void }) {
   const { data: inv, refetch, isFetching, error } = useInvoice(invoiceId)
   const { data: me } = useMe()
   const toast = useToast()
@@ -145,9 +145,20 @@ function InvoiceSheet({ invoiceId, onClose, onWatch }: { invoiceId: number | nul
         <>
           {head(E.party, 'Баланс пополнен', `+${rub(inv.amount)} зачислено.${me ? ` Теперь на балансе ${rub(me.balance)}` : ''}`)}
           <div className="sheet-actions">
-            <Button stretched onClick={onClose}>
-              Готово
-            </Button>
+            {onResume ? (
+              <>
+                <Button stretched onClick={onResume}>
+                  Вернуться к оформлению
+                </Button>
+                <Button stretched variant="ghost" onClick={onClose}>
+                  Остаться здесь
+                </Button>
+              </>
+            ) : (
+              <Button stretched onClick={onClose}>
+                Готово
+              </Button>
+            )}
           </div>
         </>
       ) : (
@@ -271,7 +282,8 @@ function UnpaidInvoices({ methods, onWatch }: { methods?: PaymentMethod[]; onWat
 /** Сумма из ссылки (?amount=300 - «Пополнить на 300 ₽» из окна покупки), иначе 500 */
 function initialAmount(v: string | null) {
   const n = Math.ceil(Number(v))
-  return n > 0 && n <= MAX ? String(n) : '500'
+  // больше лимита - ставим лимит, а не 500: остальное доплатят вторым счётом
+  return n > 0 ? String(Math.min(n, MAX)) : '500'
 }
 
 export function TopUpPage() {
@@ -286,7 +298,11 @@ export function TopUpPage() {
   // счетов нет - справа пусто: форма одной колонкой по центру
   const { data: unpaidList, error: unpaidError } = useUnpaidInvoices()
   const hasUnpaid = !!unpaidList?.length || (!!unpaidError && !unpaidList)
-  const [raw, setRaw] = useState(() => initialAmount(sp.get('amount')))
+  const linkAmount = sp.get('amount')
+  const [raw, setRaw] = useState(() => initialAmount(linkAmount))
+  // пришли с покупки: после оплаты ведём обратно к ней, выбор там сохранён
+  const resume = !!(state as { resume?: boolean } | null)?.resume
+  const navigate = useNavigate()
   const [providerId, setProviderId] = useState<number | null>(null)
   const [invoice, setInvoice] = useState<Invoice | null>(null)
   const watch = useWatchInvoice()
@@ -296,6 +312,16 @@ export function TopUpPage() {
   const amount = Number(raw) || 0
   const error = raw && amount < min ? `Минимальная сумма — ${rub(min)}` : amount > MAX ? `Максимум — ${rub(MAX)}` : ''
   const valid = !!method && amount >= min && amount <= MAX
+
+  // сумма из ссылки: страница могла открыться без перемонтирования, берём свежую
+  useEffect(() => {
+    if (linkAmount) setRaw(initialAmount(linkAmount))
+  }, [linkAmount])
+  // не хватает меньше минимума способа оплаты: поднимаем до минимума, а не показываем ошибку
+  useEffect(() => {
+    const need = Math.ceil(Number(linkAmount)) || 0
+    if (need > 0 && min > 0) setRaw((r) => (Number(r) < min && Number(r) === need ? String(min) : r))
+  }, [min, linkAmount])
 
   const pay = () => {
     if (!method) return
@@ -413,7 +439,12 @@ export function TopUpPage() {
         </div>
       )}
 
-      <InvoiceSheet invoiceId={invoice?.id ?? null} onClose={() => setInvoice(null)} onWatch={watch} />
+      <InvoiceSheet
+        invoiceId={invoice?.id ?? null}
+        onClose={() => setInvoice(null)}
+        onWatch={watch}
+        onResume={resume ? () => navigate('/', { replace: true }) : undefined}
+      />
     </Page>
   )
 }

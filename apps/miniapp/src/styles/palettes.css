@@ -227,9 +227,7 @@
   position: relative;
   height: 150px;
   border-radius: 14px;
-  background:
-    linear-gradient(to top, #000, transparent),
-    linear-gradient(to right, #fff, var(--pad-hue));
+  background: linear-gradient(to top, #000, transparent), linear-gradient(to right, #fff, var(--pad-hue));
   cursor: crosshair;
   touch-action: none;
   outline: 0;

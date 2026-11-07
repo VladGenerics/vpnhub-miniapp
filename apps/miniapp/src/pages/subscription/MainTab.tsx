@@ -15,6 +15,7 @@ import { keys, useMe, useTariffs } from '../../api/queries'
 import { useCountdown } from '../../hooks/useCountdown'
 import { copyText, countdown, date, days, rub } from '../../lib/format'
 import { haptic } from '../../lib/telegram'
+import { draftOf } from '../../lib/draft'
 import { AutoRenewSheet } from './AutoRenewSheet'
 import { RenewSheet } from './RenewSheet'
 
@@ -101,7 +102,8 @@ export function MainTab({ sub, aside }: { sub: Subscription; aside?: ReactNode }
   const { data: tariffs } = useTariffs()
   const toast = useToast()
   const [renewOpen, setRenewOpen] = useState(false)
-  const [extendOpen, setExtendOpen] = useState(false)
+  // вернулись с пополнения посреди продления - окно открывается само
+  const [extendOpen, setExtendOpen] = useState(() => !!draftOf('renew')?.resume)
   const [qrOpen, setQrOpen] = useState(false)
   const [copied, setCopied] = useState(false)
 

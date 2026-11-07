@@ -9,8 +9,13 @@ export interface TabDef {
 }
 
 /** Вкладки как папки в Telegram, контент листается свайпом */
-export function SwipeTabs({ tabs }: { tabs: TabDef[] }) {
-  const [index, setIndex] = useState(0)
+export function SwipeTabs({ tabs, initial }: { tabs: TabDef[]; initial?: string }) {
+  const [index, setIndex] = useState(() =>
+    Math.max(
+      0,
+      tabs.findIndex((t) => t.key === initial),
+    ),
+  )
   const [dx, setDx] = useState(0)
   const [height, setHeight] = useState<number>()
   const viewport = useRef<HTMLDivElement>(null)

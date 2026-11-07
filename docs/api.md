@@ -73,6 +73,7 @@ Authorization: tma <initData>
 | `GET /invoices/:id` | | `Invoice` |
 | `GET /invoices?status=UNPAID` | | `Invoice[]` - неоплаченные счета пользователя, новые сверху, только с его `user_id` |
 | `POST /subscription/purchase` | `{ days, devices }` | `Subscription` после покупки |
+| `POST /subscription/slots` | `{ count }` | `Subscription` с новыми пустыми слотами - докупить слоты к активной подписке |
 | `PUT /subscription/auto-renewal` | `{ is_enabled, days }` | `AutoRenewal` |
 | `POST /subscription/slots/:id/release` | | `204` - отвязать устройство, слот остаётся |
 | `DELETE /subscription/slots/:id` | | `204` - удалить слот из подписки |
@@ -103,6 +104,10 @@ Authorization: tma <initData>
 - Продление заранее (кнопка «Продлить» в кабинете): тот же `POST /subscription/purchase`,
   `devices` = текущее число слотов. Бэкенд прибавляет дни к `expires_at`, слоты и привязанные устройства
   не трогает, автопродление не меняет. Нужна отдельная ручка - поменяйте `renew` в `apps/miniapp/src/api/index.ts`.
+- Докупка слотов (окно «Добавить слоты» на вкладке устройств): `POST /subscription/slots`, `count` - сколько слотов добавить (до 1000 всего).
+  Срок подписки не меняется. Цена - за оставшийся срок: цена слотов после минус цена текущих на столько же дней
+  (формула `slotsQuote` в `packages/shared/src/pricing.ts`, итог считает бэкенд). Не хватает денег - ошибка с `detail`.
+  В статистике такая покупка идёт в `slots` (`purchase_slots`).
 - `purchases.kind` для статистики админки: первая покупка - `VPN_FIRST_PURCHASE`, покупка на активную
   подписку - `VPN_EXTENSION`, после окончания - `VPN_RENEWAL`, списание автопродлением - `VPN_AUTORENEWAL`.
 - Подписки нет: `404`, пустой ответ или `status: "NOT_FOUND"` - фронт поймёт любой вариант.

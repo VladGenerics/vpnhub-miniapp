@@ -52,3 +52,31 @@ export function quote(t: Tariffs, devices: number, days: number): Quote | null {
     total: round2(base * (1 - dd) * (1 - disc)),
   }
 }
+
+export interface SlotsQuote {
+  /** Цена дня за устройство */
+  pricePerDay: number
+  /** Дней до конца подписки, за них и платим */
+  daysLeft: number
+  /** Без скидок */
+  base: number
+  /** Доплата за новые слоты на оставшийся срок */
+  total: number
+}
+
+/**
+ * Доплата за новые слоты к действующей подписке: стоимость всех слотов минус стоимость текущих
+ * на оставшийся срок, так скидка за число устройств считается верно. Итог считает бэкенд, здесь предпросмотр.
+ */
+export function slotsQuote(t: Tariffs, currentSlots: number, add: number, expiresAt: string, now = Date.now()): SlotsQuote | null {
+  const daysLeft = Math.max(1, Math.ceil((+new Date(expiresAt) - now) / 86_400_000))
+  const after = quote(t, currentSlots + add, daysLeft)
+  const before = quote(t, Math.max(0, currentSlots), daysLeft)
+  if (!after || !before) return null
+  return {
+    pricePerDay: after.pricePerDay,
+    daysLeft,
+    base: round2(after.pricePerDay * add * daysLeft),
+    total: round2(after.total - (currentSlots > 0 ? before.total : 0)),
+  }
+}

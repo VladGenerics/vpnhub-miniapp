@@ -127,6 +127,17 @@ export function useRenew() {
   })
 }
 
+export function useBuySlots() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (count: number) => api.buySlots(count),
+    onSuccess: async (sub) => {
+      await setFresh(qc, keys.subscription, sub)
+      qc.invalidateQueries({ queryKey: keys.me })
+    },
+  })
+}
+
 export function useSetAutoRenewal() {
   const qc = useQueryClient()
   return useMutation({

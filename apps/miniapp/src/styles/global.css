@@ -78,8 +78,52 @@
 
 @supports (transition-timing-function: linear(0, 1)) {
   :root {
-    --spring: linear(0, 0.013 0.6%, 0.05 1.2%, 0.2 2.7%, 0.43 4.5%, 0.674 6.6%, 0.871 8.8%, 1.007 11.2%, 1.075 13.4%, 1.098 15.5%, 1.088 17.9%, 1.051 21%, 1.012 24.6%, 0.995 28.5%, 0.993 33.6%, 1.001 44%, 1);
-    --spring-bouncy: linear(0, 0.009, 0.035 2.1%, 0.141, 0.281 6.7%, 0.723 12.9%, 0.938 16.7%, 1.017, 1.077, 1.121, 1.149 24.3%, 1.159, 1.163, 1.161, 1.154 29.9%, 1.129 32.8%, 1.051 39.6%, 1.017 43.1%, 0.991, 0.977 51%, 0.974 53.8%, 0.975 57.1%, 0.997 69.8%, 1.003 76.9%, 1);
+    --spring: linear(
+      0,
+      0.013 0.6%,
+      0.05 1.2%,
+      0.2 2.7%,
+      0.43 4.5%,
+      0.674 6.6%,
+      0.871 8.8%,
+      1.007 11.2%,
+      1.075 13.4%,
+      1.098 15.5%,
+      1.088 17.9%,
+      1.051 21%,
+      1.012 24.6%,
+      0.995 28.5%,
+      0.993 33.6%,
+      1.001 44%,
+      1
+    );
+    --spring-bouncy: linear(
+      0,
+      0.009,
+      0.035 2.1%,
+      0.141,
+      0.281 6.7%,
+      0.723 12.9%,
+      0.938 16.7%,
+      1.017,
+      1.077,
+      1.121,
+      1.149 24.3%,
+      1.159,
+      1.163,
+      1.161,
+      1.154 29.9%,
+      1.129 32.8%,
+      1.051 39.6%,
+      1.017 43.1%,
+      0.991,
+      0.977 51%,
+      0.974 53.8%,
+      0.975 57.1%,
+      0.997 69.8%,
+      1.003 76.9%,
+      1
+    );
   }
 }
 
@@ -371,7 +415,8 @@ p {
 .plan-row + .plan-row::before,
 .kv-row + .kv-row::before,
 .url-row + .cell::before,
-.plan-row + .cell::before {
+.plan-row + .cell::before,
+.slots-scroll + .cell::before {
   content: '';
   position: absolute;
   top: 0;
@@ -471,6 +516,27 @@ p {
   color: var(--hint);
   font-size: 22px;
   opacity: 0.7;
+}
+
+.slot-empty.is-add {
+  border-style: solid;
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-soft);
+  opacity: 1;
+}
+
+.slot-empty.is-count {
+  font-size: 14px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* раскрытый длинный список устройств листается внутри карточки */
+.slots-scroll {
+  max-height: 440px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .cell:has(.device-icon) .cell-icon,
@@ -636,7 +702,6 @@ p {
   border-color: var(--accent);
   box-shadow: 0 0 0 3px var(--accent-glow);
 }
-
 
 .stepper-value small {
   font-size: 13px;
@@ -1987,7 +2052,6 @@ p {
 .url-row:active .copy-btn {
   transform: scale(0.86) rotate(-8deg);
 }
-
 
 .stepper-value .anum,
 .anum {

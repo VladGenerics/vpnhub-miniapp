@@ -14,6 +14,7 @@ import { MAX_DAYS, MAX_DEVICES, NO_SUB_TITLES } from '../../data/content'
 import { useMe, usePurchase, useTariffs } from '../../api/queries'
 import { days, devicesWord, rub } from '../../lib/format'
 import { haptic } from '../../lib/telegram'
+import { draft, draftOf } from '../../lib/draft'
 
 const TITLE_INTERVAL = 10_000
 const PERIODS = [30, 90, 180, 365]
@@ -53,8 +54,10 @@ export function NoSubscription() {
   const purchase = usePurchase()
   const toast = useToast()
   const [emoji] = useState(() => HERO_POOL[Math.floor(Math.random() * HERO_POOL.length)])
-  const [devices, setDevices] = useState(3)
-  const [period, setPeriod] = useState(30)
+  // выбор переживает уход на пополнение и обратно
+  const [devices, setDevices] = useState(() => draftOf('new')?.devices ?? 3)
+  const [period, setPeriod] = useState(() => draftOf('new')?.days ?? 30)
+  useEffect(() => draft.set({ kind: 'new', devices, days: period }), [devices, period])
   const q = tariffs ? quote(tariffs, devices, period) : null
   // баланс неизвестен (не загрузился) - это не ноль: доплату не считаем, кнопку не включаем
   const balance = me?.balance
@@ -68,6 +71,7 @@ export function NoSubscription() {
       { days: period, devices },
       {
         onSuccess: () => {
+          draft.clear()
           haptic.notify('success')
           toast('Подписка оформлена', E.party)
         },
@@ -125,12 +129,22 @@ export function NoSubscription() {
                 <span>
                   Баланс: <b>{balance !== undefined ? rub(balance) : '...'}</b>
                 </span>
-                <Link to="/topup" state={{ back: true }} className="link" onClick={() => haptic.tap()}>
+                <Link
+                  to={lacking > 0 ? `/topup?amount=${lacking}` : '/topup'}
+                  state={{ back: true, resume: lacking > 0 }}
+                  className="link"
+                  onClick={() => haptic.tap()}
+                >
                   Пополнить
                 </Link>
               </div>
               {lacking > 0 ? (
-                <Link to={`/topup?amount=${lacking}`} state={{ back: true }} className="btn btn-primary btn-l is-stretched" onClick={() => haptic.tap()}>
+                <Link
+                  to={`/topup?amount=${lacking}`}
+                  state={{ back: true, resume: true }}
+                  className="btn btn-primary btn-l is-stretched"
+                  onClick={() => haptic.tap()}
+                >
                   Пополнить на {rub(lacking)}
                 </Link>
               ) : (

@@ -1,5 +1,5 @@
 import type { DeviceSlot, Invoice, Me, PaymentMethod, PublicSettings, Subscription, Tariffs } from '@vpnhub/shared'
-import { quote } from '@vpnhub/shared'
+import { quote, slotsQuote } from '@vpnhub/shared'
 import { getTgUser } from '../lib/telegram'
 import type { UserApi } from './index'
 
@@ -236,6 +236,17 @@ export const mockApi: UserApi = {
     if (total > me.balance) throw new Error('Недостаточно средств на балансе')
     me = { ...me, balance: me.balance - total }
     sub.expires_at = iso(Math.max(Date.now(), +new Date(sub.expires_at)) + days * DAY)
+    return delay({ ...sub }, 500)
+  },
+
+  async buySlots(count) {
+    const sub = requireSub()
+    const q = slotsQuote(tariffs, sub.slots.length, count, sub.expires_at)
+    if (!q) throw new Error('Тариф недоступен, попробуйте позже')
+    if (q.total > me.balance) throw new Error('Недостаточно средств на балансе')
+    me = { ...me, balance: me.balance - q.total }
+    const nextId = Math.max(0, ...sub.slots.map((s) => s.id)) + 1
+    sub.slots = [...sub.slots, ...Array.from({ length: count }, (_, i) => emptySlot(nextId + i))]
     return delay({ ...sub }, 500)
   },
 

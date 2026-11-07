@@ -31,6 +31,8 @@ export interface UserApi {
   purchase(req: PurchaseRequest): Promise<Subscription>
   /** Продление активной подписки заранее. Устройства остаются, дни прибавляются к сроку */
   renew(days: number): Promise<Subscription>
+  /** Докупить слоты к активной подписке: деньги списываются сразу, срок не меняется */
+  buySlots(count: number): Promise<Subscription>
   setAutoRenewal(v: AutoRenewal): Promise<AutoRenewal>
   releaseSlot(id: number): Promise<void>
   deleteSlot(id: number): Promise<void>
@@ -63,6 +65,7 @@ const httpApi: UserApi = {
     if (!sub) throw new ApiError(404, 'Подписка не найдена')
     return http('POST', '/subscription/purchase', { days, devices: sub.slots.length })
   },
+  buySlots: (count) => http('POST', '/subscription/slots', { count }),
   setAutoRenewal: (v) => http('PUT', '/subscription/auto-renewal', v),
   releaseSlot: (id) => http('POST', `/subscription/slots/${id}/release`),
   deleteSlot: (id) => http('DELETE', `/subscription/slots/${id}`),
