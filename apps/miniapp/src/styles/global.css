@@ -1205,14 +1205,40 @@ p {
 .notice .lottie {
   flex: none;
 }
-/* «Выбор покупки сохранён»: спокойная акцентная плашка, а не предупреждение */
-.notice.is-resume {
-  justify-content: space-between;
+/* «Выбор покупки сохранён»: карточка с воздухом, а не прижатая полоска */
+.resume-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 16px;
+  padding: 14px 16px;
+  border-radius: 16px;
   background: var(--accent-soft);
 }
-.notice.is-resume .link {
+.resume-card .lottie {
   flex: none;
+}
+.resume-card-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 13px;
+  line-height: 1.35;
+  color: var(--hint);
+}
+.resume-card-text b {
+  font-size: 15px;
   font-weight: 600;
+  color: var(--text);
+}
+.resume-card .btn {
+  flex: none;
+}
+/* ПК: над «Итого» в правой колонке */
+.topup-side .resume-card {
+  margin: 0 0 18px;
 }
 
 /* ============ Детали устройства ============ */

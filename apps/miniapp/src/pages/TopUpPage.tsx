@@ -358,11 +358,15 @@ export function TopUpPage() {
   const backToPurchase = () => navigate('/', { replace: true })
   // пополняют посреди покупки: путь назад виден всё время, а не только в окне оплаченного счёта
   const resumeBanner = resume && (
-    <div className="notice is-resume">
-      <span>Выбор покупки сохранён. Пополните баланс и вернитесь к оформлению</span>
-      <button className="link" onClick={backToPurchase}>
+    <div className="resume-card">
+      <Lottie name={E.bell} size={30} />
+      <div className="resume-card-text">
+        <b>Выбор покупки сохранён</b>
+        <span>Пополните баланс и вернитесь к оформлению</span>
+      </div>
+      <Button variant="secondary" size="s" onClick={backToPurchase}>
         Вернуться
-      </button>
+      </Button>
     </div>
   )
 
@@ -453,7 +457,6 @@ export function TopUpPage() {
         )}
       </div>
       {meError && !me && <LoadError text="Не удалось загрузить баланс" onRetry={() => refetchMe()} busy={meFetching} />}
-      {resumeBanner}
 
       <div className="topup-grid">
         <div className="panel">
@@ -494,6 +497,7 @@ export function TopUpPage() {
         </div>
 
         <div className="topup-side">
+          {resumeBanner}
           {/* только то, что пополняется: сумма после оплаты здесь путала бы, будто зачислится больше */}
           <div className="panel">
             <h2 className="panel-title">Итого</h2>
