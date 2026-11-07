@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type ReactNode, type PointerEvent } from '
 import { createPortal } from 'react-dom'
 import { LuX } from 'react-icons/lu'
 import { useIsDesktop } from '../hooks/useMediaQuery'
-import { haptic } from '../lib/telegram'
+import { haptic, useTelegramBackButton } from '../lib/telegram'
 
 interface Props {
   open: boolean
@@ -28,6 +28,8 @@ export function Sheet({ open, onClose, children, expandable = true, full = false
   const closeRef = useRef(onClose)
   closeRef.current = onClose
   const sheetRef = useRef<HTMLDivElement>(null)
+  // родная «Назад» Telegram сначала закрывает окно, а не уводит со страницы
+  useTelegramBackButton(open ? () => closeRef.current() : null)
 
   useEffect(() => {
     if (open) {
@@ -50,6 +52,12 @@ export function Sheet({ open, onClose, children, expandable = true, full = false
     // Фокусируем само окно, а не первое поле: на телефоне иначе сразу вылезет клавиатура
     const back = document.activeElement as HTMLElement | null
     sheetRef.current?.focus({ preventScroll: true })
+    // имя окна для скринридера - его заголовок («Продление», «Счёт на 500 ₽»)
+    const title = sheetRef.current?.querySelector('h2')
+    if (title && sheetRef.current) {
+      title.id ||= `sheet-title-${Math.random().toString(36).slice(2, 8)}`
+      sheetRef.current.setAttribute('aria-labelledby', title.id)
+    }
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') return closeRef.current()
       if (e.key !== 'Tab' || !sheetRef.current) return

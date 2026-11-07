@@ -1,1 +1,1 @@
-export { rub, date, dateTime, plural, days, devicesWord, countdown, copyText } from '@vpnhub/shared'
+export { rub, date, dateTime, dateTimeLocal, plural, days, devicesWord, countdown, copyText } from '@vpnhub/shared'

@@ -2,9 +2,8 @@ import { useEffect, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import { quote, type Subscription } from '@vpnhub/shared'
-import { LuCheck, LuCopy, LuQrCode } from 'react-icons/lu'
+import { LuCheck, LuCopy, LuQrCode, LuRefreshCw, LuSettings, LuWallet } from 'react-icons/lu'
 import { Lottie } from '../../components/Lottie'
-import { Cols } from '../../components/Page'
 import { Button } from '../../components/Controls'
 import { Section, Cell } from '../../components/List'
 import { QrCode } from '../../components/QrCode'
@@ -13,21 +12,12 @@ import { useToast } from '../../components/Toast'
 import { E } from '../../data/emoji'
 import { keys, useMe, useTariffs } from '../../api/queries'
 import { useCountdown } from '../../hooks/useCountdown'
-import { copyText, countdown, date, days, rub } from '../../lib/format'
+import { useRenewal } from '../../hooks/useRenewal'
+import { copyText, countdown, date, dateTimeLocal, days, rub } from '../../lib/format'
 import { haptic } from '../../lib/telegram'
 import { draftOf } from '../../lib/draft'
 import { AutoRenewSheet } from './AutoRenewSheet'
 import { RenewSheet } from './RenewSheet'
-
-/** Сколько стоит следующее автопродление и сколько на него не хватает */
-function useRenewal(sub: Subscription) {
-  const { data: me } = useMe()
-  const { data: tariffs } = useTariffs()
-  const q = tariffs ? quote(tariffs, sub.slots.length, sub.auto_renewal.days) : null
-  if (!me || !q) return null
-  const cost = q.total
-  return { cost, balance: me.balance, lacking: Math.max(0, cost - me.balance) }
-}
 
 /** Автопродление: включено ли и хватает ли на него денег */
 function RenewStatus({ sub }: { sub: Subscription }) {
@@ -59,17 +49,88 @@ function RenewStatus({ sub }: { sub: Subscription }) {
   )
 }
 
-// wide - на ПК: автопродление показываем отдельной карточкой, здесь вместо него тариф
-function StatusCard({ sub, onRenew, wide = false }: { sub: Subscription; onRenew(): void; wide?: boolean }) {
+/** Остаток подписки, тикает раз в секунду. На нуле перезапрашиваем подписку и баланс: вдруг продлилась */
+function useSubCountdown(sub: Subscription) {
   const qc = useQueryClient()
-  // таймер дошёл до нуля, перезапрашиваем подписку: вдруг продлилась
-  const left = useCountdown(sub.expires_at, () => {
+  return useCountdown(sub.expires_at, () => {
     qc.invalidateQueries({ queryKey: keys.subscription })
     qc.invalidateQueries({ queryKey: keys.me })
   })
+}
+
+/** Тариф за сутки за одно устройство, строкой */
+function useTariffText() {
   const { data: tariffs } = useTariffs()
   const q = tariffs ? quote(tariffs, 1, 1) : null
-  const tariff = q ? `${rub(q.pricePerDay)} в сутки за устройство` : null
+  return q ? `${rub(q.pricePerDay)} в сутки за устройство` : null
+}
+
+/**
+ * ПК: одна карточка по макету заказчика. Слева статус и точное время отключения,
+ * в середине баланс и хватает ли на автопродление, справа действия; снизу строка автопродления
+ */
+function OverviewPanel({ sub, onRenew, onAutoRenew }: { sub: Subscription; onRenew(): void; onAutoRenew(): void }) {
+  const left = useSubCountdown(sub)
+  const renewal = useRenewal(sub)
+  const tariff = useTariffText()
+  const { data: me } = useMe()
+  const { is_enabled, days: renewDays } = sub.auto_renewal
+  const lacking = renewal?.enabled ? Math.ceil(renewal.lacking) : 0
+
+  return (
+    <div className="panel sub-overview">
+      <div className="sub-overview-main">
+        <div className="sub-status">
+          <span className="status-pill">
+            <i /> Подписка активна
+          </span>
+          {/* «16 дней 16:34:11», без дней, когда их 0 */}
+          <b className="sub-countdown countdown" aria-live="off">
+            {countdown(left)}
+          </b>
+          <span className="sub-until">Отключится {dateTimeLocal(sub.expires_at)}</span>
+        </div>
+
+        <div className="sub-balance">
+          <span className="sub-label">Баланс</span>
+          <b className="sub-balance-value">{me ? rub(me.balance) : '...'}</b>
+          {renewal?.enabled &&
+            (lacking > 0 ? (
+              <span className="sub-note">
+                Для автопродления не хватает <b className="renew-lacking">{rub(lacking)}</b>
+              </span>
+            ) : (
+              <span className="sub-note">Хватает на автопродление · спишется {rub(renewal.cost)}</span>
+            ))}
+          <Link to={lacking > 0 ? `/topup?amount=${lacking}` : '/topup'} state={{ back: true }} className="link" onClick={() => haptic.tap()}>
+            Пополнить баланс
+          </Link>
+        </div>
+
+        <div className="sub-actions">
+          <Button stretched icon={<LuWallet size={20} />} onClick={onRenew}>
+            Продлить подписку
+          </Button>
+          <Button stretched variant="secondary" size="m" icon={<LuSettings size={18} />} onClick={onAutoRenew}>
+            Настроить автопродление
+          </Button>
+        </div>
+      </div>
+
+      <div className="sub-overview-foot">
+        <LuRefreshCw size={18} />
+        <span>
+          Автопродление <b>{is_enabled ? 'включено' : 'выключено'}</b>
+          {is_enabled && ` · на ${days(renewDays)}`}
+        </span>
+        {tariff && <span className="sub-tariff">Тариф: {tariff}</span>}
+      </div>
+    </div>
+  )
+}
+
+function StatusCard({ sub, onRenew }: { sub: Subscription; onRenew(): void }) {
+  const left = useSubCountdown(sub)
 
   return (
     <div className="status-card">
@@ -86,8 +147,7 @@ function StatusCard({ sub, onRenew, wide = false }: { sub: Subscription; onRenew
         </b>
       </div>
 
-      {!wide && <RenewStatus sub={sub} />}
-      {wide && tariff && <div className="status-tariff">Тариф: {tariff}</div>}
+      <RenewStatus sub={sub} />
 
       <Button stretched className="status-renew" onClick={onRenew}>
         Продлить
@@ -177,32 +237,31 @@ export function MainTab({ sub, aside }: { sub: Subscription; aside?: ReactNode }
   return (
     <div className="tab-content">
       {aside ? (
-        // ПК: слева подписка и автопродление, справа ссылка и устройства
-        <Cols
-          left={
-            <>
-              <section className="section">
-                <h3 className="section-title">Подписка</h3>
-                <StatusCard sub={sub} onRenew={() => setExtendOpen(true)} wide />
-              </section>
-              <section className="section">
-                <h3 className="section-title">Автопродление</h3>
-                <div className="status-card renew-card">
-                  <RenewStatus sub={sub} />
-                  <Button stretched variant="secondary" className="status-renew" onClick={() => setRenewOpen(true)}>
-                    Настроить автопродление
+        // ПК: сверху сводка подписки во всю ширину, ниже подключение: ссылка и устройства
+        <>
+          <OverviewPanel sub={sub} onRenew={() => setExtendOpen(true)} onAutoRenew={() => setRenewOpen(true)} />
+          <div className="panel">
+            <h2 className="panel-title">Подключение устройств</h2>
+            {sub.url && (
+              <>
+                <div className="link-bar">
+                  <button className="link-field" onClick={copy} aria-label="Скопировать ссылку">
+                    <Lottie name={E.link} size={26} />
+                    <span className="url-text">{sub.url.replace('https://', '')}</span>
+                  </button>
+                  <Button variant="secondary" size="m" icon={copied ? <LuCheck size={18} strokeWidth={2.6} /> : <LuCopy size={18} />} onClick={copy}>
+                    {copied ? 'Скопировано' : 'Скопировать ссылку'}
+                  </Button>
+                  <Button variant="secondary" size="m" icon={<LuQrCode size={18} />} onClick={() => setQrOpen(true)}>
+                    Показать QR-код
                   </Button>
                 </div>
-              </section>
-            </>
-          }
-          right={
-            <>
-              {link}
-              {aside}
-            </>
-          }
-        />
+                <p className="panel-hint">Добавьте ссылку в приложение-клиент на любом устройстве</p>
+              </>
+            )}
+            {aside}
+          </div>
+        </>
       ) : (
         <>
           <StatusCard sub={sub} onRenew={() => setExtendOpen(true)} />

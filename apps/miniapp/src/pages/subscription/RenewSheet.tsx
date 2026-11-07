@@ -5,7 +5,7 @@ import { AnimatedNumber } from '../../components/AnimatedNumber'
 import { Sheet } from '../../components/Sheet'
 import { Lottie } from '../../components/Lottie'
 import { LoadError } from '../../components/LoadError'
-import { Button, Chips, Stepper } from '../../components/Controls'
+import { Button, Chips, DiscountBadge, Stepper, discountReason } from '../../components/Controls'
 import { useToast } from '../../components/Toast'
 import { E } from '../../data/emoji'
 import { MAX_DAYS } from '../../data/content'
@@ -13,6 +13,7 @@ import { useMe, useRenew, useTariffs } from '../../api/queries'
 import { date, days, devicesWord, rub } from '../../lib/format'
 import { haptic } from '../../lib/telegram'
 import { consumeResume, draft, draftOf } from '../../lib/draft'
+import { useSingleFlight } from '../../hooks/useSingleFlight'
 
 const PRESETS = [7, 14, 30, 90]
 const DAY = 86_400_000
@@ -42,19 +43,23 @@ export function RenewSheet({ sub, open, onClose }: { sub: Subscription; open: bo
   const base = Math.max(Date.now(), +new Date(sub.expires_at))
   const newUntil = new Date(base + dayCount * DAY).toISOString()
 
+  // черновик снимает сам хук useRenew, здесь только отклик
+  const once = useSingleFlight()
   const submit = () =>
-    renew.mutate(dayCount, {
-      onSuccess: (s) => {
-        draft.clear()
-        haptic.notify('success')
-        toast(`Продлено до ${date(s.expires_at)}`, E.party)
-        onClose()
-      },
-      onError: (e) => {
-        haptic.notify('error')
-        toast(e.message || 'Не удалось продлить', E.warning)
-      },
-    })
+    once((done) =>
+      renew.mutate(dayCount, {
+        onSettled: done,
+        onSuccess: (s) => {
+          haptic.notify('success')
+          toast(`Продлено до ${date(s.expires_at)}`, E.party)
+          onClose()
+        },
+        onError: (e) => {
+          haptic.notify('error')
+          toast(e.message || 'Не удалось продлить', E.warning)
+        },
+      }),
+    )
 
   return (
     <Sheet open={open} onClose={onClose} full>
@@ -79,6 +84,7 @@ export function RenewSheet({ sub, open, onClose }: { sub: Subscription; open: bo
         <>
           <h3 className="section-title">К оплате</h3>
           <div className="calc-card">
+            <DiscountBadge percent={discount} reason={discountReason(slots, q.deviceDiscount, q.discount)} />
             <div className="calc-formula">
               <span>{rub(q.pricePerDay)}</span>
               <i>×</i>
@@ -89,11 +95,10 @@ export function RenewSheet({ sub, open, onClose }: { sub: Subscription; open: bo
               <span>{days(dayCount)}</span>
             </div>
             <div className="calc-total">
+              {q.total < q.base && <s className="calc-old">{rub(q.base)}</s>}
               <AnimatedNumber value={q.total} format={rub} duration={450} />
             </div>
-            <div className="calc-hint">
-              {discount > 0 && `скидка ${Math.round(discount * 100)} % · `}подписка будет до {date(newUntil)}
-            </div>
+            <div className="calc-hint">подписка будет до {date(newUntil)}</div>
           </div>
         </>
       )}

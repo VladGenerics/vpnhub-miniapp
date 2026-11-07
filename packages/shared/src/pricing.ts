@@ -21,7 +21,23 @@ export function pricePerDeviceDay(t: Tariffs, days: number): number | null {
 }
 
 export function deviceDiscount(t: Tariffs, devices: number): number {
-  return stepFor(t.device_discounts, (d) => d.device_count, devices)?.discount ?? 0
+  const d = stepFor(t.device_discounts, (d) => d.device_count, devices)?.discount ?? 0
+  // скидка - доля 0..1; мусор из API не должен давать отрицательную цену
+  return Number.isFinite(d) ? Math.min(1, Math.max(0, d)) : 0
+}
+
+/** Ответ /tariffs похож на тарифы: массивы на месте, числа конечные. Иначе расчёты дали бы NaN */
+export function isValidTariffs(t: unknown): t is Tariffs {
+  const v = t as Tariffs | null
+  const num = (n: unknown) => typeof n === 'number' && Number.isFinite(n)
+  return (
+    !!v &&
+    Array.isArray(v.prices) &&
+    v.prices.every((p) => num(p?.min_days) && num(p?.price_per_day)) &&
+    Array.isArray(v.device_discounts) &&
+    v.device_discounts.every((d) => num(d?.device_count) && num(d?.discount)) &&
+    num(v.current_discount)
+  )
 }
 
 export function activeDiscount(t: Tariffs, now = Date.now()): number {
@@ -53,30 +69,63 @@ export function quote(t: Tariffs, devices: number, days: number): Quote | null {
   }
 }
 
+/**
+ * Цена дня за устройство для дробного срока: между порогами тарифа - плавно по прямой.
+ * Как в боте: при ценах 1 дн. - 5 ₽ и 10 дн. - 4,5 ₽ срок 2 дн. 23 ч стоит 4,89 ₽.
+ * Короче первого порога - цена первого, дольше последнего - цена последнего
+ */
+export function interpolatedPricePerDay(t: Tariffs, days: number): number | null {
+  const ps = [...t.prices].filter((p) => Number.isFinite(p.price_per_day) && p.price_per_day > 0).sort((a, b) => a.min_days - b.min_days)
+  if (!ps.length) return null
+  if (days <= ps[0].min_days) return ps[0].price_per_day
+  for (let i = 1; i < ps.length; i++) {
+    const a = ps[i - 1]
+    const b = ps[i]
+    if (days <= b.min_days) return a.price_per_day + ((b.price_per_day - a.price_per_day) * (days - a.min_days)) / (b.min_days - a.min_days)
+  }
+  return ps[ps.length - 1].price_per_day
+}
+
 export interface SlotsQuote {
-  /** Цена дня за устройство */
+  /** Тариф за день за устройство без скидки, на оставшийся срок */
+  basePricePerDay: number
+  /** Тариф со скидкой за число устройств */
   pricePerDay: number
-  /** Дней до конца подписки, за них и платим */
+  /** Скидка за число устройств после покупки, доля 0..1 */
+  deviceDiscount: number
+  /** Сколько устройств будет после покупки - от него скидка */
+  devicesAfter: number
+  /** Остаток подписки в днях, дробный: 2 дн. 12 ч = 2.5 */
   daysLeft: number
-  /** Без скидок */
+  /** Без скидки */
   base: number
-  /** Доплата за новые слоты на оставшийся срок */
+  /** К оплате */
   total: number
 }
 
 /**
- * Доплата за новые слоты к действующей подписке: стоимость всех слотов минус стоимость текущих
- * на оставшийся срок, так скидка за число устройств считается верно. Итог считает бэкенд, здесь предпросмотр.
+ * Докупка слотов к действующей подписке, как в боте:
+ *   остаток срока в днях (дробный) × тариф × (1 − скидка за устройства после покупки) × новые слоты.
+ * Тариф берётся на остаток срока, скидка уменьшает тариф. Итог считает бэкенд, здесь предпросмотр.
  */
 export function slotsQuote(t: Tariffs, currentSlots: number, add: number, expiresAt: string, now = Date.now()): SlotsQuote | null {
-  const daysLeft = Math.max(1, Math.ceil((+new Date(expiresAt) - now) / 86_400_000))
-  const after = quote(t, currentSlots + add, daysLeft)
-  const before = quote(t, Math.max(0, currentSlots), daysLeft)
-  if (!after || !before) return null
+  // точный остаток: округлять до сотых до расчёта нельзя - за минуты до конца он стал бы нулём, а цена поплыла бы
+  const exactDays = (+new Date(expiresAt) - now) / 86_400_000
+  if (!Number.isFinite(exactDays) || exactDays <= 0 || !Number.isInteger(add) || add < 1) return null
+  const basePrice = interpolatedPricePerDay(t, exactDays)
+  if (basePrice === null) return null
+  const devicesAfter = Math.max(0, currentSlots) + add
+  const dd = deviceDiscount(t, devicesAfter)
+  const basePricePerDay = round2(basePrice)
+  const pricePerDay = round2(basePrice * (1 - dd))
   return {
-    pricePerDay: after.pricePerDay,
-    daysLeft,
-    base: round2(after.pricePerDay * add * daysLeft),
-    total: round2(after.total - (currentSlots > 0 ? before.total : 0)),
+    basePricePerDay,
+    pricePerDay,
+    deviceDiscount: dd,
+    devicesAfter,
+    // для показа - до сотых, но не «0» в последние минуты
+    daysLeft: Math.max(0.01, round2(exactDays)),
+    base: round2(exactDays * basePricePerDay * add),
+    total: round2(exactDays * pricePerDay * add),
   }
 }

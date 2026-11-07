@@ -1,5 +1,27 @@
 import { useState, type ButtonHTMLAttributes, type ReactNode } from 'react'
+import { LuBadgePercent } from 'react-icons/lu'
 import { haptic } from '../lib/telegram'
+import { devicesWord } from '../lib/format'
+
+/** Плашка «Действует скидка 25 % за 6 устройств»: скидку видно сразу, а не только по зачёркнутой цене */
+export function DiscountBadge({ percent, reason }: { percent: number; reason?: string }) {
+  if (!(percent > 0.0049)) return null
+  return (
+    <div className="discount-badge">
+      <LuBadgePercent size={18} />
+      <span>
+        Действует скидка <b>{Math.round(percent * 100)} %</b>
+        {reason && ` ${reason}`}
+      </span>
+    </div>
+  )
+}
+
+/** За что скидка: за число устройств, по акции или персональная, или вместе */
+export function discountReason(devices: number, deviceDiscount: number, otherDiscount: number) {
+  const parts = [deviceDiscount > 0 && `за ${devices} ${devicesWord(devices)}`, otherDiscount > 0 && 'по акции'].filter(Boolean)
+  return parts.join(' и ')
+}
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: 'primary' | 'secondary' | 'danger' | 'ghost'

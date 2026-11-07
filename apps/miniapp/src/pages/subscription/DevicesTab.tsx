@@ -6,6 +6,7 @@ import { platformOf, slotTitle } from '../../lib/device'
 import { date, plural } from '../../lib/format'
 import { draftOf } from '../../lib/draft'
 import { haptic } from '../../lib/telegram'
+import { MAX_DEVICES } from '../../data/content'
 import { AddSlotsSheet } from './AddSlotsSheet'
 
 // сколько устройств видно сразу, остальные - по кнопке
@@ -13,7 +14,8 @@ const DEVICES_VISIBLE = 6
 // до скольких свободных слотов показываем каждый отдельной строкой
 const FREE_AS_ROWS = 3
 
-export function DevicesTab({ sub }: { sub: Subscription }) {
+// desktop - внутри карточки «Подключение устройств» на ПК: заголовок короче, как в макете
+export function DevicesTab({ sub, desktop = false }: { sub: Subscription; desktop?: boolean }) {
   const occupied = sub.slots.filter((s) => s.is_occupied)
   const free = sub.slots.filter((s) => !s.is_occupied)
   // вернулись с пополнения посреди докупки - окно открывается само
@@ -33,7 +35,7 @@ export function DevicesTab({ sub }: { sub: Subscription }) {
   return (
     <div className="tab-content">
       <Section
-        title={`Занято ${occupied.length} из ${sub.slots.length} слотов`}
+        title={desktop ? `Устройства · ${occupied.length} из ${sub.slots.length}` : `Занято ${occupied.length} из ${sub.slots.length} слотов`}
         footer="Слот занимается автоматически, когда новое устройство подключается по ссылке подписки"
       >
         {/* раскрытый длинный список листается внутри карточки, а не растягивает страницу */}
@@ -68,14 +70,23 @@ export function DevicesTab({ sub }: { sub: Subscription }) {
             subtitle="Ожидают подключения по ссылке"
           />
         )}
-        <Cell
-          tone="accent"
-          icon={<span className="slot-empty is-add">+</span>}
-          title="Добавить слоты"
-          subtitle="Докупить к текущей подписке"
-          onClick={() => setAddOpen(true)}
-          chevron
-        />
+        {/* в лимите 1000 устройств докупать некуда: строка остаётся, но без перехода */}
+        {sub.slots.length >= MAX_DEVICES ? (
+          <Cell
+            icon={<span className="slot-empty">+</span>}
+            title={<span className="muted">Добавить слоты</span>}
+            subtitle={`Достигнут максимум: ${MAX_DEVICES} устройств`}
+          />
+        ) : (
+          <Cell
+            tone="accent"
+            icon={<span className="slot-empty is-add">+</span>}
+            title="Добавить слоты"
+            subtitle="Докупить к текущей подписке"
+            onClick={() => setAddOpen(true)}
+            chevron
+          />
+        )}
       </Section>
       <AddSlotsSheet sub={sub} open={addOpen} onClose={() => setAddOpen(false)} />
     </div>

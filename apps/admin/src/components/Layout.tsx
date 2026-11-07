@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { ROLE_LABEL } from '@vpnhub/shared'
 import { useAuth } from '../auth/AuthProvider'
+import { isTelegram } from '../api/http'
 import { Icon } from './Icon'
 import type { IconName } from './Icon'
 import { Button } from './ui'
@@ -158,7 +159,8 @@ export function Layout() {
               </div>
               <Avatar name={name} photo={profile?.photo_url} />
             </div>
-            <Button variant="ghost" icon="logout" aria-label="Выйти" title="Выйти" onClick={logout} />
+            {/* в Telegram вход по initData: «выйти» нечем, кнопка ничего бы не сделала */}
+            {!isTelegram && <Button variant="ghost" icon="logout" aria-label="Выйти" title="Выйти" onClick={logout} />}
           </div>
         </header>
         <main className="content">

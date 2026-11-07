@@ -7,6 +7,8 @@ import { Button, Card, ErrorView, PageHead, Skeleton, Switch, useMoneyInput } fr
 import { rub } from '../lib/format'
 
 const MAX_NAME = 64
+// пополнение в кабинете - до 1 000 000 ₽ за раз: минимум выше сделал бы способ недоступным
+const MAX_MIN_AMOUNT = 1_000_000
 
 function MethodRow({ m, canEdit }: { m: PaymentMethod; canEdit: boolean }) {
   const [name, setName] = useState(m.name)
@@ -24,7 +26,7 @@ function MethodRow({ m, canEdit }: { m: PaymentMethod; canEdit: boolean }) {
   }, [m])
 
   const nameErr = !name.trim() ? 'Введите название' : null
-  const minErr = !(min.value >= 0) ? 'Укажите сумму' : null
+  const minErr = !Number.isFinite(min.value) || min.value < 0 ? 'Укажите сумму' : min.value > MAX_MIN_AMOUNT ? `Не больше ${rub(MAX_MIN_AMOUNT)}` : null
   const dirty = name.trim() !== m.name || min.value !== m.min_amount
   const busy = update.isPending
   // isPending обновится только после перерисовки, а второй Enter приходит раньше: держим флаг синхронно

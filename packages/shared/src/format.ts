@@ -1,9 +1,23 @@
 export const rub = (n: number) => `${n.toLocaleString('ru-RU', { maximumFractionDigits: 2 })} ₽`
 
-export const date = (d: Date | string) => new Date(d).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' }).replace(' г.', '')
+export const date = (d: Date | string) =>
+  Number.isNaN(+new Date(d)) ? '—' : new Date(d).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' }).replace(' г.', '')
 
 export const dateTime = (d: Date | string) =>
   new Date(d).toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+
+/**
+ * Точная дата и время в часовом поясе браузера: «24 ноября 2026 в 15:20 (GMT+2)».
+ * В БД UTC, API отдаёт ISO со смещением (Z), браузер сам переводит в местное время
+ */
+export function dateTimeLocal(d: Date | string) {
+  const t = new Date(d)
+  if (Number.isNaN(+t)) return '—'
+  const day = date(t)
+  const time = t.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })
+  const tz = new Intl.DateTimeFormat('ru-RU', { timeZoneName: 'short' }).formatToParts(t).find((p) => p.type === 'timeZoneName')?.value
+  return `${day} в ${time}${tz ? ` (${tz})` : ''}`
+}
 
 export function plural(n: number, forms: [string, string, string]) {
   const m10 = n % 10

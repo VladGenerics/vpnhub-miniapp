@@ -18,6 +18,8 @@ export interface NavItem {
   to: string
   label: string
   icon: ReactNode
+  /** Подпись в боковой панели на ПК, если отличается от нижнего меню */
+  wideLabel?: string
   /** Вложенные страницы, на которых пункт тоже подсвечен */
   match: string[]
 }

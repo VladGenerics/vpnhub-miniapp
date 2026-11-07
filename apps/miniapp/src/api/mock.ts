@@ -1,6 +1,7 @@
 import type { DeviceSlot, Invoice, Me, PaymentMethod, PublicSettings, Subscription, Tariffs } from '@vpnhub/shared'
 import { quote, slotsQuote } from '@vpnhub/shared'
 import { getTgUser } from '../lib/telegram'
+import { MAX_DEVICES } from '../data/content'
 import type { UserApi } from './index'
 
 // Тестовый бэкенд в памяти, данные той же формы, что у настоящего API.
@@ -71,8 +72,24 @@ const demoSubscription = (expiresInMs = 16 * DAY + 13.7 * 36e5): Subscription =>
 let subscription: Subscription | null = params.get('sub') === '0' ? null : demoSubscription(expiresIn > 0 ? expiresIn * 1000 : undefined)
 
 const tariffs: Tariffs = {
-  prices: [{ min_days: 1, price_per_day: 5 }],
-  device_discounts: [],
+  // как в боте: цена дня по сроку и скидка за число устройств
+  prices: [
+    { min_days: 1, price_per_day: 5 },
+    { min_days: 10, price_per_day: 4.5 },
+    { min_days: 30, price_per_day: 3.3 },
+    { min_days: 90, price_per_day: 2.76 },
+  ],
+  device_discounts: [
+    { device_count: 2, discount: 0.05 },
+    { device_count: 3, discount: 0.1 },
+    { device_count: 4, discount: 0.15 },
+    { device_count: 5, discount: 0.2 },
+    { device_count: 6, discount: 0.25 },
+    { device_count: 7, discount: 0.35 },
+    { device_count: 8, discount: 0.4 },
+    { device_count: 9, discount: 0.45 },
+    { device_count: 10, discount: 0.5 },
+  ],
   current_discount: 0,
   personal_discount: null,
 }
@@ -241,6 +258,9 @@ export const mockApi: UserApi = {
 
   async buySlots(count) {
     const sub = requireSub()
+    // как на бэке: не больше 1000 устройств в подписке
+    if (!Number.isInteger(count) || count < 1 || sub.slots.length + count > MAX_DEVICES)
+      throw new Error(`В подписке может быть не больше ${MAX_DEVICES} устройств`)
     const q = slotsQuote(tariffs, sub.slots.length, count, sub.expires_at)
     if (!q) throw new Error('Тариф недоступен, попробуйте позже')
     if (q.total > me.balance) throw new Error('Недостаточно средств на балансе')

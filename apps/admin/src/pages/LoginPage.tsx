@@ -5,6 +5,7 @@ import { FaTelegramPlane } from 'react-icons/fa'
 import { preloadTelegramLogin, telegramLoginPopup, type TelegramAuthData } from '@vpnhub/shared'
 import { api, USE_MOCKS } from '../api'
 import { useAuth } from '../auth/AuthProvider'
+import { isTelegram } from '../api/http'
 import { Button } from '../components/ui'
 
 const BOT_ID = Number(import.meta.env.VITE_TG_BOT_ID) || 0
@@ -90,9 +91,14 @@ export function NoAccessPage() {
             поддержки.
           </p>
         </div>
-        <Button variant="secondary" icon="logout" wide onClick={logout}>
-          Войти другим аккаунтом
-        </Button>
+        {/* в Telegram аккаунт задаёт сам Telegram: сменить его можно только там */}
+        {isTelegram ? (
+          <p className="muted">Чтобы войти другим аккаунтом, откройте админку из Telegram под нужным аккаунтом</p>
+        ) : (
+          <Button variant="secondary" icon="logout" wide onClick={logout}>
+            Войти другим аккаунтом
+          </Button>
+        )}
       </div>
     </main>
   )

@@ -1,6 +1,8 @@
 import { useEffect, type ReactNode } from 'react'
 import type { SortOrder } from '@vpnhub/shared'
 import { num } from '../lib/format'
+// те же размеры, что принимает адрес (?size=10): иначе выбор показывал бы не то, что на экране
+import { PAGE_SIZES } from '../hooks/useListParams'
 import { Icon } from './Icon'
 import { Skeleton } from './ui'
 
@@ -106,8 +108,6 @@ export function DataTable<T>({
     </div>
   )
 }
-
-const PAGE_SIZES = [20, 50, 100]
 
 /** Номера страниц с многоточиями: 1 ... 4 5 [6] 7 8 ... 40 */
 function pageList(page: number, pages: number): (number | '…')[] {

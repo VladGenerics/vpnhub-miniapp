@@ -337,8 +337,10 @@ export function useMoneyInput(initial = '') {
   const [raw, setRaw] = useState(initial)
   const set = (v: string) => {
     const cleaned = v.replace(',', '.').replace(/[^\d.]/g, '')
-    const [int, ...rest] = cleaned.split('.')
-    setRaw(rest.length ? `${int}.${rest.join('').slice(0, 2)}` : int.slice(0, 9))
+    const [whole, ...rest] = cleaned.split('.')
+    // целая часть до 9 цифр и с копейками тоже: иначе 400 девяток с «.00» давали Infinity
+    const int = whole.slice(0, 9)
+    setRaw(rest.length ? `${int}.${rest.join('').slice(0, 2)}` : int)
   }
   const value = raw === '' ? NaN : Number(raw)
   return { raw, set, value, reset: () => setRaw(initial) }

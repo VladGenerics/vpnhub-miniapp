@@ -2,7 +2,7 @@ import { useMemo } from 'react'
 import { PURCHASE_KIND_LABEL, plural, type PurchaseKind } from '@vpnhub/shared'
 import { usePurchasesStats } from '../../api/queries'
 import { change, CountUp, Kpi, Trend } from '../../components/ui'
-import { num, rub, rubCompact } from '../../lib/format'
+import { money, num, rub, rubCompact } from '../../lib/format'
 import type { Slot } from './charts/palette'
 import { PieCard } from './charts/PieCard'
 import { TimeSeriesCard, type Series } from './charts/TimeSeriesCard'
@@ -55,11 +55,11 @@ export default function PurchasesStats() {
               <Kpi
                 icon="wallet"
                 label="Сумма покупок"
-                value={<CountUp value={Math.round(amount)} format={rub} />}
+                value={<CountUp value={money(amount)} format={rub} />}
                 trend={prev && <Trend value={change(amount, prevAmount)} hint={PREV_HINT} />}
               />
-              <Kpi icon="card" label="Средний чек" value={count ? rub(Math.round(amount / count)) : '—'} />
-              <Kpi icon="monitor" label="Куплено слотов" value={<CountUp value={slots} format={num} />} note={`на ${rubCompact(Math.round(slotsAmount))}`} />
+              <Kpi icon="card" label="Средний чек" value={count ? rub(money(amount / count)) : '—'} />
+              <Kpi icon="monitor" label="Куплено слотов" value={<CountUp value={slots} format={num} />} note={`на ${rubCompact(money(slotsAmount))}`} />
             </div>
 
             <div className="stats-grid">
@@ -85,9 +85,7 @@ export default function PurchasesStats() {
                 centerLabel="за период"
                 format={rubCompact}
                 fetching={q.isFetching}
-                items={totals
-                  .filter((t) => t.amount > 0)
-                  .map((t) => ({ key: t.k, name: PURCHASE_KIND_LABEL[t.k], slot: slotOf(t.k), value: Math.round(t.amount) }))}
+                items={totals.filter((t) => t.amount > 0).map((t) => ({ key: t.k, name: PURCHASE_KIND_LABEL[t.k], slot: slotOf(t.k), value: money(t.amount) }))}
               />
               <TimeSeriesCard title={`Сумма по видам покупок ${PER[s.g]}`} type="line" series={series.amount} format={rub} className="is-wide" {...props} />
               <TimeSeriesCard

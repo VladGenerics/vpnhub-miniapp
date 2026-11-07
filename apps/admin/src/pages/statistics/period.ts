@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import type { Granularity, StatsQuery } from '@vpnhub/shared'
 import { TZ, useStatsRange } from '../../api/queries'
+import { isRealDay } from '../../lib/format'
 
 // Период и шаг статистики. Время в поясе браузера, его же шлём бэкенду в tz.
 // Период хранится в адресе (?g=day&from=2026-10-02&to=2026-11-01), у каждой вкладки свой.
@@ -99,7 +100,7 @@ function encode(ms: number, withTime: boolean) {
 }
 
 function decode(v: string | null): number | null {
-  if (!v || !/^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}([+-]\d{2}:\d{2}|Z)?)?$/.test(v)) return null
+  if (!v || !/^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}([+-]\d{2}:\d{2}|Z)?)?$/.test(v) || !isRealDay(v)) return null
   // yyyy-mm-dd без времени new Date читает как UTC - дописываем время, чтобы вышло локальное
   const ms = new Date(v.length === 10 ? `${v}T00:00` : v).getTime()
   return Number.isFinite(ms) ? ms : null

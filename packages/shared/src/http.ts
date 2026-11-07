@@ -62,12 +62,16 @@ export function createHttpClient({ baseUrl, tokenKey, getInitData, timeout = 30_
   // если хранилище запрещено (приватный режим, настройки WebView), токен живёт в памяти до перезагрузки,
   // иначе после входа интерфейс считал бы себя авторизованным, а запросы шли бы без токена
   let memToken: string | null = null
+  // хранилище работает - верим только ему: нет ключа = вышли (в том числе в соседней вкладке).
+  // Токен в памяти - запасной путь лишь когда запись в хранилище не удалась
+  let storageOk = true
   const authToken = {
     /** Ключ в localStorage, чтобы ловить вход и выход в соседних вкладках */
     key: tokenKey,
     get(): string | null {
+      if (!storageOk) return memToken
       try {
-        return localStorage.getItem(tokenKey) ?? memToken
+        return localStorage.getItem(tokenKey)
       } catch {
         return memToken
       }
@@ -77,8 +81,10 @@ export function createHttpClient({ baseUrl, tokenKey, getInitData, timeout = 30_
       try {
         if (token) localStorage.setItem(tokenKey, token)
         else localStorage.removeItem(tokenKey)
+        storageOk = true
       } catch {
         // приватный режим или запрет хранилища: остаётся токен в памяти
+        storageOk = false
       }
     },
   }

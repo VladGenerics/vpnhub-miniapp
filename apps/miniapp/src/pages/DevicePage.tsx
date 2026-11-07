@@ -7,7 +7,7 @@ import { DeviceIcon } from '../components/DeviceIcon'
 import { Sheet } from '../components/Sheet'
 import { Lottie } from '../components/Lottie'
 import { Button } from '../components/Controls'
-import { PageSkeleton } from '../components/States'
+import { PageError, PageSkeleton } from '../components/States'
 import { useToast } from '../components/Toast'
 import { E } from '../data/emoji'
 import { useActiveSubscription, useDeleteSlot, useReleaseSlot } from '../api/queries'
@@ -17,7 +17,7 @@ import { haptic } from '../lib/telegram'
 
 export function DevicePage() {
   const { id } = useParams()
-  const { active, isPending } = useActiveSubscription()
+  const { active, isPending, isError, refetch } = useActiveSubscription()
   const release = useReleaseSlot()
   const remove = useDeleteSlot()
   const goBack = useGoBack()
@@ -33,6 +33,14 @@ export function DevicePage() {
     return (
       <Page back>
         <PageSkeleton />
+      </Page>
+    )
+
+  // подписка не загрузилась (500, обрыв) - это не «устройства нет»: ошибка с повтором, адрес не теряем
+  if (isError && !active)
+    return (
+      <Page back>
+        <PageError onRetry={refetch} />
       </Page>
     )
 

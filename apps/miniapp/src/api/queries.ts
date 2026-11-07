@@ -1,7 +1,8 @@
 import { QueryClient, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type { AutoRenewal, CreateInvoiceRequest, Invoice, PurchaseRequest, Subscription } from '@vpnhub/shared'
-import { required, shouldRetry } from '@vpnhub/shared'
+import { ApiError, isValidTariffs, required, shouldRetry } from '@vpnhub/shared'
 import { api } from './index'
+import { draft, type Draft } from '../lib/draft'
 
 const isClientError = (err: unknown) => {
   const status = (err as { status?: number } | null)?.status ?? 0
@@ -28,6 +29,17 @@ async function setFresh<T>(qc: QueryClient, queryKey: readonly unknown[], data: 
   qc.setQueryData<T>(queryKey, data)
 }
 
+/**
+ * Эпоха авторизации: растёт при входе, выходе и смене аккаунта в соседней вкладке.
+ * Мутация запоминает эпоху на старте, и поздний ответ прежнего аккаунта не попадает в кэш нового
+ */
+export const authEpoch = { value: 0 }
+const epochCtx = () => ({ epoch: authEpoch.value })
+const sameEpoch = (ctx: { epoch: number } | undefined) => ctx?.epoch === authEpoch.value
+
+/** Успешная покупка снимает свой черновик (если он того же вида), даже когда страницу уже закрыли */
+const clearDraft = (kind: Draft['kind']) => draft.get()?.kind === kind && draft.clear()
+
 export const keys = {
   me: ['me'] as const,
   subscription: ['subscription'] as const,
@@ -40,7 +52,17 @@ export const keys = {
 
 export const useMe = () => useQuery({ queryKey: keys.me, queryFn: () => api.getMe().then(required) })
 export const useSubscription = () => useQuery({ queryKey: keys.subscription, queryFn: api.getSubscription })
-export const useTariffs = () => useQuery({ queryKey: keys.tariffs, queryFn: () => api.getTariffs().then(required), staleTime: 5 * 60_000 })
+export const useTariffs = () =>
+  useQuery({
+    queryKey: keys.tariffs,
+    queryFn: async () => {
+      const t = required(await api.getTariffs())
+      // кривые тарифы - ошибка с повтором, а не покупка по цене NaN
+      if (!isValidTariffs(t)) throw new ApiError(0, 'Не удалось загрузить цены, попробуйте позже')
+      return t
+    },
+    staleTime: 5 * 60_000,
+  })
 export const usePaymentMethods = () => useQuery({ queryKey: keys.paymentMethods, queryFn: () => api.getPaymentMethods().then(required) })
 export const useSettings = (enabled = true) =>
   useQuery({ queryKey: keys.settings, queryFn: () => api.getSettings().then(required), staleTime: 5 * 60_000, enabled })
@@ -90,15 +112,18 @@ export function useBindEmail() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (email: string) => api.bindEmail(email),
-    onSuccess: (me) => setFresh(qc, keys.me, me),
+    onMutate: epochCtx,
+    onSuccess: (me, _email, ctx) => (sameEpoch(ctx) ? setFresh(qc, keys.me, me) : undefined),
   })
 }
 
 export function useCreateInvoice() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (req: CreateInvoiceRequest) => api.createInvoice(req),
-    onSuccess: (inv) => {
+    mutationFn: (req: CreateInvoiceRequest) => api.createInvoice(req).then(required),
+    onMutate: epochCtx,
+    onSuccess: (inv, _req, ctx) => {
+      if (!sameEpoch(ctx)) return
       qc.setQueryData(keys.invoice(inv.id), inv)
       qc.invalidateQueries({ queryKey: keys.unpaidInvoices })
     },
@@ -108,8 +133,12 @@ export function useCreateInvoice() {
 export function usePurchase() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (req: PurchaseRequest) => api.purchase(req),
-    onSuccess: async (sub) => {
+    // пустой ответ на денежную операцию - не «успех»: показываем ошибку, а не «Подписка оформлена»
+    mutationFn: (req: PurchaseRequest) => api.purchase(req).then(required),
+    onMutate: epochCtx,
+    onSuccess: async (sub, _req, ctx) => {
+      if (!sameEpoch(ctx)) return
+      clearDraft('new')
       await setFresh(qc, keys.subscription, sub)
       qc.invalidateQueries({ queryKey: keys.me })
     },
@@ -119,8 +148,11 @@ export function usePurchase() {
 export function useRenew() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (days: number) => api.renew(days),
-    onSuccess: async (sub) => {
+    mutationFn: (days: number) => api.renew(days).then(required),
+    onMutate: epochCtx,
+    onSuccess: async (sub, _days, ctx) => {
+      if (!sameEpoch(ctx)) return
+      clearDraft('renew')
       await setFresh(qc, keys.subscription, sub)
       qc.invalidateQueries({ queryKey: keys.me })
     },
@@ -130,8 +162,11 @@ export function useRenew() {
 export function useBuySlots() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (count: number) => api.buySlots(count),
-    onSuccess: async (sub) => {
+    mutationFn: (count: number) => api.buySlots(count).then(required),
+    onMutate: epochCtx,
+    onSuccess: async (sub, _count, ctx) => {
+      if (!sameEpoch(ctx)) return
+      clearDraft('slots')
       await setFresh(qc, keys.subscription, sub)
       qc.invalidateQueries({ queryKey: keys.me })
     },
@@ -142,7 +177,8 @@ export function useSetAutoRenewal() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (v: AutoRenewal) => api.setAutoRenewal(v),
-    onSuccess: (auto_renewal) => setFresh<Subscription | null>(qc, keys.subscription, (s) => (s ? { ...s, auto_renewal } : s)),
+    onMutate: epochCtx,
+    onSuccess: (auto_renewal, _v, ctx) => sameEpoch(ctx) && setFresh<Subscription | null>(qc, keys.subscription, (s) => (s ? { ...s, auto_renewal } : s)),
   })
 }
 

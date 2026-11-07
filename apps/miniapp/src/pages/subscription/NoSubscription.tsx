@@ -7,7 +7,7 @@ import { Cols } from '../../components/Page'
 import { useIsTwoCol } from '../../hooks/useMediaQuery'
 import { LoadError } from '../../components/LoadError'
 import { Section, Cell } from '../../components/List'
-import { Button, Chips, Stepper } from '../../components/Controls'
+import { Button, Chips, DiscountBadge, Stepper, discountReason } from '../../components/Controls'
 import { useToast } from '../../components/Toast'
 import { E, HERO_POOL } from '../../data/emoji'
 import { MAX_DAYS, MAX_DEVICES, NO_SUB_TITLES } from '../../data/content'
@@ -15,6 +15,7 @@ import { useMe, usePurchase, useTariffs } from '../../api/queries'
 import { days, devicesWord, rub } from '../../lib/format'
 import { haptic } from '../../lib/telegram'
 import { draft, draftOf } from '../../lib/draft'
+import { useSingleFlight } from '../../hooks/useSingleFlight'
 
 const TITLE_INTERVAL = 10_000
 const PERIODS = [30, 90, 180, 365]
@@ -57,6 +58,7 @@ export function NoSubscription() {
   // выбор переживает уход на пополнение и обратно
   const [devices, setDevices] = useState(() => draftOf('new')?.devices ?? 3)
   const [period, setPeriod] = useState(() => draftOf('new')?.days ?? 30)
+  // вернулись на форму - флаг «вернуться к оформлению» снимаем, числа помним
   useEffect(() => draft.set({ kind: 'new', devices, days: period }), [devices, period])
   const q = tariffs ? quote(tariffs, devices, period) : null
   // баланс неизвестен (не загрузился) - это не ноль: доплату не считаем, кнопку не включаем
@@ -64,23 +66,35 @@ export function NoSubscription() {
   const enough = q && balance !== undefined ? q.total <= balance : false
   const lacking = q && balance !== undefined && !enough ? Math.ceil(q.total - balance) : 0
   const noPrice = !!tariffs && !q
+  // общая доля скидки (за устройства и по акции перемножаются) и цена дня с ней
+  const discount = q ? 1 - (1 - q.deviceDiscount) * (1 - q.discount) : 0
+  const perDay = q ? Math.round(q.pricePerDay * (1 - discount) * 100) / 100 : 0
   const twoCol = useIsTwoCol()
 
+  // черновик снимает сам хук usePurchase, здесь только отклик
+  const once = useSingleFlight()
   const subscribe = () =>
-    purchase.mutate(
-      { days: period, devices },
-      {
-        onSuccess: () => {
-          draft.clear()
-          haptic.notify('success')
-          toast('Подписка оформлена', E.party)
+    once((done) =>
+      purchase.mutate(
+        { days: period, devices },
+        {
+          onSettled: done,
+          onSuccess: () => {
+            haptic.notify('success')
+            toast('Подписка оформлена', E.party)
+          },
+          onError: (e) => {
+            haptic.notify('error')
+            toast(e.message || 'Не удалось оформить подписку', E.warning)
+          },
         },
-        onError: (e) => {
-          haptic.notify('error')
-          toast(e.message || 'Не удалось оформить подписку', E.warning)
-        },
-      },
+      ),
     )
+  // уходим пополнять: на странице оплаты будет «Вернуться к оформлению»
+  const markResume = () => {
+    haptic.tap()
+    draft.set({ kind: 'new', devices, days: period, resume: true })
+  }
 
   return (
     <>
@@ -102,7 +116,20 @@ export function NoSubscription() {
         }
         right={
           <>
-            <Section title="Тариф" footer={q ? `${rub(q.pricePerDay)} в сутки за одно устройство` : undefined}>
+            <Section
+              title="Тариф"
+              footer={
+                q &&
+                (perDay < q.pricePerDay ? (
+                  <>
+                    <s className="calc-old">{rub(q.pricePerDay)}</s>
+                    {rub(perDay)} в сутки за одно устройство
+                  </>
+                ) : (
+                  `${rub(q.pricePerDay)} в сутки за одно устройство`
+                ))
+              }
+            >
               <div className="plan-row">
                 <div>
                   <div className="cell-title">Устройства</div>
@@ -120,6 +147,11 @@ export function NoSubscription() {
                 <Chips items={PERIODS} value={PERIODS.includes(period) ? period : null} onChange={setPeriod} render={(d) => days(d)} />
               </div>
             </Section>
+            {q && (
+              <div className="discount-row">
+                <DiscountBadge percent={discount} reason={discountReason(devices, q.deviceDiscount, q.discount)} />
+              </div>
+            )}
             {tariffsError && !tariffs && <LoadError text="Не удалось загрузить цены" onRetry={() => refetchTariffs()} busy={tariffsFetching} />}
             {noPrice && <LoadError text="Тариф на этот срок пока недоступен" onRetry={() => refetchTariffs()} busy={tariffsFetching} />}
             {meError && !me && <LoadError text="Не удалось загрузить баланс" onRetry={() => refetchMe()} busy={meFetching} />}
@@ -133,18 +165,13 @@ export function NoSubscription() {
                   to={lacking > 0 ? `/topup?amount=${lacking}` : '/topup'}
                   state={{ back: true, resume: lacking > 0 }}
                   className="link"
-                  onClick={() => haptic.tap()}
+                  onClick={() => (lacking > 0 ? markResume() : haptic.tap())}
                 >
                   Пополнить
                 </Link>
               </div>
               {lacking > 0 ? (
-                <Link
-                  to={`/topup?amount=${lacking}`}
-                  state={{ back: true, resume: true }}
-                  className="btn btn-primary btn-l is-stretched"
-                  onClick={() => haptic.tap()}
-                >
+                <Link to={`/topup?amount=${lacking}`} state={{ back: true, resume: true }} className="btn btn-primary btn-l is-stretched" onClick={markResume}>
                   Пополнить на {rub(lacking)}
                 </Link>
               ) : (

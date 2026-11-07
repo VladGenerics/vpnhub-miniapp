@@ -10,12 +10,14 @@ export function ActiveSubscription({ sub }: { sub: Subscription }) {
   const occupied = sub.slots.filter((s) => s.is_occupied).length
   const twoCol = useIsTwoCol()
   const hero = <Hero emoji="logo" title="Меню подписки" subtitle="Здесь вы можете управлять подпиской" size={112} />
-  // на ПК вкладки не нужны: подписка и устройства видны рядом
+  // на ПК вкладки не нужны: по макету заголовок слева, сводка подписки и под ней подключение устройств
   if (twoCol)
     return (
       <>
-        {hero}
-        <MainTab sub={sub} aside={<DevicesTab sub={sub} />} />
+        <header className="page-head">
+          <h1>Подписка</h1>
+        </header>
+        <MainTab sub={sub} aside={<DevicesTab sub={sub} desktop />} />
       </>
     )
   return (

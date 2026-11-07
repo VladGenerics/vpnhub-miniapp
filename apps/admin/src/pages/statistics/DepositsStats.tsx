@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { PROVIDER_LABEL, type Granularity, type PaymentProvider } from '@vpnhub/shared'
 import { useDepositsStats } from '../../api/queries'
 import { change, CountUp, Kpi, Trend } from '../../components/ui'
-import { num, rub, rubCompact, toDateInput } from '../../lib/format'
+import { money, num, rub, rubCompact, toDateInput } from '../../lib/format'
 import type { Slot } from './charts/palette'
 import { PieCard } from './charts/PieCard'
 import { TimeSeriesCard, type Series } from './charts/TimeSeriesCard'
@@ -62,13 +62,13 @@ export default function DepositsStats() {
               <Kpi
                 icon="wallet"
                 label="Пополнено за период"
-                value={<CountUp value={Math.round(amount)} format={rub} />}
+                value={<CountUp value={money(amount)} format={rub} />}
                 trend={prev && <Trend value={change(amount, prevAmount)} hint={PREV_HINT} />}
-                note={win.length ? `в среднем ${rubCompact(Math.round(amount / win.length))} ${AVG[s.g]}` : undefined}
+                note={win.length ? `в среднем ${rubCompact(money(amount / win.length))} ${AVG[s.g]}` : undefined}
               />
               <Kpi icon="receipt" label="Оплаченных счетов" value={<CountUp value={count} format={num} />} />
-              <Kpi icon="card" label="Средний чек" value={count ? rub(Math.round(amount / count)) : '—'} />
-              <Kpi icon="trendUp" label="Пополнено всего" value={<CountUp value={Math.round(before + amount)} format={rubCompact} />} note="на конец периода" />
+              <Kpi icon="card" label="Средний чек" value={count ? rub(money(amount / count)) : '—'} />
+              <Kpi icon="trendUp" label="Пополнено всего" value={<CountUp value={money(before + amount)} format={rubCompact} />} note="на конец периода" />
             </div>
 
             <div className="stats-grid">
@@ -107,7 +107,7 @@ export default function DepositsStats() {
                   key: pr,
                   name: PROVIDER_LABEL[pr],
                   slot: slotOf(i),
-                  value: Math.round(win.reduce((a, p) => a + (p.by_provider[pr]?.amount ?? 0), 0)),
+                  value: money(win.reduce((a, p) => a + (p.by_provider[pr]?.amount ?? 0), 0)),
                 })).filter((x) => x.value > 0)}
               />
               <PieCard

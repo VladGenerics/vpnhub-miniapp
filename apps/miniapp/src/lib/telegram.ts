@@ -117,18 +117,39 @@ export const haptic = {
   },
 }
 
-/** Родная кнопка «Назад» Telegram, пока страница смонтирована */
+// Стек обработчиков родной «Назад»: срабатывает только верхний. Открытое окно поверх страницы
+// закрывается первым, а страница получает кнопку обратно, когда окно закрыли
+const backStack: { run(): void }[] = []
+let backListener: (() => void) | null = null
+
+function syncBackButton() {
+  if (!tg) return
+  if (backStack.length) {
+    if (!backListener) {
+      backListener = () => backStack[backStack.length - 1]?.run()
+      tg.BackButton.onClick(backListener)
+    }
+    tg.BackButton.show()
+  } else {
+    if (backListener) tg.BackButton.offClick(backListener)
+    backListener = null
+    tg.BackButton.hide()
+  }
+}
+
+/** Родная кнопка «Назад» Telegram, пока компонент смонтирован и onBack задан */
 export function useTelegramBackButton(onBack: (() => void) | null) {
   const ref = useRef(onBack)
   ref.current = onBack
   useEffect(() => {
     if (!isTelegram || !tg || !onBack || !tg.isVersionAtLeast('6.1')) return
-    const handler = () => ref.current?.()
-    tg.BackButton.onClick(handler)
-    tg.BackButton.show()
+    const entry = { run: () => ref.current?.() }
+    backStack.push(entry)
+    syncBackButton()
     return () => {
-      tg.BackButton.offClick(handler)
-      tg.BackButton.hide()
+      const i = backStack.indexOf(entry)
+      if (i >= 0) backStack.splice(i, 1)
+      syncBackButton()
     }
   }, [!!onBack])
 }

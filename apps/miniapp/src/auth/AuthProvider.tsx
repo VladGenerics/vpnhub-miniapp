@@ -1,9 +1,17 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { Navigate, useLocation } from 'react-router-dom'
 import { authToken, setUnauthorizedHandler } from '../api/http'
-import { queryClient } from '../api/queries'
+import { authEpoch, queryClient } from '../api/queries'
+import { draft } from '../lib/draft'
 import { PageError } from '../components/States'
 import { isTelegram, saveWebUser, tg, type TgUser } from '../lib/telegram'
+
+/** Смена аккаунта: старые данные, поздние ответы и черновик покупки прежнего пользователя больше не действуют */
+function resetAccountState() {
+  authEpoch.value++
+  queryClient.clear()
+  draft.clear()
+}
 
 // В Telegram пользователь авторизован всегда, каждый запрос несёт initData.
 // В браузере нужен токен, который бэкенд выдаёт после входа на /login. Храним его в localStorage.
@@ -27,13 +35,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     authToken.set(null)
     saveWebUser(null)
     setToken(null)
-    queryClient.clear()
+    resetAccountState()
   }, [])
 
   const login = useCallback((t: string, user?: TgUser) => {
     authToken.set(t)
     if (user) saveWebUser(user)
-    setToken(t)
+    setToken((prev) => {
+      if (prev !== t) resetAccountState()
+      return t
+    })
   }, [])
 
   useEffect(() => {
@@ -47,7 +58,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (e.key !== authToken.key && e.key !== null) return
       const next = authToken.get()
       setToken((prev) => {
-        if (prev !== next) queryClient.clear()
+        if (prev !== next) resetAccountState()
         return next
       })
     }

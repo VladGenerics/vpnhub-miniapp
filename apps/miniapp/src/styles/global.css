@@ -1007,15 +1007,6 @@ p {
     transform: rotate(360deg);
   }
 }
-.sheet-wait {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  padding: 6px 0 2px;
-  font-size: 14px;
-  color: var(--hint);
-}
 
 .url-row {
   position: relative;
@@ -1153,6 +1144,47 @@ p {
   font-variant-numeric: tabular-nums;
 }
 
+/* «Действует скидка 25 % за 6 устройств» */
+.discount-badge {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  width: fit-content;
+  max-width: 100%;
+  margin: 0 auto 12px;
+  padding: 6px 13px;
+  border-radius: 999px;
+  background: var(--success-soft);
+  color: var(--success);
+  font-size: 14px;
+  font-weight: 500;
+  text-align: left;
+}
+.discount-badge svg {
+  flex: none;
+}
+.discount-badge b {
+  font-weight: 700;
+}
+.discount-row {
+  margin-top: 12px;
+}
+.discount-row .discount-badge {
+  margin-bottom: 0;
+}
+
+/* старая цена до скидки рядом с новой */
+.calc-old {
+  margin-right: 6px;
+  color: var(--hint);
+  font-weight: 400;
+  text-decoration-thickness: 1px;
+}
+.calc-total .calc-old {
+  font-size: 20px;
+  font-weight: 600;
+}
+
 .calc-hint {
   font-size: 13px;
   color: var(--hint);
@@ -1172,6 +1204,15 @@ p {
 
 .notice .lottie {
   flex: none;
+}
+/* «Выбор покупки сохранён»: спокойная акцентная плашка, а не предупреждение */
+.notice.is-resume {
+  justify-content: space-between;
+  background: var(--accent-soft);
+}
+.notice.is-resume .link {
+  flex: none;
+  font-weight: 600;
 }
 
 /* ============ Детали устройства ============ */
@@ -2276,14 +2317,6 @@ p {
   .has-sidebar .page.is-wide .col .status-card {
     margin-top: 0;
   }
-  .has-sidebar .page.is-wide .status-tariff {
-    margin-top: -2px;
-    font-size: 14px;
-    color: var(--hint);
-  }
-  .has-sidebar .page.is-wide .renew-card .renew-status {
-    padding: 12px 14px;
-  }
   .has-sidebar .page.is-wide .balance-hero {
     padding: 0;
   }
@@ -2314,19 +2347,6 @@ p {
     display: none;
   }
 
-  /* пополнение без неоплаченных счетов: форма на всю ширину */
-  .has-sidebar .page.is-wide .topup-form {
-    margin-top: 26px;
-  }
-  .has-sidebar .page.is-wide .topup-form > :first-child {
-    margin-top: 0;
-  }
-  .has-sidebar .page.is-wide .topup-form .sticky-cta {
-    position: static;
-  }
-  .has-sidebar .page.is-wide .topup-form .sticky-cta::before {
-    display: none;
-  }
   /* «Оформление»: настроек мало - одна карточка по центру */
   .has-sidebar .page.is-wide.is-narrow {
     max-width: 680px;
@@ -2365,6 +2385,356 @@ p {
   .has-sidebar .page.is-wide:not(.is-narrow) {
     max-width: 1760px;
     padding: 36px 80px 48px;
+  }
+}
+
+/* узкий ПК (боковая панель съедает место): чипсы переносятся в два ряда, а не режутся многоточием */
+@media (min-width: 960px) {
+  .has-sidebar .page.is-wide .chips {
+    grid-auto-flow: row;
+    grid-template-columns: repeat(auto-fit, minmax(84px, 1fr));
+  }
+}
+
+/* ============ ПК: подписка и пополнение по макету заказчика ============ */
+/* эти блоки рендерятся только на ПК (useIsTwoCol), телефонная раскладка их не видит */
+.page-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 22px;
+}
+.page-head h1 {
+  font-size: 30px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.page-head-sub {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  margin: -10px 0 22px;
+  font-size: 15px;
+  color: var(--hint);
+}
+.page-head-sub b {
+  margin-left: 6px;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+.page-head-sub b.renew-lacking {
+  color: var(--danger);
+}
+.page-head-sep {
+  width: 1px;
+  height: 18px;
+  background: var(--sep);
+}
+
+.panel {
+  padding: 22px 24px 24px;
+  border-radius: 20px;
+  background: var(--card);
+}
+.panel + .panel,
+.panel + .section,
+.panel + .load-error {
+  margin-top: 18px;
+}
+.panel-title {
+  margin-bottom: 16px;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+.panel-hint {
+  margin-top: 8px;
+  font-size: 13px;
+  color: var(--hint);
+}
+/* списки внутри карточки чуть светлее её фона, как в макете */
+.panel .section-card {
+  background: color-mix(in srgb, var(--text) 4%, var(--card));
+}
+.panel .section {
+  margin-top: 20px;
+}
+.panel .section-title {
+  padding-left: 2px;
+}
+
+/* сводка подписки: статус | баланс | действия, снизу строка автопродления */
+.sub-overview-main {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-areas:
+    'status balance'
+    'actions actions';
+  gap: 22px 28px;
+}
+.sub-status {
+  grid-area: status;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+}
+.sub-status .status-pill {
+  padding: 6px 12px;
+  font-size: 15px;
+}
+.sub-countdown {
+  /* «16 дней 13:41:56» одной строкой */
+  white-space: nowrap;
+  font-size: 32px;
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+.sub-until {
+  font-size: 14px;
+  color: var(--hint);
+}
+.sub-balance {
+  grid-area: balance;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  padding-left: 28px;
+  border-left: 1px solid var(--sep);
+}
+.sub-label {
+  font-size: 14px;
+  color: var(--hint);
+}
+.sub-balance-value {
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1.15;
+  font-variant-numeric: tabular-nums;
+}
+.sub-note {
+  font-size: 14px;
+  color: var(--hint);
+}
+.sub-note .renew-lacking {
+  color: var(--danger);
+}
+.sub-balance .link {
+  margin-top: 2px;
+  font-size: 15px;
+  font-weight: 600;
+}
+.sub-actions {
+  grid-area: actions;
+  display: flex;
+  gap: 10px;
+}
+.sub-actions .btn-m {
+  height: 52px;
+}
+.sub-overview-foot {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--sep);
+  font-size: 15px;
+  color: var(--hint);
+}
+.sub-overview-foot svg {
+  flex: none;
+}
+.sub-overview-foot b {
+  font-weight: 600;
+  color: var(--text);
+}
+.sub-tariff {
+  margin-left: auto;
+  font-size: 14px;
+}
+
+/* ссылка подписки: поле + две кнопки в ряд */
+.link-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.link-field {
+  flex: 1 1 280px;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 48px;
+  padding: 0 14px;
+  border: 1.5px solid var(--sep);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--text) 4%, var(--card));
+  color: var(--text);
+  text-align: left;
+  transition: border-color 0.15s;
+}
+.link-field:hover {
+  border-color: var(--accent);
+}
+.link-field .url-text {
+  font-size: 15px;
+}
+.link-bar .btn {
+  height: 48px;
+}
+
+/* пополнение: форма | итого */
+.topup-grid {
+  display: grid;
+  gap: 18px;
+  align-items: start;
+}
+.topup-side {
+  display: flex;
+  flex-direction: column;
+}
+.topup-side .section {
+  margin-top: 18px;
+}
+.field-label {
+  margin: 0 0 10px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--hint);
+}
+.field-label:not(:first-of-type) {
+  margin-top: 24px;
+  color: var(--text);
+}
+.panel .amount-input {
+  justify-content: flex-start;
+  margin: 0;
+  padding: 10px 52px 10px 20px;
+  font-size: 40px;
+}
+.field-note {
+  margin-top: 8px;
+  font-size: 13px;
+  color: var(--hint);
+}
+.amount-presets-row {
+  margin-top: 12px;
+}
+.amount-presets-row .chip {
+  height: 42px;
+  border-radius: 12px;
+  font-size: 15px;
+}
+.method-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.method-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 62px;
+  padding: 10px 16px;
+  border: 1.5px solid var(--sep);
+  border-radius: 14px;
+  text-align: left;
+  transition:
+    border-color 0.15s,
+    background 0.15s;
+}
+.method-row:hover {
+  background: var(--card-hover);
+}
+.method-row.is-on {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+.method-row-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.method-row-main b {
+  font-size: 16px;
+  font-weight: 600;
+}
+.method-row-main span {
+  font-size: 13px;
+  color: var(--hint);
+}
+.summary-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 0;
+  font-size: 15px;
+  color: var(--hint);
+}
+.summary-row b {
+  color: var(--text);
+  font-weight: 600;
+  text-align: right;
+}
+.summary-row.is-total {
+  margin: 6px 0 18px;
+  padding-top: 16px;
+  border-top: 1px solid var(--sep);
+  color: var(--text);
+  font-size: 17px;
+  font-weight: 600;
+}
+.summary-row.is-total b {
+  white-space: nowrap;
+  font-size: 30px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.summary-note {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 12px;
+  font-size: 13px;
+  color: var(--hint);
+}
+
+/* три колонки сводки - только когда балансу хватает места (миллион рублей и подпись), иначе два ряда */
+@media (min-width: 1360px) {
+  .sub-overview-main {
+    grid-template-columns: minmax(max-content, 1.2fr) minmax(220px, 1fr) minmax(240px, 320px);
+    grid-template-areas: 'status balance actions';
+    align-items: center;
+  }
+  .sub-actions {
+    flex-direction: column;
+  }
+  .sub-actions .btn-m {
+    height: 44px;
+  }
+}
+@media (min-width: 1180px) {
+  .topup-grid {
+    grid-template-columns: minmax(0, 1.55fr) minmax(320px, 1fr);
+    gap: 22px;
+  }
+  .topup-side {
+    position: sticky;
+    top: 24px;
   }
 }
 
@@ -2777,6 +3147,39 @@ body:has(.app.is-sidebar-collapsed) .is-modal .sheet {
 .states-row .chip {
   padding: 6px 8px;
   font-size: 13px;
+}
+/* свой остаток подписки: д / ч / м / с и кнопка */
+.states-custom {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) auto;
+  gap: 6px;
+}
+.states-custom label {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  height: 32px;
+  padding: 0 8px;
+  border: 1px solid var(--sep);
+  border-radius: 10px;
+  background: var(--chip);
+}
+.states-custom label:focus-within {
+  border-color: var(--accent);
+}
+.states-custom input {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: none;
+  color: var(--text);
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+.states-custom .chip {
+  height: 32px;
 }
 
 /* окна с настройками: между блоками больше воздуха, подпись не прижата к предыдущей карточке */

@@ -53,11 +53,11 @@ export function Sidebar() {
             to={it.to}
             end
             className={`sidebar-item ${i === active ? 'is-active' : ''}`}
-            title={collapsed ? it.label : undefined}
-            aria-label={collapsed ? it.label : undefined}
+            title={collapsed ? (it.wideLabel ?? it.label) : undefined}
+            aria-label={collapsed ? (it.wideLabel ?? it.label) : undefined}
           >
             <span className="sidebar-icon">{it.icon}</span>
-            <span className="sidebar-label">{it.label}</span>
+            <span className="sidebar-label">{it.wideLabel ?? it.label}</span>
           </NavLink>
         ))}
       </nav>
