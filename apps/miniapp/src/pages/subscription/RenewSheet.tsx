@@ -5,18 +5,17 @@ import { AnimatedNumber } from '../../components/AnimatedNumber'
 import { Sheet } from '../../components/Sheet'
 import { Lottie } from '../../components/Lottie'
 import { LoadError } from '../../components/LoadError'
-import { Button, Chips, DiscountBadge, Stepper, discountReason } from '../../components/Controls'
+import { Button, DiscountBadge, Stepper, discountReason } from '../../components/Controls'
 import { useToast } from '../../components/Toast'
 import { E } from '../../data/emoji'
 import { MAX_DAYS } from '../../data/content'
 import { useMe, useRenew, useTariffs } from '../../api/queries'
-import { date, days, rub } from '../../lib/format'
+import { date, rub } from '../../lib/format'
 import { haptic } from '../../lib/telegram'
 import { consumeResume, draft, draftOf } from '../../lib/draft'
 import { useSingleFlight } from '../../hooks/useSingleFlight'
 import { PriceLadder, CalcFormula } from '../../components/Tariff'
 
-const PRESETS = [7, 14, 30, 90]
 const DAY = 86_400_000
 
 /** Продление заранее, без автопродления: дни прибавляются к текущему сроку, деньги списываются сразу */
@@ -75,9 +74,6 @@ export function RenewSheet({ sub, open, onClose }: { sub: Subscription; open: bo
         <div className="plan-row">
           <div className="cell-title">Продлить на</div>
           <Stepper value={dayCount} min={1} max={MAX_DAYS} onChange={setDayCount} suffix="дн." />
-        </div>
-        <div className="plan-row is-column">
-          <Chips items={PRESETS} value={PRESETS.includes(dayCount) ? dayCount : null} onChange={setDayCount} render={(d) => days(d)} />
         </div>
       </div>
 

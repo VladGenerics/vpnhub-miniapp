@@ -55,6 +55,16 @@ export const E = {
   laptopGirl: T(95),
 } as const
 
+/** Все анимированные эмодзи из паков одним списком (имена файлов в public/emoji) - для выбора в подсказке и витрины /emoji */
+export const ALL_EMOJI: string[] = [
+  ...Array.from({ length: 31 }, (_, i) => V(i)),
+  ...Array.from({ length: 100 }, (_, i) => T(i)),
+  E.tgStar,
+  E.payCard,
+  E.payCrypto,
+  E.paySbp,
+]
+
 /** Пул для случайного эмодзи на главной без подписки */
 export const HERO_POOL = [E.globe, E.medal, E.vCircle, E.catLaptop, E.signal, E.gift, E.phone, E.vDiamond, E.rocket]
 

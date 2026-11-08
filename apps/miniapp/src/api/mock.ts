@@ -5,7 +5,8 @@ import { MAX_DEVICES } from '../data/content'
 import type { UserApi } from './index'
 
 // Тестовый бэкенд в памяти, данные той же формы, что у настоящего API.
-// Для проверки: ?sub=0 - без подписки, ?expires=90 - подписка кончится через 90 с.
+// Для проверки: ?sub=0 - без подписки, ?sub=expired - подписка истекла (устройства остались),
+// ?expires=90 - подписка кончится через 90 с.
 
 const params = new URLSearchParams(location.search)
 const DAY = 864e5
@@ -69,7 +70,17 @@ const demoSubscription = (expiresInMs = 16 * DAY + 13.7 * 36e5): Subscription =>
   slots: DEMO_SLOTS(),
 })
 
-let subscription: Subscription | null = params.get('sub') === '0' ? null : demoSubscription(expiresIn > 0 ? expiresIn * 1000 : undefined)
+let subscription: Subscription | null =
+  params.get('sub') === '0'
+    ? null
+    : params.get('sub') === 'expired'
+      ? {
+          ...demoSubscription(-DAY),
+          status: 'DISABLED',
+          auto_renewal: { is_enabled: false, days: 30 },
+          slots: [...DEMO_SLOTS(), ...[6, 7, 8, 9, 10, 11].map(emptySlot)],
+        }
+      : demoSubscription(expiresIn > 0 ? expiresIn * 1000 : undefined)
 
 const tariffs: Tariffs = {
   // как в боте: цена дня по сроку и скидка за число устройств
@@ -295,6 +306,7 @@ export const demoState = {
     const unpaid = [...invoices.values()].filter((i) => i.status === 'UNPAID').length
     return {
       hasSub: subscription?.status === 'ACTIVE',
+      expired: subscription?.status === 'DISABLED' && subscription.slots.length > 0,
       autoRenew: subscription?.auto_renewal.is_enabled ?? false,
       balance: me.balance,
       unpaid: unpaid > 0,

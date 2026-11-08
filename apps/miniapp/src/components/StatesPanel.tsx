@@ -2,6 +2,9 @@ import { useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { LuSlidersHorizontal, LuX } from 'react-icons/lu'
 import { demoState } from '../api/mock'
+import { setTipEmoji, useTipEmoji } from '../lib/tipEmoji'
+import { ALL_EMOJI } from '../data/emoji'
+import { Lottie } from './Lottie'
 
 // Панель состояний для показа на тестовых данных: подписка, срок, баланс, счета, слоты.
 // Сейчас видна всем на демо (временно, для показа заказчику), скрыть на устройстве - ?states=0, вернуть - ?states=1.
@@ -49,6 +52,7 @@ export default function StatesPanel() {
   const [left, setLeft] = useState<number | null>(null)
   const [dur, setDur] = useState<Record<Unit, string>>({ d: '', h: '', m: '', s: '' })
   const qc = useQueryClient()
+  const tipEmoji = useTipEmoji()
   if (!on) return null
 
   const apply = (fn: () => void) => {
@@ -82,11 +86,19 @@ export default function StatesPanel() {
         <span>Подписка</span>
         <Opts
           items={[
-            [true, 'Есть'],
-            [false, 'Нет'],
+            ['active', 'Есть'],
+            ['expired', 'Истекла'],
+            ['none', 'Нет'],
           ]}
-          value={st.hasSub}
-          onChange={(v) => apply(() => (setLeft(null), demoState.setSub(v)))}
+          value={st.hasSub ? 'active' : st.expired ? 'expired' : 'none'}
+          onChange={(v) =>
+            apply(() => {
+              setLeft(v === 'expired' ? 0 : null)
+              // истекла: подписка остаётся с устройствами, страница - «Возобновление подписки»
+              if (v === 'expired') demoState.setExpires(0)
+              else demoState.setSub(v === 'active')
+            })
+          }
         />
       </div>
       <div className="states-row">
@@ -182,6 +194,22 @@ export default function StatesPanel() {
           value={st.unpaid}
           onChange={(v) => apply(() => demoState.setUnpaid(v))}
         />
+      </div>
+      <div className="states-row">
+        <span>Эмодзи в подсказке</span>
+        {/* все эмодзи из паков одним списком, без деления по пакам */}
+        <div className="states-emoji">
+          <button className={`chip ${!tipEmoji ? 'is-active' : ''}`} onClick={() => setTipEmoji('')}>
+            Без эмодзи
+          </button>
+          <div className="states-emoji-grid">
+            {ALL_EMOJI.map((name) => (
+              <button key={name} className={name === tipEmoji ? 'is-active' : ''} onClick={() => setTipEmoji(name)} aria-label={name} title={name}>
+                <Lottie name={name} size={26} />
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   )

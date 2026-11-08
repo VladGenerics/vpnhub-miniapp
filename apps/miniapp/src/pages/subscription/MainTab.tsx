@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
-import { quote, type Subscription } from '@vpnhub/shared'
+import type { Subscription } from '@vpnhub/shared'
 import { LuCheck, LuCopy, LuQrCode, LuRefreshCw, LuSettings, LuWallet } from 'react-icons/lu'
 import { Lottie } from '../../components/Lottie'
 import { Button } from '../../components/Controls'
@@ -10,7 +10,7 @@ import { QrCode } from '../../components/QrCode'
 import { Sheet } from '../../components/Sheet'
 import { useToast } from '../../components/Toast'
 import { E } from '../../data/emoji'
-import { keys, useMe, useTariffs } from '../../api/queries'
+import { keys, useMe } from '../../api/queries'
 import { useCountdown } from '../../hooks/useCountdown'
 import { useRenewal } from '../../hooks/useRenewal'
 import { copyText, countdown, date, dateTimeLocal, days, rub } from '../../lib/format'
@@ -58,14 +58,6 @@ function useSubCountdown(sub: Subscription) {
   })
 }
 
-/** Тариф за сутки за одно устройство, строкой */
-/** Реальный тариф продления: цена дня одного устройства на срок автопродления и текущее число слотов, со скидками */
-function useTariffText(sub: Subscription) {
-  const { data: tariffs } = useTariffs()
-  const q = tariffs ? quote(tariffs, sub.slots.length, sub.auto_renewal.days || 30) : null
-  return q ? `${rub(q.finalPricePerDay)} в сутки за устройство` : null
-}
-
 /**
  * ПК: одна карточка по макету заказчика. Слева статус и точное время отключения,
  * в середине баланс и хватает ли на автопродление, справа действия; снизу строка автопродления
@@ -73,7 +65,6 @@ function useTariffText(sub: Subscription) {
 function OverviewPanel({ sub, onRenew, onAutoRenew }: { sub: Subscription; onRenew(): void; onAutoRenew(): void }) {
   const left = useSubCountdown(sub)
   const renewal = useRenewal(sub)
-  const tariff = useTariffText(sub)
   const { data: me } = useMe()
   const { is_enabled, days: renewDays } = sub.auto_renewal
   const lacking = renewal?.enabled ? Math.ceil(renewal.lacking) : 0
@@ -124,7 +115,6 @@ function OverviewPanel({ sub, onRenew, onAutoRenew }: { sub: Subscription; onRen
           Автопродление <b>{is_enabled ? 'включено' : 'выключено'}</b>
           {is_enabled && ` · на ${days(renewDays)}`}
         </span>
-        {tariff && <span className="sub-tariff">Тариф: {tariff}</span>}
       </div>
     </div>
   )
@@ -160,7 +150,6 @@ function StatusCard({ sub, onRenew }: { sub: Subscription; onRenew(): void }) {
 // aside - устройства: на ПК идут правой колонкой под ссылкой подписки
 export function MainTab({ sub, aside }: { sub: Subscription; aside?: ReactNode }) {
   const { data: me } = useMe()
-  const tariffText = useTariffText(sub)
   const toast = useToast()
   const [renewOpen, setRenewOpen] = useState(false)
   // вернулись с пополнения посреди продления - окно открывается само
@@ -225,13 +214,6 @@ export function MainTab({ sub, aside }: { sub: Subscription; aside?: ReactNode }
         to="/topup"
         state={{ back: true }}
       />
-      {tariffText && (
-        <Cell
-          icon={<Lottie name={E.dollarTile} size={32} />}
-          title="Тариф"
-          after={<span className="muted">{tariffText.replace(' в сутки', ' / сутки')}</span>}
-        />
-      )}
     </Section>
   )
 

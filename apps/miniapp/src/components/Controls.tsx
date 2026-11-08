@@ -1,5 +1,6 @@
-import { useState, type ButtonHTMLAttributes, type ReactNode } from 'react'
+import { useEffect, useState, type ButtonHTMLAttributes, type ReactNode } from 'react'
 import { LuBadgePercent } from 'react-icons/lu'
+import { Tooltip } from './Tooltip'
 import { haptic } from '../lib/telegram'
 import { devicesWord } from '../lib/format'
 
@@ -64,19 +65,60 @@ export function Switch({ checked, onChange, label }: { checked: boolean; onChang
 }
 
 // Счётчик: кнопки и ввод числа руками. Пока печатают, поле может быть пустым; значение зажимается в min..max при вводе и уходе из поля
-export function Stepper({ value, min, max, onChange, suffix }: { value: number; min: number; max: number; onChange(v: number): void; suffix?: string }) {
+// minHint - почему меньше нельзя: на упоре «−» не отключается, а показывает подсказку (наведение или нажатие)
+export function Stepper({
+  value,
+  min,
+  max,
+  onChange,
+  suffix,
+  minHint,
+}: {
+  value: number
+  min: number
+  max: number
+  onChange(v: number): void
+  suffix?: string
+  minHint?: { text: ReactNode; emoji?: ReactNode }
+}) {
   const [draft, setDraft] = useState<string | null>(null)
+  const [hintOpen, setHintOpen] = useState(false)
+  // подсказка по нажатию сама прячется через пару секунд
+  useEffect(() => {
+    if (!hintOpen) return
+    const t = setTimeout(() => setHintOpen(false), 3000)
+    return () => clearTimeout(t)
+  }, [hintOpen])
   const set = (v: number) => {
     const c = Math.min(max, Math.max(min, v))
     if (c !== value) haptic.select()
     onChange(c)
   }
   const shown = draft ?? String(value)
-  return (
-    <div className="stepper">
-      <button onClick={() => (setDraft(null), set(value - 1))} disabled={value <= min} aria-label="Меньше">
+  const atMin = value <= min
+  const minus =
+    atMin && minHint ? (
+      <Tooltip text={minHint.text} emoji={minHint.emoji} open={hintOpen}>
+        <button
+          className="is-locked"
+          aria-disabled
+          aria-label="Меньше"
+          onClick={() => {
+            haptic.notify('warning')
+            setHintOpen(true)
+          }}
+        >
+          −
+        </button>
+      </Tooltip>
+    ) : (
+      <button onClick={() => (setDraft(null), set(value - 1))} disabled={atMin} aria-label="Меньше">
         −
       </button>
+    )
+  return (
+    <div className="stepper">
+      {minus}
       <label className="stepper-value">
         <input
           inputMode="numeric"

@@ -293,8 +293,12 @@ p {
 
 .hero-emoji {
   position: relative;
+  flex: none;
   isolation: isolate;
   margin-bottom: 14px;
+  /* размер задан снаружи: кадры анимации внутри не могут менять высоту шапки и двигать страницу
+     (в Safari шапка подпрыгивала на перезапуске анимации) */
+  contain: size layout style;
 }
 
 .hero-emoji::before {
@@ -341,8 +345,12 @@ p {
 
 .title-dots {
   display: flex;
+  flex: none;
   gap: 6px;
+  height: 6px;
   margin-top: 12px;
+  /* полоска прогресса анимируется постоянно: высота жёсткая, шапку она не трогает */
+  contain: layout style;
 }
 
 .title-dots span {
@@ -502,6 +510,10 @@ p {
   border-radius: 11px;
   background: var(--accent-soft);
   color: var(--accent);
+}
+.icon-btn.is-danger {
+  background: var(--danger-soft);
+  color: var(--danger);
 }
 
 .device-icon {
@@ -664,9 +676,74 @@ p {
   transition: opacity 0.15s;
 }
 
-.stepper button:disabled {
+.stepper button:disabled,
+.stepper button.is-locked {
   opacity: 0.35;
   cursor: default;
+}
+.stepper button.is-locked {
+  cursor: help;
+}
+
+/* подсказка над элементом (рисуется в body): по Snackbar из Telegram iOS UI Kit (ссылка в ТЗ) -
+   полупрозрачный тёмный фон с размытием, скругление 14, отступы 9/16, иконка 28 слева, текст 14/18 */
+.tip-wrap {
+  position: relative;
+  display: inline-flex;
+}
+.tip {
+  --tip-bg: rgba(45, 45, 45, 0.8);
+  position: fixed;
+  left: -9999px;
+  top: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: max-content;
+  min-height: 48px;
+  max-width: min(320px, calc(100vw - 16px));
+  padding: 9px 16px;
+  border-radius: 14px;
+  background: var(--tip-bg);
+  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 18px;
+  text-align: left;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(4px);
+  transition:
+    opacity 0.15s,
+    transform 0.15s;
+}
+.tip.is-shown {
+  opacity: 1;
+  transform: none;
+}
+.tip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: var(--arrow, 50%);
+  border: 6px solid transparent;
+  border-top-color: var(--tip-bg);
+  transform: translateX(-50%);
+}
+.tip-emoji {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  font-size: 22px;
+  line-height: 1;
+}
+.tip-text b {
+  font-weight: 600;
 }
 
 .stepper-value {
@@ -678,7 +755,7 @@ p {
   padding: 0 10px;
   margin: 0 2px;
   /* выглядит как поле ввода: подложка, рамка, карандаш */
-  border: 1.5px solid color-mix(in srgb, var(--hint) 38%, transparent);
+  border: 2px solid color-mix(in srgb, var(--hint) 38%, transparent);
   border-radius: 12px;
   background: var(--chip);
   transition:
@@ -1279,6 +1356,22 @@ p {
 .notice .lottie {
   flex: none;
 }
+.notice.is-info {
+  background: var(--accent-soft);
+}
+.notice-emoji {
+  flex: none;
+  font-size: 18px;
+}
+/* баннер между заголовком и списком устройств */
+.devices-notice {
+  margin: 0 0 10px;
+}
+.devices-more {
+  display: block;
+  margin: 10px auto 0;
+  font-size: 14px;
+}
 /* тестовая оплата поверх кабинета (только тестовые данные в Telegram) */
 .test-pay-layer {
   position: fixed;
@@ -1420,7 +1513,7 @@ p {
   gap: 6px;
   margin: 8px 16px 0;
   padding: 8px 44px;
-  border: 1.5px solid var(--sep);
+  border: 2px solid var(--sep);
   border-radius: 14px;
   background: var(--chip);
   transition:
@@ -1999,6 +2092,8 @@ p {
   flex: none;
   opacity: 0;
   transition: opacity 0.25s;
+  /* размер задан в style: перерисовка кадров (canvas/svg) не меняет раскладку вокруг */
+  contain: size layout style;
 }
 .lottie.is-ready {
   opacity: 1;
@@ -2465,6 +2560,197 @@ p {
     display: none;
   }
 
+  /* оформление подписки: до 1100 px настройка и чек друг под другом, шире - чек справа и едет за прокруткой */
+  .checkout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0 24px;
+    max-width: 1040px;
+    margin: 0 auto;
+    align-items: start;
+  }
+  .checkout-config > .section:first-child,
+  .checkout > .receipt {
+    margin-top: 0;
+  }
+  .checkout > .section:last-child {
+    grid-column: 1 / -1;
+  }
+
+  /* цены по сроку строками: отметка, срок, цена дня, выгода */
+  .price-ladder.is-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+  .price-ladder.is-list .price-step {
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+    padding: 13px 16px;
+    border: 0;
+    border-radius: 0;
+    background: none;
+  }
+  .price-ladder.is-list .price-step + .price-step {
+    box-shadow: inset 0 1px 0 var(--sep);
+  }
+  .price-ladder.is-list .price-step:not(:disabled):hover {
+    background: var(--card-hover);
+  }
+  .price-ladder.is-list .price-step.is-active {
+    background: var(--accent-soft);
+  }
+  .price-step-dot {
+    flex: none;
+    width: 18px;
+    height: 18px;
+    border: 2px solid color-mix(in srgb, var(--hint) 60%, transparent);
+    border-radius: 50%;
+    transition:
+      border-color 0.2s,
+      box-shadow 0.2s;
+  }
+  .price-step.is-active .price-step-dot {
+    border-color: var(--accent);
+    box-shadow: inset 0 0 0 3px var(--card), inset 0 0 0 9px var(--accent);
+  }
+  .price-ladder.is-list .price-step-days {
+    flex: 1;
+    font-size: 15px;
+    color: var(--text);
+  }
+  .price-ladder.is-list .price-step-price {
+    font-size: 15px;
+  }
+  .price-step-note {
+    min-width: 64px;
+    font-size: 13px;
+    color: var(--hint);
+    text-align: right;
+  }
+  .price-step-note.is-save {
+    color: var(--success);
+    font-weight: 600;
+  }
+
+  /* чек: итог крупно, ниже из чего он сложился, кнопка */
+  .receipt-card {
+    padding: 20px;
+    border-radius: 18px;
+    background: var(--card);
+  }
+  .receipt-total {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 4px 10px;
+    font-size: 36px;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+  }
+  .receipt-total s {
+    font-size: 17px;
+    font-weight: 400;
+    color: var(--hint);
+    letter-spacing: 0;
+  }
+  .receipt-balance .sticky-cta-meta {
+    padding: 0 0 16px;
+    font-size: 15px;
+  }
+  .receipt-lines {
+    display: grid;
+    gap: 10px;
+    margin: 0;
+    padding-top: 16px;
+    border-top: 1px solid var(--sep);
+    font-size: 14px;
+  }
+  /* итог внизу, прямо над кнопкой */
+  .receipt-pay {
+    margin-top: 18px;
+    padding-top: 16px;
+    border-top: 1px solid var(--sep);
+  }
+  .receipt-pay-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--hint);
+  }
+  .receipt-pay .receipt-total {
+    margin: 2px 0 14px;
+  }
+  .receipt-lines > div {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .receipt-lines dt {
+    color: var(--hint);
+  }
+  .receipt-lines dd {
+    margin: 0;
+    font-weight: 600;
+    text-align: right;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+  .receipt-lines dd s {
+    margin-right: 6px;
+    font-weight: 400;
+    color: var(--hint);
+  }
+  .receipt-lines dd b {
+    color: var(--accent);
+  }
+  .receipt-lines .is-save dt,
+  .receipt-lines .is-save dd {
+    color: var(--success);
+  }
+  .receipt .sticky-cta {
+    position: static;
+    margin-top: 20px;
+    padding-top: 0;
+  }
+  .receipt .sticky-cta::before {
+    display: none;
+  }
+  .receipt .sticky-cta-meta {
+    padding: 0 2px 10px;
+  }
+  .receipt .load-error {
+    margin-top: 14px;
+  }
+  /* «Что входит» под оформлением: пункты в две колонки, а не длинным списком */
+  .checkout > .section:last-child {
+    margin-top: 28px;
+  }
+  /* устройства истёкшей подписки: на всю ширину под тарифом и чеком, строки в две колонки */
+  .checkout > .expired-devices {
+    grid-column: 1 / -1;
+    margin-top: 28px;
+  }
+  .devices-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .devices-grid .cell::before {
+    display: none;
+  }
+  .devices-grid .cell:nth-child(n + 3) {
+    box-shadow: inset 0 1px 0 var(--sep);
+  }
+  .buy-features {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .buy-features .cell::before {
+    display: none;
+  }
+
   /* «Оформление»: настроек мало - одна карточка по центру */
   .has-sidebar .page.is-wide.is-narrow {
     max-width: 680px;
@@ -2490,6 +2776,16 @@ p {
   }
   .has-sidebar .page.is-wide :is(.article-grid, .tile-grid) .cell::before {
     display: none;
+  }
+}
+
+@media (min-width: 1100px) {
+  .checkout {
+    grid-template-columns: minmax(0, 1fr) 340px;
+  }
+  .checkout > .receipt {
+    position: sticky;
+    top: 24px;
   }
 }
 
@@ -2674,11 +2970,6 @@ p {
   font-weight: 600;
   color: var(--text);
 }
-.sub-tariff {
-  margin-left: auto;
-  font-size: 14px;
-}
-
 /* ссылка подписки: поле + две кнопки в ряд */
 .link-bar {
   display: flex;
@@ -3271,6 +3562,34 @@ body:has(.app.is-sidebar-collapsed) .is-modal .sheet {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr)) auto;
   gap: 6px;
+}
+/* выбор эмодзи подсказки: сетка всех эмодзи из паков с прокруткой */
+.states-emoji {
+  display: grid;
+  gap: 8px;
+}
+.states-emoji > .chip {
+  justify-self: start;
+}
+.states-emoji-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(38px, 1fr));
+  gap: 4px;
+  max-height: 172px;
+  overflow-y: auto;
+  padding: 2px;
+}
+.states-emoji-grid button {
+  display: grid;
+  place-items: center;
+  height: 38px;
+  border: 1.5px solid transparent;
+  border-radius: 10px;
+  background: var(--chip);
+}
+.states-emoji-grid button.is-active {
+  border-color: var(--accent);
+  background: var(--accent-soft);
 }
 .states-custom label {
   display: flex;

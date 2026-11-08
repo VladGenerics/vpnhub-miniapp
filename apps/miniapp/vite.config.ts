@@ -5,14 +5,17 @@ import react from '@vitejs/plugin-react'
 
 // В public лежат все эмодзи паков (их смотрит витрина /emoji в dev), в сборку оставляем только те,
 // что есть в src/data/emoji.ts. Имена там собираются через V(n) и T(n).
-function pruneEmoji(): Plugin {
+// Сборка с тестовыми данными (keepAll) оставляет все: в панели состояний эмодзи подсказки выбирают из всего списка.
+function pruneEmoji(keepAll: boolean): Plugin {
   let outDir = 'dist'
+  let root = '.'
   return {
     name: 'prune-emoji',
     apply: 'build',
-    configResolved: (c) => void (outDir = c.build.outDir),
+    configResolved: (c) => void ((outDir = c.build.outDir), (root = c.root)),
     closeBundle() {
-      const src = readFileSync('src/data/emoji.ts', 'utf8')
+      if (keepAll) return
+      const src = readFileSync(join(root, 'src/data/emoji.ts'), 'utf8')
       const pad = (n: string) => n.padStart(2, '0')
       const used = new Set([
         ...[...src.matchAll(/\bV\((\d+)\)/g)].map((m) => `VHubProject_${pad(m[1])}.lottie`),
@@ -32,7 +35,7 @@ export default defineConfig(({ mode }) => {
   // версия для строки в профиле - из package.json, чтобы не править её руками при релизе
   const version = JSON.parse(readFileSync('package.json', 'utf8')).version as string
   return {
-    plugins: [react(), pruneEmoji()],
+    plugins: [react(), pruneEmoji(env.VITE_USE_MOCKS === 'true')],
     define: { __APP_VERSION__: JSON.stringify(version) },
     build: {
       rolldownOptions: {

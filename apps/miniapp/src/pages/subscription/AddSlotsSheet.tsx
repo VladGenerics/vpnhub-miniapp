@@ -1,11 +1,11 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { slotsQuote, type Subscription } from '@vpnhub/shared'
 import { AnimatedNumber } from '../../components/AnimatedNumber'
 import { Sheet } from '../../components/Sheet'
 import { Lottie } from '../../components/Lottie'
 import { LoadError } from '../../components/LoadError'
-import { Button, Chips, DiscountBadge, Stepper, discountReason } from '../../components/Controls'
+import { Button, DiscountBadge, Stepper, discountReason } from '../../components/Controls'
 import { useToast } from '../../components/Toast'
 import { E } from '../../data/emoji'
 import { MAX_DEVICES } from '../../data/content'
@@ -15,8 +15,6 @@ import { haptic } from '../../lib/telegram'
 import { consumeResume, draft, draftOf } from '../../lib/draft'
 import { useSingleFlight } from '../../hooks/useSingleFlight'
 
-const PRESETS = [1, 2, 5, 10]
-
 /** Докупка слотов к действующей подписке: платим за оставшийся срок, срок не меняется */
 export function AddSlotsSheet({ sub, open, onClose }: { sub: Subscription; open: boolean; onClose(): void }) {
   const { data: me, error: meError, refetch: refetchMe, isFetching: meFetching } = useMe()
@@ -24,8 +22,6 @@ export function AddSlotsSheet({ sub, open, onClose }: { sub: Subscription; open:
   const buy = useBuySlots()
   const toast = useToast()
   const [count, setCount] = useState(1)
-  // число ещё не трогали: первая чипса его заменяет, дальше прибавляет
-  const fresh = useRef(true)
 
   useEffect(() => {
     if (!open) return
@@ -33,7 +29,6 @@ export function AddSlotsSheet({ sub, open, onClose }: { sub: Subscription; open:
     // сохранённое число - не больше свободного места: слоты могли докупить в другой вкладке
     const saved = draftOf('slots')?.count
     setCount(Math.min(Math.max(1, saved ?? 1), Math.max(1, MAX_DEVICES - sub.slots.length)))
-    fresh.current = saved === undefined
     consumeResume('slots')
   }, [open])
 
@@ -92,27 +87,7 @@ export function AddSlotsSheet({ sub, open, onClose }: { sub: Subscription; open:
               Сейчас {slots} {devicesWord(slots)}
             </div>
           </div>
-          <Stepper
-            value={n}
-            min={1}
-            max={Math.max(1, room)}
-            onChange={(v) => {
-              setCount(v)
-              fresh.current = false
-            }}
-          />
-        </div>
-        <div className="plan-row is-column">
-          {/* чипсы прибавляют: +10 дважды = 20. Первое нажатие заменяет начальную единицу, иначе +10 дало бы 11 */}
-          <Chips
-            items={PRESETS.filter((p) => p <= room)}
-            value={null}
-            onChange={(n) => {
-              setCount((c) => Math.min(room, fresh.current ? n : c + n))
-              fresh.current = false
-            }}
-            render={(n) => `+${n}`}
-          />
+          <Stepper value={n} min={1} max={Math.max(1, room)} onChange={setCount} />
         </div>
       </div>
 
