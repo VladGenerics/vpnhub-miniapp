@@ -28,6 +28,11 @@ const TestPayPage =
   import.meta.env.VITE_USE_MOCKS === 'true' || (import.meta.env.DEV && !import.meta.env.VITE_API_URL)
     ? lazy(() => import('./pages/TestPayPage').then((m) => ({ default: m.TestPayPage })))
     : () => null
+// тестовая оплата слоем внутри мини-аппа (в Telegram внешний браузер не передал бы итог оплаты)
+const TestPayOverlay =
+  import.meta.env.VITE_USE_MOCKS === 'true' || (import.meta.env.DEV && !import.meta.env.VITE_API_URL)
+    ? lazy(() => import('./pages/TestPayPage').then((m) => ({ default: m.TestPayOverlay })))
+    : () => null
 // панель состояний для показа на тестовых данных (?states=1); условие то же, что у TestPayPage, чтобы чанк выпадал из боевой сборки
 const StatesPanel =
   import.meta.env.VITE_USE_MOCKS === 'true' || (import.meta.env.DEV && !import.meta.env.VITE_API_URL)
@@ -142,6 +147,7 @@ export default function App() {
         {!wide && NAV_ROUTES.includes(pathname) && <BottomNav />}
         <Suspense fallback={null}>
           <StatesPanel />
+          <TestPayOverlay />
         </Suspense>
       </div>
     </RequireAuth>

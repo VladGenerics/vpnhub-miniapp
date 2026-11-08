@@ -10,10 +10,11 @@ import { useToast } from '../../components/Toast'
 import { E } from '../../data/emoji'
 import { MAX_DAYS } from '../../data/content'
 import { useMe, useRenew, useTariffs } from '../../api/queries'
-import { date, days, devicesWord, rub } from '../../lib/format'
+import { date, days, rub } from '../../lib/format'
 import { haptic } from '../../lib/telegram'
 import { consumeResume, draft, draftOf } from '../../lib/draft'
 import { useSingleFlight } from '../../hooks/useSingleFlight'
+import { PriceLadder, CalcFormula } from '../../components/Tariff'
 
 const PRESETS = [7, 14, 30, 90]
 const DAY = 86_400_000
@@ -80,20 +81,21 @@ export function RenewSheet({ sub, open, onClose }: { sub: Subscription; open: bo
         </div>
       </div>
 
+      {tariffs && (
+        <>
+          <h3 className="section-title">Цена дня по сроку</h3>
+          <div className="ladder-wrap">
+            <PriceLadder tariffs={tariffs} days={dayCount} onPick={setDayCount} />
+          </div>
+        </>
+      )}
+
       {q && (
         <>
           <h3 className="section-title">К оплате</h3>
           <div className="calc-card">
             <DiscountBadge percent={discount} reason={discountReason(slots, q.deviceDiscount, q.discount)} />
-            <div className="calc-formula">
-              <span>{rub(q.pricePerDay)}</span>
-              <i>×</i>
-              <span>
-                {slots} {devicesWord(slots)}
-              </span>
-              <i>×</i>
-              <span>{days(dayCount)}</span>
-            </div>
+            <CalcFormula q={q} devices={slots} days={dayCount} />
             <div className="calc-total">
               {q.total < q.base && <s className="calc-old">{rub(q.base)}</s>}
               <AnimatedNumber value={q.total} format={rub} duration={450} />

@@ -1,7 +1,8 @@
 import type { Tariffs } from './types'
 
 // Цена подписки по тарифам из БД:
-//   цена дня × устройства × дни × (1 − скидка за устройства) × (1 − max(персональная, общая))
+//   тариф × устройства × дни, где тариф = цена дня на этот срок (между парами prices - плавно по прямой)
+//   × (1 − скидка за устройства) × (1 − max(персональная, общая))
 // Итог считает бэкенд, здесь только предпросмотр.
 
 const round2 = (n: number) => Math.round(n * 100) / 100
@@ -14,10 +15,11 @@ function stepFor<T>(rules: T[], key: (r: T) => number, value: number): T | undef
     .at(-1)
 }
 
-/** Цена дня за устройство или null, если тарифа нет: без цены оформлять нельзя, а не «за 0 ₽» */
-export function pricePerDeviceDay(t: Tariffs, days: number): number | null {
-  const price = stepFor(t.prices, (p) => p.min_days, days)?.price_per_day ?? [...t.prices].sort((a, b) => a.min_days - b.min_days)[0]?.price_per_day
-  return typeof price === 'number' && Number.isFinite(price) && price > 0 ? price : null
+/** Пары «срок - цена дня» из БД по возрастанию срока, только осмысленные */
+export function priceTiers(t: Tariffs) {
+  return [...t.prices]
+    .filter((p) => Number.isFinite(p.min_days) && Number.isFinite(p.price_per_day) && p.price_per_day > 0)
+    .sort((a, b) => a.min_days - b.min_days)
 }
 
 export function deviceDiscount(t: Tariffs, devices: number): number {
@@ -46,22 +48,33 @@ export function activeDiscount(t: Tariffs, now = Date.now()): number {
 }
 
 export interface Quote {
+  /** Цена дня за устройство на этот срок, без скидок */
   pricePerDay: number
+  /** Цена дня самой короткой пары (обычно 1 день) - от неё видно, насколько срок удешевил тариф */
+  basePricePerDay: number
+  /** Тариф со всеми скидками: столько стоит день одного устройства */
+  finalPricePerDay: number
   base: number
   deviceDiscount: number
   discount: number
   total: number
 }
 
-/** Расчёт цены или null, если для такого срока нет цены в тарифах */
+/**
+ * Расчёт цены или null, если тарифов нет. Тариф по сроку плавный: при парах 1 дн. - 5 ₽ и 30 дн. - 4 ₽
+ * каждый день срока дешевле на (5 − 4) / 29 ≈ 0,03 ₽
+ */
 export function quote(t: Tariffs, devices: number, days: number): Quote | null {
-  const pricePerDay = pricePerDeviceDay(t, days)
-  if (pricePerDay === null) return null
+  const tiers = priceTiers(t)
+  const pricePerDay = interpolatedPricePerDay(t, days)
+  if (pricePerDay === null || !tiers.length || !(days > 0) || !(devices > 0)) return null
   const base = pricePerDay * devices * days
   const dd = deviceDiscount(t, devices)
   const disc = activeDiscount(t)
   return {
-    pricePerDay,
+    pricePerDay: round2(pricePerDay),
+    basePricePerDay: tiers[0].price_per_day,
+    finalPricePerDay: round2(pricePerDay * (1 - dd) * (1 - disc)),
     base: round2(base),
     deviceDiscount: dd,
     discount: disc,
@@ -75,7 +88,7 @@ export function quote(t: Tariffs, devices: number, days: number): Quote | null {
  * Короче первого порога - цена первого, дольше последнего - цена последнего
  */
 export function interpolatedPricePerDay(t: Tariffs, days: number): number | null {
-  const ps = [...t.prices].filter((p) => Number.isFinite(p.price_per_day) && p.price_per_day > 0).sort((a, b) => a.min_days - b.min_days)
+  const ps = priceTiers(t)
   if (!ps.length) return null
   if (days <= ps[0].min_days) return ps[0].price_per_day
   for (let i = 1; i < ps.length; i++) {

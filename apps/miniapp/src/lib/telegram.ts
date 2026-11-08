@@ -189,7 +189,15 @@ export function openSupport(raw: string) {
 
 // Открывает оплату счёта: Telegram Stars (t.me/$...) - родным окном, ссылки t.me - внутри Telegram,
 // остальное - во внешнем браузере.
+/** Событие «открыть тестовую оплату слоем», ловит TestPayOverlay (только тестовые данные) */
+export const TEST_PAY_EVENT = 'vpnhub:test-pay'
+
 export function openPayment(url: string) {
+  // заглушка оплаты на своём сайте: в Telegram открываем внутри мини-аппа, иначе браузер не передаст итог
+  if (isTelegram && url.startsWith(`${location.origin}${import.meta.env.BASE_URL}test-pay`)) {
+    window.dispatchEvent(new CustomEvent(TEST_PAY_EVENT, { detail: url }))
+    return
+  }
   if (isTelegram && tg) {
     if (/^https:\/\/t\.me\/(\$|invoice\/)/.test(url) && tg.openInvoice && tg.isVersionAtLeast('6.1')) tg.openInvoice(url)
     else if (url.startsWith('https://t.me/')) tg.openTelegramLink(url)

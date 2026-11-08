@@ -359,10 +359,15 @@ p {
   background: var(--accent-soft);
 }
 
-.title-dots i {
+/* полоска в SVG: у векторной фигуры край сглаживается на дробных пикселях. Блок HTML браузер
+   рисует по целым пикселям, и на 24 px за 10 с полоска растёт заметными рывками */
+.title-dots svg {
   display: block;
+  width: 100%;
   height: 100%;
-  background: var(--accent);
+}
+.title-dots rect {
+  fill: var(--accent);
   animation: dot-fill linear forwards;
 }
 
@@ -371,7 +376,7 @@ p {
     width: 0;
   }
   to {
-    width: 100%;
+    width: 24px;
   }
 }
 
@@ -700,7 +705,6 @@ p {
 }
 .stepper-value:focus-within {
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px var(--accent-glow);
 }
 
 .stepper-value small {
@@ -1123,7 +1127,7 @@ p {
   color: var(--hint);
 }
 
-.calc-formula span {
+.calc-formula > span {
   padding: 3px 9px;
   border-radius: 8px;
   background: var(--chip);
@@ -1142,6 +1146,76 @@ p {
   color: var(--accent);
   letter-spacing: -0.02em;
   font-variant-numeric: tabular-nums;
+}
+
+/* пары «срок - цена дня» из БД: компактные плитки в один ряд */
+.ladder-wrap {
+  padding: 12px;
+}
+.sheet-body > .ladder-wrap {
+  padding: 0;
+}
+.price-ladder {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(68px, 1fr));
+  gap: 6px;
+}
+.price-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  padding: 8px 4px;
+  border: 1.5px solid transparent;
+  border-radius: 12px;
+  background: var(--chip);
+  transition:
+    border-color 0.2s,
+    background 0.2s;
+}
+.price-step:not(:disabled):hover {
+  background: var(--card-hover);
+}
+.price-step.is-active {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+.price-step-days {
+  font-size: 12px;
+  color: var(--hint);
+}
+.price-step-price {
+  font-size: 15px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.price-step.is-active .price-step-price {
+  color: var(--accent);
+}
+
+/* тариф в формуле расчёта: выделен акцентом, базовая цена зачёркнута */
+.calc-formula > .calc-tariff {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 16px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.calc-tariff s {
+  color: var(--hint);
+  font-size: 13px;
+  font-weight: 400;
+}
+.calc-tariff small {
+  font-size: 12px;
+  font-weight: 500;
+  opacity: 0.8;
+}
+.buy-calc {
+  margin-top: 16px;
 }
 
 /* «Действует скидка 25 % за 6 устройств» */
@@ -1205,6 +1279,15 @@ p {
 .notice .lottie {
   flex: none;
 }
+/* тестовая оплата поверх кабинета (только тестовые данные в Telegram) */
+.test-pay-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  overflow-y: auto;
+  background: var(--bg);
+}
+
 /* «Выбор покупки сохранён»: карточка с воздухом, а не прижатая полоска */
 .resume-card {
   display: flex;
@@ -1395,7 +1478,6 @@ p {
 
 .amount-input:focus-within {
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px var(--accent-glow);
 }
 
 .amount-currency {
@@ -1419,6 +1501,16 @@ p {
 }
 
 .amount-input.has-error input {
+  color: var(--danger);
+}
+.amount-input.has-error,
+.amount-input.has-error:focus-within {
+  border-color: var(--danger);
+}
+.amount-input.has-error input {
+  caret-color: var(--danger);
+}
+.amount-input.has-error .amount-edit {
   color: var(--danger);
 }
 
