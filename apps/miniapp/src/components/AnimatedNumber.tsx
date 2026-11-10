@@ -11,25 +11,22 @@ const decimalsOf = (n: number) => {
 
 /**
  * Число, плавно докручивающееся до нового значения.
- * - whole - целые рубли и в пути, и в конце (итоговые суммы покупки): без скачка 842 → 841,54.
- *   Без него точность как у цели: к 841,54 идёт 830,12 → 841,54 (баланс, цена дня).
+ * - В пути показывается с той же точностью, что и цель: к 841,54 идёт 830,12 → 838,90 → 841,54,
+ *   а не целые рубли с прыжком на копейки в конце (было: 842, потом 841,54).
  * - Если цель меняется на ходу (зажали «+» у дней), счёт продолжается от того, что уже на экране.
  * - from - с чего начать при первом показе (баланс набегает от нуля)
  */
 export function AnimatedNumber({
-  value: raw,
+  value,
   format = String,
   duration = 450,
   from,
-  whole,
 }: {
   value: number
   format?(n: number): string
   duration?: number
   from?: number
-  whole?: boolean
 }) {
-  const value = whole ? Math.round(raw) : raw
   const [shown, setShown] = useState(from ?? value)
   const current = useRef(from ?? value)
   const raf = useRef(0)

@@ -111,8 +111,8 @@ export function AddSlotsSheet({ sub, open, onClose }: { sub: Subscription; open:
               <span>{q.daysLeft.toLocaleString('ru-RU', { maximumFractionDigits: 2 })} дн.</span>
             </div>
             <div className="calc-total">
-              {q.total < q.base && <s className="calc-old">{rub(Math.round(q.base))}</s>}
-              <AnimatedNumber value={q.total} format={rub} whole duration={450} />
+              {q.total < q.base && <s className="calc-old">{rub(q.base)}</s>}
+              <AnimatedNumber value={q.total} format={rub} duration={450} />
             </div>
             <div className="calc-hint">
               будет {q.devicesAfter} {devicesWord(q.devicesAfter)}
@@ -158,7 +158,7 @@ export function AddSlotsSheet({ sub, open, onClose }: { sub: Subscription; open:
               full ? `Максимум ${MAX_DEVICES} устройств` : !tariffs ? 'Загрузка цен' : !q ? 'Тариф недоступен' : balance === undefined && 'Загрузка баланса'
             }
           >
-            {buy.isPending ? 'Добавляем...' : q ? `Добавить за ${rub(Math.round(q.total))}` : 'Добавить'}
+            {buy.isPending ? 'Добавляем...' : q ? `Добавить за ${rub(q.total)}` : 'Добавить'}
           </Button>
         )}
         <Button stretched variant="ghost" onClick={onClose}>
