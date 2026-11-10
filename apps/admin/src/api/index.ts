@@ -29,7 +29,7 @@ import type {
 } from '@vpnhub/shared'
 import { http } from './http'
 
-/** Все запросы админки. Описание - docs/api.md */
+/** Все запросы админки. Описание - docs/api.txt */
 export interface AdminApi {
   /** Тот же вход, что в кабинете, права проверяет /admin/me */
   loginTelegram(req: TelegramAuthData): Promise<AuthResponse>

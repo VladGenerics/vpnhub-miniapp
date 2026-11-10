@@ -15,7 +15,7 @@ import type {
 } from '@vpnhub/shared'
 import { ApiError, http } from './http'
 
-/** Все запросы кабинета. Описание - docs/api.md */
+/** Все запросы кабинета. Описание - docs/api.txt */
 export interface UserApi {
   /** Вход с сайта через Telegram, новый пользователь регистрируется */
   loginTelegram(req: TelegramLoginRequest): Promise<AuthResponse>

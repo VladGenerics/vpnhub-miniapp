@@ -16,7 +16,7 @@ import { copyText, rub } from '../lib/format'
 import { haptic, isTelegram } from '../lib/telegram'
 import { useIsTwoCol } from '../hooks/useMediaQuery'
 
-// почта уходит в PUT /me/email, см. docs/api.md
+// почта уходит в PUT /me/email, см. docs/api.txt
 function EmailSheet({ open, onClose }: { open: boolean; onClose(): void }) {
   const toast = useToast()
   const bind = useBindEmail()
