@@ -96,7 +96,7 @@ export function AutoRenewSheet({ sub, open, onClose }: { sub: Subscription; open
                 <span>{days(dayCount)}</span>
               </div>
               <div className="calc-total">
-                <AnimatedNumber value={q.total} format={rub} duration={450} />
+                <AnimatedNumber value={q.total} format={rub} whole duration={450} />
               </div>
               <div className="calc-hint">спишется при следующем продлении</div>
             </div>

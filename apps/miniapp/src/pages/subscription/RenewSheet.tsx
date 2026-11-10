@@ -93,8 +93,8 @@ export function RenewSheet({ sub, open, onClose }: { sub: Subscription; open: bo
             <DiscountBadge percent={discount} reason={discountReason(slots, q.deviceDiscount, q.discount)} />
             <CalcFormula q={q} devices={slots} days={dayCount} />
             <div className="calc-total">
-              {q.total < q.base && <s className="calc-old">{rub(q.base)}</s>}
-              <AnimatedNumber value={q.total} format={rub} duration={450} />
+              {q.total < q.base && <s className="calc-old">{rub(Math.round(q.base))}</s>}
+              <AnimatedNumber value={q.total} format={rub} whole duration={450} />
             </div>
             <div className="calc-hint">подписка будет до {date(newUntil)}</div>
           </div>
@@ -135,7 +135,7 @@ export function RenewSheet({ sub, open, onClose }: { sub: Subscription; open: bo
             disabled={!q || balance === undefined || renew.isPending}
             hint={!tariffs ? 'Загрузка цен' : !q ? 'Тариф недоступен' : balance === undefined && 'Загрузка баланса'}
           >
-            {renew.isPending ? 'Продлеваем...' : q ? `Продлить за ${rub(q.total)}` : 'Продлить'}
+            {renew.isPending ? 'Продлеваем...' : q ? `Продлить за ${rub(Math.round(q.total))}` : 'Продлить'}
           </Button>
         )}
         <Button stretched variant="ghost" onClick={onClose}>

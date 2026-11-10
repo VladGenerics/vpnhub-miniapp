@@ -190,7 +190,7 @@ export function NoSubscription({ expired }: { expired?: Subscription }) {
         disabled={!q || !enough || purchase.isPending}
         hint={!tariffs ? 'Загрузка цен' : !q ? 'Тариф недоступен' : balance === undefined && 'Загрузка баланса'}
       >
-        {expired ? 'Возобновить за' : 'Оформить за'} <AnimatedNumber value={q?.total ?? 0} format={rub} duration={400} />
+        {expired ? 'Возобновить за' : 'Оформить за'} <AnimatedNumber value={q?.total ?? 0} format={rub} whole duration={400} />
       </Button>
     )
   const cta = (
@@ -205,8 +205,8 @@ export function NoSubscription({ expired }: { expired?: Subscription }) {
       <DiscountBadge percent={discount} reason={discountReason(devices, q.deviceDiscount, q.discount)} />
       <CalcFormula q={q} devices={devices} days={period} />
       <div className="calc-total">
-        {q.total < q.base && <s className="calc-old">{rub(q.base)}</s>}
-        <AnimatedNumber value={q.total} format={rub} duration={450} />
+        {q.total < q.base && <s className="calc-old">{rub(Math.round(q.base))}</s>}
+        <AnimatedNumber value={q.total} format={rub} whole duration={450} />
       </div>
     </div>
   )
@@ -272,8 +272,8 @@ export function NoSubscription({ expired }: { expired?: Subscription }) {
                 <div className="receipt-pay">
                   <div className="receipt-pay-label">К оплате</div>
                   <div className="receipt-total">
-                    <AnimatedNumber value={q?.total ?? 0} format={rub} duration={450} />
-                    {q && q.total < q.base && <s>{rub(q.base)}</s>}
+                    <AnimatedNumber value={q?.total ?? 0} format={rub} whole duration={450} />
+                    {q && q.total < q.base && <s>{rub(Math.round(q.base))}</s>}
                   </div>
                   {payButton}
                 </div>
