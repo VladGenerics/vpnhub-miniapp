@@ -226,7 +226,7 @@ export const mockApi: UserApi = {
         .sort((a: Article, b: Article) => a.sequence_number - b.sequence_number),
     ),
 
-  // как советуем бэкенду (docs/api.txt): тот же неоплаченный счёт на ту же сумму тем же способом не дублируем
+  // как советуем бэкенду (docs/api.md): тот же неоплаченный счёт на ту же сумму тем же способом не дублируем
   createInvoice({ provider, amount }) {
     invoices.forEach(syncInvoice)
     const same = [...invoices.values()].find((i) => i.status === 'UNPAID' && i.provider === provider && i.amount === amount)

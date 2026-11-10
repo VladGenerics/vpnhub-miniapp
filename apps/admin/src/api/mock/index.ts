@@ -38,7 +38,7 @@ import {
   type MUser,
 } from './data'
 
-// Тестовый бэкенд в памяти. Отдаёт то же, что описано в docs/api.txt, с небольшой задержкой.
+// Тестовый бэкенд в памяти. Отдаёт то же, что описано в docs/api.md, с небольшой задержкой.
 
 const iso = (ms: number) => new Date(ms).toISOString()
 const delay = <T>(v: T, ms = 180 + Math.random() * 220) => new Promise<T>((r) => setTimeout(() => r(structuredClone(v)), ms))
@@ -396,7 +396,7 @@ export const mockApi: AdminApi = {
     if (p.status) list = list.filter((i) => i.status === p.status)
     if (p.provider) list = list.filter((i) => i.provider === p.provider)
     if (p.user_id) list = list.filter((i) => i.user_id === Number(p.user_id))
-    // по дате оплаты - только оплаченные, даже без границ периода (как в docs/api.txt)
+    // по дате оплаты - только оплаченные, даже без границ периода (как в docs/api.md)
     if (p.date_by === 'paid') list = list.filter((i) => i.paid_at !== null)
     if (p.from || p.to) {
       const from = p.from ? Date.parse(p.from) : -Infinity
