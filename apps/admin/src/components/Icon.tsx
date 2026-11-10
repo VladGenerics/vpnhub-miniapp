@@ -1,4 +1,10 @@
 import {
+  LuBookOpen,
+  LuEye,
+  LuEyeOff,
+  LuGripVertical,
+  LuPencil,
+  LuTrash2,
   LuArrowDown,
   LuArrowUp,
   LuCalendar,
@@ -61,6 +67,12 @@ const ICONS = {
   trendUp: LuTrendingUp,
   trendDown: LuTrendingDown,
   send: LuSend,
+  book: LuBookOpen,
+  eye: LuEye,
+  eyeOff: LuEyeOff,
+  grip: LuGripVertical,
+  pencil: LuPencil,
+  trash: LuTrash2,
 } satisfies Record<string, IconType>
 
 export type IconName = keyof typeof ICONS

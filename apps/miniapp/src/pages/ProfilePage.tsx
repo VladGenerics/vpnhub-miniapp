@@ -36,6 +36,7 @@ function EmailSheet({ open, onClose }: { open: boolean; onClose(): void }) {
         <Button
           stretched
           disabled={!valid || bind.isPending}
+          hint={!valid && (value ? 'Неверный адрес' : 'Введите почту')}
           onClick={() =>
             bind.mutate(value, {
               onSuccess: () => {
@@ -97,12 +98,13 @@ export function ProfilePage() {
       {meError && !me && <LoadError text="Не удалось загрузить профиль" onRetry={() => refetchMe()} busy={meFetching} />}
 
       <Cols
+        equal
         left={
           <>
             <Section title="Аккаунт">
               <Cell
                 icon={<Lottie name={E.mail} size={32} />}
-                title="Электронная почта"
+                title="Почта"
                 subtitle={email ?? 'Не привязана'}
                 after={
                   email ? undefined : (

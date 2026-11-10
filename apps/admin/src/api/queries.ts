@@ -2,6 +2,10 @@ import { keepPreviousData, QueryClient, useMutation, useQuery, useQueryClient } 
 import type {
   AdminSettingsPatch,
   AdminUserDetails,
+  Article,
+  ArticleInput,
+  ArticleKind,
+  ArticlePatch,
   BalanceAdjustRequest,
   InvoicesParams,
   ListParams,
@@ -37,6 +41,7 @@ export const keys = {
   invoices: (p: InvoicesParams) => ['invoices', p] as const,
   paymentMethods: ['payment-methods'] as const,
   settings: ['settings'] as const,
+  articles: ['articles'] as const,
   statsRange: ['stats', 'range'] as const,
   stats: (kind: string, q: StatsQuery) => ['stats', kind, q] as const,
 }
@@ -97,6 +102,51 @@ export function useUpdateSettings() {
   return useMutation({
     mutationFn: (patch: AdminSettingsPatch) => api.updateSettings(patch),
     onSuccess: (s) => qc.setQueryData(keys.settings, s),
+  })
+}
+
+// --- разделы «Информация» и «Помощь» ---
+
+export const useArticles = () => useQuery({ queryKey: keys.articles, queryFn: () => api.getArticles().then(required) })
+
+const putArticle = (qc: QueryClient, a: Article) =>
+  qc.setQueryData<Article[]>(keys.articles, (list) =>
+    list ? (list.some((x) => x.id === a.id) ? list.map((x) => (x.id === a.id ? a : x)) : [...list, a]) : list,
+  )
+
+export function useSaveArticle() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, input }: { id: number | null; input: ArticlePatch }) =>
+      id === null ? api.createArticle(input as ArticleInput) : api.updateArticle(id, input),
+    onSuccess: (a: Article) => putArticle(qc, a),
+  })
+}
+
+export function useDeleteArticle() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: number) => api.deleteArticle(id),
+    onSuccess: (_: void, id: number) => qc.setQueryData<Article[]>(keys.articles, (list) => list?.filter((x) => x.id !== id)),
+  })
+}
+
+export function useReorderArticles() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ kind, ids }: { kind: ArticleKind; ids: number[] }) => api.reorderArticles(kind, ids),
+    // порядок виден сразу, при ошибке список перечитывается с сервера
+    onMutate: async ({ ids }) => {
+      await qc.cancelQueries({ queryKey: keys.articles })
+      qc.setQueryData<Article[]>(keys.articles, (list) =>
+        list?.map((a) => {
+          const i = ids.indexOf(a.id)
+          return i < 0 ? a : { ...a, sequence_number: i + 1 }
+        }),
+      )
+    },
+    onSuccess: (list: Article[]) => qc.setQueryData(keys.articles, list),
+    onError: () => qc.invalidateQueries({ queryKey: keys.articles }),
   })
 }
 

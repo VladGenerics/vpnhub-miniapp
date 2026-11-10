@@ -1,4 +1,6 @@
+import { DEFAULT_ARTICLES } from '@vpnhub/shared'
 import type {
+  Article,
   AuthResponse,
   TelegramLoginRequest,
   AutoRenewal,
@@ -24,6 +26,8 @@ export interface UserApi {
   getTariffs(): Promise<Tariffs>
   getPaymentMethods(): Promise<PaymentMethod[]>
   getSettings(): Promise<PublicSettings>
+  /** Включённые разделы «Информация» и «Помощь», по sequence_number */
+  getArticles(): Promise<Article[]>
   createInvoice(req: CreateInvoiceRequest): Promise<Invoice>
   getInvoice(id: number): Promise<Invoice>
   /** Неоплаченные счета пользователя (status = UNPAID), новые сверху */
@@ -55,6 +59,15 @@ const httpApi: UserApi = {
   getTariffs: () => http('GET', '/tariffs'),
   getPaymentMethods: () => http('GET', '/payment-methods'),
   getSettings: () => http('GET', '/settings'),
+  getArticles: async () => {
+    try {
+      return await http<Article[]>('GET', '/articles')
+    } catch (e) {
+      // ручки на бэкенде ещё нет - показываем разделы по умолчанию, а не пустую страницу
+      if (e instanceof ApiError && (e.status === 404 || e.status === 405 || e.status === 501)) return DEFAULT_ARTICLES
+      throw e
+    }
+  },
   createInvoice: (req) => http('POST', '/invoices', req),
   getInvoice: (id) => http('GET', `/invoices/${id}`),
   getUnpaidInvoices: () => http('GET', '/invoices?status=UNPAID'),

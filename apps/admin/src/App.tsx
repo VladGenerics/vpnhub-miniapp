@@ -5,6 +5,8 @@ import { ErrorBoundary } from './components/ErrorBoundary'
 import { Layout } from './components/Layout'
 import { StateView } from './components/ui'
 import { useApplyTheme } from './lib/theme'
+import { ArticleEditPage } from './pages/ArticleEditPage'
+import { ArticlesPage } from './pages/ArticlesPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { InvoicesPage } from './pages/InvoicesPage'
 import { LoginPage, NoAccessPage } from './pages/LoginPage'
@@ -64,6 +66,8 @@ function Page() {
           <Route path="users/:id" element={<UserPage />} />
           <Route path="invoices" element={<InvoicesPage />} />
           <Route path="payment-methods" element={<PaymentMethodsPage />} />
+          <Route path="articles" element={<ArticlesPage />} />
+          <Route path="articles/:id" element={<ArticleEditPage />} />
           <Route path="statistics" element={<StatisticsPage />}>
             <Route index element={<UsersStats />} />
             <Route path="deposits" element={<DepositsStats />} />

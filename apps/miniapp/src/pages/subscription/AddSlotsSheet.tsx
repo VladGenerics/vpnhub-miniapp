@@ -150,7 +150,14 @@ export function AddSlotsSheet({ sub, open, onClose }: { sub: Subscription; open:
             Пополнить на {rub(Math.ceil(lacking))}
           </Link>
         ) : (
-          <Button stretched onClick={submit} disabled={!q || balance === undefined || buy.isPending}>
+          <Button
+            stretched
+            onClick={submit}
+            disabled={!q || balance === undefined || buy.isPending}
+            hint={
+              full ? `Максимум ${MAX_DEVICES} устройств` : !tariffs ? 'Загрузка цен' : !q ? 'Тариф недоступен' : balance === undefined && 'Загрузка баланса'
+            }
+          >
             {buy.isPending ? 'Добавляем...' : q ? `Добавить за ${rub(q.total)}` : 'Добавить'}
           </Button>
         )}

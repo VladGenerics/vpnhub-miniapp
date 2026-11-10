@@ -1,5 +1,5 @@
 import { QueryClient, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import type { AutoRenewal, CreateInvoiceRequest, Invoice, PurchaseRequest, Subscription } from '@vpnhub/shared'
+import type { ArticleKind, AutoRenewal, CreateInvoiceRequest, Invoice, PurchaseRequest, Subscription } from '@vpnhub/shared'
 import { ApiError, isValidTariffs, required, shouldRetry } from '@vpnhub/shared'
 import { api } from './index'
 import { draft, type Draft } from '../lib/draft'
@@ -46,6 +46,7 @@ export const keys = {
   tariffs: ['tariffs'] as const,
   paymentMethods: ['payment-methods'] as const,
   settings: ['settings'] as const,
+  articles: ['articles'] as const,
   invoice: (id: number) => ['invoice', id] as const,
   unpaidInvoices: ['invoices', 'UNPAID'] as const,
 }
@@ -64,6 +65,21 @@ export const useTariffs = () =>
     staleTime: 5 * 60_000,
   })
 export const usePaymentMethods = () => useQuery({ queryKey: keys.paymentMethods, queryFn: () => api.getPaymentMethods().then(required) })
+/** Разделы «Информация» / «Помощь» одного вида, включённые и по порядку */
+export const useArticles = (kind: ArticleKind) =>
+  useQuery({
+    queryKey: keys.articles,
+    queryFn: async () => {
+      const list = required(await api.getArticles())
+      if (!Array.isArray(list)) throw new ApiError(0, 'Не удалось загрузить разделы, попробуйте позже')
+      // битая запись не должна ронять страницу: без адреса и заголовка - пропускаем, пустые поля - пустой строкой
+      return list
+        .filter((a) => a && typeof a.slug === 'string' && typeof a.title === 'string')
+        .map((a) => ({ ...a, emoji: a.emoji ?? '', body: typeof a.body === 'string' ? a.body : '', sequence_number: Number(a.sequence_number) || 0 }))
+    },
+    staleTime: 5 * 60_000,
+    select: (list) => list.filter((a) => a.kind === kind && a.is_active !== false).sort((a, b) => a.sequence_number - b.sequence_number),
+  })
 export const useSettings = (enabled = true) =>
   useQuery({ queryKey: keys.settings, queryFn: () => api.getSettings().then(required), staleTime: 5 * 60_000, enabled })
 

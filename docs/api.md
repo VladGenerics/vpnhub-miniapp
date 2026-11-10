@@ -69,6 +69,7 @@ Authorization: tma <initData>
 | `GET /tariffs` | | `Tariffs` - цены, скидки за устройства, общая и персональная скидка |
 | `GET /payment-methods` | | `PaymentMethod[]` - только включённые, по `sequence_number` |
 | `GET /settings` | | `PublicSettings` - ссылка на поддержку и размеры реф. бонусов |
+| `GET /articles` | | `Article[]` - включённые (`is_active`) разделы «Информация» и «Помощь», по `sequence_number`. Пока ручки нет (`404`), кабинет показывает разделы по умолчанию |
 | `POST /invoices` | `{ provider, amount }` | `Invoice` с `pay_url` |
 | `GET /invoices/:id` | | `Invoice` |
 | `GET /invoices?status=UNPAID` | | `Invoice[]` - неоплаченные счета пользователя, новые сверху, только с его `user_id` |
@@ -144,6 +145,11 @@ Authorization: tma <initData>
 | `PATCH /admin/payment-methods/:id` | `{ name?, is_active?, min_amount? }` | `PaymentMethod` |
 | `GET /admin/settings` | | `AdminSettings` |
 | `PATCH /admin/settings` | `{ support_link?, invited_bonus?, referral_bonus? }` | `AdminSettings` |
+| `GET /admin/articles` | | `Article[]` - все разделы, включая выключенные |
+| `POST /admin/articles` | `ArticleInput` | `Article`; `sequence_number` - в конец своего `kind` |
+| `PATCH /admin/articles/:id` | `ArticlePatch` (любые поля из `ArticleInput`) | `Article` |
+| `DELETE /admin/articles/:id` | | `204` |
+| `PUT /admin/articles/order` | `{ kind, ids }` - id разделов этого `kind` сверху вниз | `Article[]` - все разделы с новыми `sequence_number` (1, 2, 3…) |
 | `GET /admin/stats/range` | | `StatsRange` |
 | `GET /admin/stats/users` | статистика | `UsersStats` - `{ now, points }`: аудитория сейчас и точки `UsersStatsPoint[]` |
 | `GET /admin/stats/deposits` | статистика | `DepositsStats` |
@@ -168,6 +174,46 @@ Authorization: tma <initData>
 Фильтр `flag` у пользователей: `bot` - `is_bot`; `blocked` - заблокировали бота;
 `premium` - Telegram Premium; `trial` - пользовались пробной подпиской;
 `active_sub` - подписка `ACTIVE` сейчас. Пустые значения сортировки (нет подписки) - в конце.
+
+### Разделы «Информация» и «Помощь»
+
+Тип `Article` - в [`packages/shared/src/articles.ts`](../packages/shared/src/articles.ts). Новая таблица (в `database.dbml` её нет):
+
+```dbml
+Enum article_kind {
+  INFO [note: 'Страница «Информация»']
+  HELP [note: 'Страница «Помощь»']
+}
+
+Table articles {
+  id integer [pk, increment]
+  kind article_kind [not null, note: 'На какой странице раздел']
+  slug varchar(64) [not null, note: 'Адрес: /info/<slug>, латиница, цифры, дефис']
+  emoji text [not null, note: 'Имя эмодзи приложения (VHubProject_17), custom_emoji_id или обычный символ']
+  title varchar(120) [not null]
+  lead varchar(255) [note: 'Описание под заголовком']
+  body text [not null, default: '', note: 'HTML как в Telegram (parse_mode HTML) + теги статей']
+  sequence_number integer [not null, note: 'Порядок внутри kind']
+  is_active boolean [not null, default: true, note: 'Выключенный не виден пользователям']
+  created_at timestamptz [not null]
+  updated_at timestamptz
+
+  indexes {
+    (kind, slug) [unique]
+    (kind, sequence_number)
+  }
+}
+```
+
+- Начальные записи - `DEFAULT_ARTICLES` из того же файла (то, что кабинет показывал раньше).
+- Проверки на бэкенде: `title` не пустой, `slug` по `^[a-z0-9]+(-[a-z0-9]+)*$` и уникален внутри `kind` - иначе `422` с `detail`.
+- `body` хранится как есть, бэкенду чистить его не нужно: кабинет показывает только разрешённые теги
+  (`b/strong, i/em, u/ins, s/strike/del, tg-spoiler, span.tg-spoiler, a, tg-emoji, code, pre, blockquote [expandable]`
+  и для статей `p, h1-h6, ul/ol/li, hr, img, figure, table, details`), скрипты и атрибуты-обработчики выкидываются.
+  Без тегов абзацев переносы строк значимы, как в сообщении Telegram, поэтому текст сообщения бота можно вставлять как есть.
+- `<tg-emoji emoji-id="...">👍</tg-emoji>`: если ID есть в `packages/shared/src/customEmojiIds.ts`, на сайте показывается
+  анимированный эмодзи приложения, иначе - символ внутри тега. Таблицу ID заполняет `apps/miniapp/scripts/emoji-ids.mjs` (нужен токен бота).
+- Блок «Не нашли ответ?» на странице «Помощь» постоянный, ссылка в нём - `support_link` из настроек.
 
 ### Баланс
 

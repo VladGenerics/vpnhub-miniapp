@@ -11,7 +11,7 @@ React 19, TypeScript, Vite, TanStack Query, ECharts. Нужен Node.js 22.12+.
 ```bash
 npm install
 npm run dev:miniapp   # кабинет  http://localhost:5173
-npm run dev:admin     # админка  http://localhost:5174
+npm run dev:admin     # админка  http://localhost:5173/admin/ (через кабинет, общие тестовые разделы)
 npm run build         # сборка в apps/*/dist
 ```
 

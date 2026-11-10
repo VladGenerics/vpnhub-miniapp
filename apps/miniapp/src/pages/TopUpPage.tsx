@@ -130,7 +130,7 @@ function InvoiceSheet({ invoiceId, onClose, onWatch, onResume }: { invoiceId: nu
                 Перейти к оплате
               </PayLink>
             ) : (
-              <Button stretched disabled>
+              <Button stretched disabled hint="Ссылка готовится">
                 <span className="spinner" /> Готовим ссылку
               </Button>
             )}
@@ -318,6 +318,8 @@ export function TopUpPage() {
   const amount = Number(raw) || 0
   const error = raw && amount < min ? `Минимальная сумма — ${rub(min)}` : amount > MAX ? `Максимум — ${rub(MAX)}` : ''
   const valid = !!method && amount >= min && amount <= MAX
+  // почему «Пополнить» недоступна - подсказка на кнопке
+  const payHint = methods?.length === 0 ? 'Оплата недоступна' : !method ? 'Выберите способ оплаты' : !amount ? `Минимум ${rub(min)}` : error
 
   // сумма из ссылки: страница могла открыться без перемонтирования, берём свежую
   useEffect(() => {
@@ -427,7 +429,7 @@ export function TopUpPage() {
   )
   const cta = (
     <div className="sticky-cta">
-      <Button stretched disabled={!valid || create.isPending} onClick={pay}>
+      <Button stretched disabled={!valid || create.isPending} hint={payHint} onClick={pay}>
         {create.isPending ? 'Создаём счёт…' : methods?.length === 0 ? 'Оплата недоступна' : valid ? `Пополнить на ${rub(amount)}` : 'Введите сумму'}
       </Button>
     </div>
@@ -513,7 +515,7 @@ export function TopUpPage() {
               <span>Сумма пополнения</span>
               <b>{valid ? rub(amount) : '—'}</b>
             </div>
-            <Button stretched disabled={!valid || create.isPending} onClick={pay}>
+            <Button stretched disabled={!valid || create.isPending} hint={payHint} onClick={pay}>
               {create.isPending ? 'Создаём счёт…' : methods?.length === 0 ? 'Оплата недоступна' : valid ? 'Перейти к оплате' : 'Введите сумму'}
             </Button>
             <p className="summary-note">

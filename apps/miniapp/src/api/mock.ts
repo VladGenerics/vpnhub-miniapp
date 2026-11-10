@@ -1,5 +1,5 @@
-import type { DeviceSlot, Invoice, Me, PaymentMethod, PublicSettings, Subscription, Tariffs } from '@vpnhub/shared'
-import { quote, slotsQuote } from '@vpnhub/shared'
+import type { Article, DeviceSlot, Invoice, Me, PaymentMethod, PublicSettings, Subscription, Tariffs } from '@vpnhub/shared'
+import { mockArticles, quote, slotsQuote } from '@vpnhub/shared'
 import { getTgUser } from '../lib/telegram'
 import { MAX_DEVICES } from '../data/content'
 import type { UserApi } from './index'
@@ -116,6 +116,7 @@ const settings: PublicSettings = { support_link: 'https://t.me/vpnhub_support', 
 
 // Счета. Оплата - страница-заглушка /test-pay в новой вкладке: она пишет итог в localStorage,
 // кабинет видит его при следующем опросе счёта.
+
 const PAY_KEY = 'vpnhub.test-pay'
 const invoices = new Map<number, Invoice>()
 // номера от времени запуска: итоги оплат в localStorage не путаются между перезагрузками
@@ -217,6 +218,14 @@ export const mockApi: UserApi = {
   getTariffs: () => delay(tariffs),
   getPaymentMethods: () => delay(methods.filter((m) => m.is_active).sort((a, b) => a.sequence_number - b.sequence_number)),
   getSettings: () => delay(settings),
+  // общие с тестовой админкой (localStorage): что добавили там - видно здесь
+  getArticles: () =>
+    delay(
+      mockArticles
+        .load()
+        .filter((a: Article) => a.is_active)
+        .sort((a: Article, b: Article) => a.sequence_number - b.sequence_number),
+    ),
 
   // как советуем бэкенду (docs/api.md): тот же неоплаченный счёт на ту же сумму тем же способом не дублируем
   createInvoice({ provider, amount }) {

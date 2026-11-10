@@ -184,7 +184,12 @@ export function NoSubscription({ expired }: { expired?: Subscription }) {
         Пополнить на {rub(lacking)}
       </Link>
     ) : (
-      <Button stretched onClick={subscribe} disabled={!q || !enough || purchase.isPending}>
+      <Button
+        stretched
+        onClick={subscribe}
+        disabled={!q || !enough || purchase.isPending}
+        hint={!tariffs ? 'Загрузка цен' : !q ? 'Тариф недоступен' : balance === undefined && 'Загрузка баланса'}
+      >
         {expired ? 'Возобновить за' : 'Оформить за'} <AnimatedNumber value={q?.total ?? 0} format={rub} duration={400} />
       </Button>
     )
@@ -230,47 +235,51 @@ export function NoSubscription({ expired }: { expired?: Subscription }) {
               </Section>
             )}
           </div>
-          <aside className="section receipt">
-            <h3 className="section-title">Ваш заказ</h3>
-            <div className="receipt-card">
-              {/* баланс сверху, итог «К оплате» внизу рядом с кнопкой */}
-              <div className="receipt-balance">{balanceRow}</div>
-              {q && (
-                <dl className="receipt-lines">
-                  <div>
-                    <dt>Тариф за устройство в сутки</dt>
-                    <dd>
-                      {cheaper && <s>{rub(q.basePricePerDay)}</s>}
-                      <b>{rub(q.finalPricePerDay)}</b>
-                    </dd>
-                  </div>
-                  <div>
-                    <dt>Устройства</dt>
-                    <dd>{added > 0 ? `${owned} (+${added})` : devices}</dd>
-                  </div>
-                  <div>
-                    <dt>Срок</dt>
-                    <dd>{days(period)}</dd>
-                  </div>
-                  {discount > 0.0049 && (
-                    <div className="is-save">
-                      <dt>Скидка {discountReason(devices, q.deviceDiscount, q.discount)}</dt>
-                      <dd>−{Math.round(discount * 100)} %</dd>
+          {/* обёртка - ячейка сетки на всю высоту ряда: чек прилипает внутри неё. Safari для sticky в grid
+              берёт границы всей сетки, а не ячейки, и без обёртки чек наезжал на устройства и «Что входит» */}
+          <div className="receipt-col">
+            <aside className="section receipt">
+              <h3 className="section-title">Ваш заказ</h3>
+              <div className="receipt-card">
+                {/* баланс сверху, итог «К оплате» внизу рядом с кнопкой */}
+                <div className="receipt-balance">{balanceRow}</div>
+                {q && (
+                  <dl className="receipt-lines">
+                    <div>
+                      <dt>Тариф за устройство в сутки</dt>
+                      <dd>
+                        {cheaper && <s>{rub(q.basePricePerDay)}</s>}
+                        <b>{rub(q.finalPricePerDay)}</b>
+                      </dd>
                     </div>
-                  )}
-                </dl>
-              )}
-              {errors}
-              <div className="receipt-pay">
-                <div className="receipt-pay-label">К оплате</div>
-                <div className="receipt-total">
-                  <AnimatedNumber value={q?.total ?? 0} format={rub} duration={450} />
-                  {q && q.total < q.base && <s>{rub(q.base)}</s>}
+                    <div>
+                      <dt>Устройства</dt>
+                      <dd>{added > 0 ? `${owned} (+${added})` : devices}</dd>
+                    </div>
+                    <div>
+                      <dt>Срок</dt>
+                      <dd>{days(period)}</dd>
+                    </div>
+                    {discount > 0.0049 && (
+                      <div className="is-save">
+                        <dt>Скидка {discountReason(devices, q.deviceDiscount, q.discount)}</dt>
+                        <dd>−{Math.round(discount * 100)} %</dd>
+                      </div>
+                    )}
+                  </dl>
+                )}
+                {errors}
+                <div className="receipt-pay">
+                  <div className="receipt-pay-label">К оплате</div>
+                  <div className="receipt-total">
+                    <AnimatedNumber value={q?.total ?? 0} format={rub} duration={450} />
+                    {q && q.total < q.base && <s>{rub(q.base)}</s>}
+                  </div>
+                  {payButton}
                 </div>
-                {payButton}
               </div>
-            </div>
-          </aside>
+            </aside>
+          </div>
           {expired && <ExpiredDevices sub={expired} />}
           <Section title="Что входит">
             <div className="buy-features">{features}</div>

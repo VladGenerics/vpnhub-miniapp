@@ -4,6 +4,10 @@ import type {
   AdminSettings,
   AdminSettingsPatch,
   AdminUserDetails,
+  Article,
+  ArticleInput,
+  ArticleKind,
+  ArticlePatch,
   AdminUserRow,
   AuthResponse,
   BalanceAdjustRequest,
@@ -41,6 +45,13 @@ export interface AdminApi {
   updatePaymentMethod(id: number, patch: PaymentMethodPatch): Promise<PaymentMethod>
   getSettings(): Promise<AdminSettings>
   updateSettings(patch: AdminSettingsPatch): Promise<AdminSettings>
+  /** Все разделы «Информация» и «Помощь», включая выключенные */
+  getArticles(): Promise<Article[]>
+  createArticle(input: ArticleInput): Promise<Article>
+  updateArticle(id: number, patch: ArticlePatch): Promise<Article>
+  deleteArticle(id: number): Promise<void>
+  /** Новый порядок разделов одного вида: ids сверху вниз, бэкенд проставляет sequence_number. Ответ - все разделы */
+  reorderArticles(kind: ArticleKind, ids: number[]): Promise<Article[]>
   getStatsRange(): Promise<StatsRange>
   getUsersStats(q: StatsQuery): Promise<UsersStats>
   getDepositsStats(q: StatsQuery): Promise<DepositsStats>
@@ -61,6 +72,11 @@ const httpApi: AdminApi = {
   updatePaymentMethod: (id, patch) => http('PATCH', `/admin/payment-methods/${id}`, patch),
   getSettings: () => http('GET', '/admin/settings'),
   updateSettings: (patch) => http('PATCH', '/admin/settings', patch),
+  getArticles: () => http('GET', '/admin/articles'),
+  createArticle: (input) => http('POST', '/admin/articles', input),
+  updateArticle: (id, patch) => http('PATCH', `/admin/articles/${id}`, patch),
+  deleteArticle: (id) => http('DELETE', `/admin/articles/${id}`),
+  reorderArticles: (kind, ids) => http('PUT', '/admin/articles/order', { kind, ids }),
   getStatsRange: () => http('GET', '/admin/stats/range'),
   getUsersStats: (q) => http('GET', '/admin/stats/users', undefined, q),
   getDepositsStats: (q) => http('GET', '/admin/stats/deposits', undefined, q),

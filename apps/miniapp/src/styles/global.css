@@ -676,6 +676,13 @@ p {
   transition: opacity 0.15s;
 }
 
+/* зажатие «+»/«−»: без выделения текста, лупы и меню долгого нажатия на iOS */
+.stepper button {
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
 .stepper button:disabled,
 .stepper button.is-locked {
   opacity: 0.35;
@@ -744,6 +751,22 @@ p {
 }
 .tip-text b {
   font-weight: 600;
+}
+/* отключённый элемент с подсказкой: события ловит обёртка (у disabled-кнопок их нет, особенно в Safari) */
+.tip-wrap.is-disabled-hint {
+  cursor: help;
+}
+.tip-wrap.is-disabled-hint > :disabled,
+.tip-wrap.is-disabled-hint > [aria-disabled='true'] {
+  pointer-events: none;
+}
+.tip-wrap.is-block {
+  display: flex;
+  width: 100%;
+}
+.tip-wrap.is-block > * {
+  flex: 1;
+  min-width: 0;
 }
 
 .stepper-value {
@@ -1662,6 +1685,176 @@ p {
   margin-top: 12px;
 }
 
+/* текст раздела из админки: HTML Telegram и разметка статей (RichText) */
+.rich {
+  font-size: 16px;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+.rich > :first-child {
+  margin-top: 0;
+}
+.rich :is(p, ul, ol, pre, figure, .rich-table, details) {
+  margin: 12px 0 0;
+}
+.rich :is(h2, h3, h4) {
+  margin: 20px 0 0;
+  font-weight: 700;
+  line-height: 1.3;
+}
+.rich h2 {
+  font-size: 21px;
+}
+.rich h3 {
+  font-size: 18px;
+}
+.rich h4 {
+  font-size: 16px;
+}
+.rich :is(ul, ol) {
+  padding-left: 22px;
+}
+.rich li + li {
+  margin-top: 4px;
+}
+.rich a {
+  color: var(--accent);
+  text-decoration: none;
+}
+.rich a:hover {
+  text-decoration: underline;
+}
+.rich code {
+  padding: 1px 5px;
+  border-radius: 6px;
+  background: var(--accent-soft);
+  font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  font-size: 0.88em;
+}
+.rich pre {
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+  border-left: 3px solid var(--accent);
+  white-space: pre-wrap;
+  overflow-x: auto;
+}
+.rich pre code {
+  padding: 0;
+  background: none;
+  font-size: 14px;
+}
+.rich hr {
+  margin: 18px 0;
+  border: 0;
+  border-top: 1px solid var(--sep);
+}
+.rich img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 12px auto 0;
+  border-radius: 12px;
+}
+.rich figcaption {
+  margin-top: 6px;
+  font-size: 14px;
+  color: var(--hint);
+  text-align: center;
+}
+.rich mark {
+  padding: 0 3px;
+  border-radius: 4px;
+  background: color-mix(in srgb, #ffd23f 45%, transparent);
+  color: inherit;
+}
+.rich summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+.rich-table {
+  overflow-x: auto;
+}
+.rich-table table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 15px;
+}
+.rich-table :is(th, td) {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--sep);
+  text-align: left;
+  vertical-align: top;
+}
+/* цитата как в Telegram: полоска акцентного цвета слева, мягкий фон */
+.rich-quote {
+  position: relative;
+  margin: 12px 0 0;
+  padding: 8px 14px 8px 14px;
+  border-left: 3px solid var(--accent);
+  border-radius: 4px 10px 10px 4px;
+  background: var(--accent-soft);
+}
+.rich-quote.is-expandable {
+  max-height: calc(1.55em * 3 + 16px);
+  overflow: hidden;
+  cursor: pointer;
+  padding-right: 34px;
+}
+.rich-quote.is-expandable::after {
+  content: '';
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  width: 8px;
+  height: 8px;
+  border-right: 2px solid var(--accent);
+  border-bottom: 2px solid var(--accent);
+  transform: rotate(45deg);
+  transition: transform 0.2s;
+}
+.rich-quote.is-expandable:not(.is-open) {
+  -webkit-mask-image: linear-gradient(#000 60%, transparent);
+  mask-image: linear-gradient(#000 60%, transparent);
+}
+.rich-quote.is-expandable.is-open {
+  max-height: none;
+}
+.rich-quote.is-expandable.is-open::after {
+  transform: rotate(-135deg);
+  bottom: 8px;
+}
+/* спойлер: текст размыт, пока не нажмут */
+.rich-spoiler:not(.is-open) {
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--hint) 30%, transparent);
+  color: transparent;
+  filter: blur(4px);
+  cursor: pointer;
+  -webkit-user-select: none;
+  user-select: none;
+  transition: filter 0.2s;
+}
+.rich-spoiler:not(.is-open) * {
+  color: transparent !important;
+}
+.rich-spoiler.is-open {
+  transition: filter 0.2s;
+}
+/* эмодзи внутри строки: по высоте текста */
+.lottie.is-inline {
+  display: inline-block;
+  vertical-align: -0.25em;
+}
+.text-emoji {
+  display: inline-grid;
+  place-items: center;
+  line-height: 1;
+}
+.text-emoji.is-inline {
+  display: inline;
+}
+
 .support-block {
   display: flex;
   align-items: center;
@@ -2307,9 +2500,11 @@ p {
   transform: scale(0.86) rotate(-8deg);
 }
 
+/* цифры одной ширины: пока число докручивается, текст рядом не дёргается */
 .stepper-value .anum,
 .anum {
   display: inline-block;
+  font-variant-numeric: tabular-nums;
 }
 .stepper-value {
   transition: transform 0.2s;
@@ -2508,6 +2703,33 @@ p {
   .has-sidebar .page.is-wide .col > .tab-content:first-child > :first-child {
     margin-top: 0;
   }
+  /* колонки одной высоты: карточки тянутся до низа ряда, строки внутри делят высоту поровну,
+     заголовки строк в одну строку - иначе «Электронная почта» с кнопкой переносилась и левая карточка вырастала */
+  .has-sidebar .page.is-wide .cols.is-equal {
+    align-items: stretch;
+  }
+  .has-sidebar .page.is-wide .cols.is-equal > .col {
+    display: flex;
+    flex-direction: column;
+  }
+  .has-sidebar .page.is-wide .cols.is-equal > .col > .section:last-child {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+  .has-sidebar .page.is-wide .cols.is-equal > .col > .section:last-child > .section-card {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+  .has-sidebar .page.is-wide .cols.is-equal .section-card > .cell {
+    flex: 1;
+  }
+  .has-sidebar .page.is-wide .cols.is-equal .cell-title {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
 
   /* шапка по центру, как на телефоне, но компактнее: над двумя колонками смотрится ровно */
   .has-sidebar .page.is-wide > .hero {
@@ -2570,8 +2792,13 @@ p {
     align-items: start;
   }
   .checkout-config > .section:first-child,
-  .checkout > .receipt {
+  .receipt-col > .receipt {
     margin-top: 0;
+  }
+  /* ячейка чека тянется на всю высоту ряда, чтобы чеку было где «ехать» за прокруткой */
+  .checkout > .receipt-col {
+    align-self: stretch;
+    min-width: 0;
   }
   .checkout > .section:last-child {
     grid-column: 1 / -1;
@@ -2783,7 +3010,9 @@ p {
   .checkout {
     grid-template-columns: minmax(0, 1fr) 340px;
   }
-  .checkout > .receipt {
+  /* sticky на ребёнке обёртки, а не на элементе сетки: так одинаково в Chrome и Safari */
+  .receipt-col > .receipt {
+    position: -webkit-sticky;
     position: sticky;
     top: 24px;
   }

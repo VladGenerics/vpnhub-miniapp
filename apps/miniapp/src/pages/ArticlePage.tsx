@@ -1,21 +1,34 @@
 import { Navigate, useParams } from 'react-router-dom'
 import { Page, Hero } from '../components/Page'
-import { HELP_ARTICLES, INFO_ARTICLES } from '../data/articles'
-import { SupportBlock, type ArticlesKind } from './ArticlesPage'
+import { PageError, PageSkeleton } from '../components/States'
+import { RichText } from '../components/RichText'
+import { useArticles } from '../api/queries'
+import { SupportBlock, articleKindOf, type ArticlesKind } from './ArticlesPage'
 
 export function ArticlePage({ kind }: { kind: ArticlesKind }) {
   const { slug } = useParams()
-  const article = (kind === 'info' ? INFO_ARTICLES : HELP_ARTICLES).find((a) => a.slug === slug)
+  const { data: articles, isPending, isError, refetch } = useArticles(articleKindOf(kind))
+
+  if (isPending)
+    return (
+      <Page back>
+        <PageSkeleton />
+      </Page>
+    )
+  if (isError && !articles)
+    return (
+      <Page back>
+        <PageError onRetry={refetch} />
+      </Page>
+    )
+  const article = articles?.find((a) => a.slug === slug)
+  // раздел удалили или выключили в админке - назад к списку
   if (!article) return <Navigate to={`/${kind}`} replace />
 
   return (
     <Page back>
-      <Hero emoji={article.emoji} title={article.title} subtitle={article.lead} size={96} />
-      <article className="article">
-        {article.body.map((p, i) => (
-          <p key={i}>{p}</p>
-        ))}
-      </article>
+      <Hero emoji={article.emoji} title={article.title} subtitle={article.lead || undefined} size={96} />
+      <RichText className="article" html={article.body} />
       {kind === 'help' && <SupportBlock />}
     </Page>
   )

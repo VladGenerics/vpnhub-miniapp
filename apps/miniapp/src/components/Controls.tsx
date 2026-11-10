@@ -1,6 +1,6 @@
-import { useEffect, useState, type ButtonHTMLAttributes, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ButtonHTMLAttributes, type MouseEvent, type PointerEvent, type ReactNode } from 'react'
 import { LuBadgePercent } from 'react-icons/lu'
-import { Tooltip } from './Tooltip'
+import { HintWrap, Tooltip, type DisabledHint } from './Tooltip'
 import { haptic } from '../lib/telegram'
 import { devicesWord } from '../lib/format'
 
@@ -29,10 +29,12 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   size?: 'l' | 'm' | 's'
   stretched?: boolean
   icon?: ReactNode
+  /** Почему кнопка недоступна: показывается подсказкой, только пока она disabled. Эмодзи можно задать свой (см. DisabledHint) */
+  hint?: DisabledHint | false
 }
 
-export function Button({ variant = 'primary', size = 'l', stretched, icon, className, onClick, children, ...rest }: ButtonProps) {
-  return (
+export function Button({ variant = 'primary', size = 'l', stretched, icon, hint, className, onClick, children, ...rest }: ButtonProps) {
+  const button = (
     <button
       className={`btn btn-${variant} btn-${size} ${stretched ? 'is-stretched' : ''} ${className ?? ''}`}
       onClick={(e) => {
@@ -44,6 +46,13 @@ export function Button({ variant = 'primary', size = 'l', stretched, icon, class
       {icon}
       {children}
     </button>
+  )
+  return rest.disabled && hint ? (
+    <HintWrap hint={hint} block={stretched}>
+      {button}
+    </HintWrap>
+  ) : (
+    button
   )
 }
 
@@ -62,6 +71,46 @@ export function Switch({ checked, onChange, label }: { checked: boolean; onChang
       <span />
     </button>
   )
+}
+
+// Зажатие «+»/«−»: первый шаг сразу, через 400 мс повтор, дальше быстрее и крупнее (1 → 5 → 10).
+// Отпустили палец/кнопку мыши, увели курсор, упёрлись в границу или ушли со страницы - повтор останавливается
+const HOLD_DELAY = 400
+function useHoldRepeat(apply: (dir: 1 | -1, step: number) => boolean) {
+  const applyRef = useRef(apply)
+  applyRef.current = apply
+  const timer = useRef(0)
+  const stop = useRef(() => {
+    window.clearTimeout(timer.current)
+    window.removeEventListener('pointerup', stop.current)
+    window.removeEventListener('pointercancel', stop.current)
+    window.removeEventListener('blur', stop.current)
+  })
+  useEffect(() => stop.current, [])
+
+  return (dir: 1 | -1) => ({
+    onPointerDown: (e: PointerEvent<HTMLButtonElement>) => {
+      if (e.button !== 0) return
+      stop.current()
+      if (!applyRef.current(dir, 1)) return
+      let n = 0
+      const tick = () => {
+        n++
+        const step = n > 40 ? 10 : n > 20 ? 5 : 1
+        if (!applyRef.current(dir, step)) return stop.current()
+        timer.current = window.setTimeout(tick, n > 8 ? 50 : 110)
+      }
+      timer.current = window.setTimeout(tick, HOLD_DELAY)
+      window.addEventListener('pointerup', stop.current)
+      window.addEventListener('pointercancel', stop.current)
+      window.addEventListener('blur', stop.current)
+    },
+    onPointerLeave: () => stop.current(),
+    // долгое нажатие на телефоне не должно открывать меню/выделение
+    onContextMenu: (e: MouseEvent) => e.preventDefault(),
+    // мышь и палец обработаны в onPointerDown, клик без указателя (Enter/пробел с клавиатуры) - один шаг
+    onClick: (e: MouseEvent) => e.detail === 0 && applyRef.current(dir, 1),
+  })
 }
 
 // Счётчик: кнопки и ввод числа руками. Пока печатают, поле может быть пустым; значение зажимается в min..max при вводе и уходе из поля
@@ -89,11 +138,29 @@ export function Stepper({
     const t = setTimeout(() => setHintOpen(false), 3000)
     return () => clearTimeout(t)
   }, [hintOpen])
-  const set = (v: number) => {
-    const c = Math.min(max, Math.max(min, v))
-    if (c !== value) haptic.select()
+  // свежее значение для повтора при зажатии: родитель обновит value только после перерисовки
+  const current = useRef(value)
+  current.current = value
+  const lastHaptic = useRef(0)
+  // шаг на dir; крупный шаг выравнивается по кратным (37 → 40 → 45), так проще попасть в круглое число.
+  // false - дальше идти некуда (граница), повтор останавливается
+  const stepBy = (dir: 1 | -1, step: number) => {
+    const v = current.current
+    const raw = step === 1 ? v + dir : dir > 0 ? Math.floor(v / step) * step + step : Math.ceil(v / step) * step - step
+    const c = Math.min(max, Math.max(min, raw))
+    if (c === v) return false
+    setDraft(null)
+    // при быстром повторе вибрация не чаще раза в 90 мс, иначе Telegram захлёбывается
+    const now = performance.now()
+    if (now - lastHaptic.current > 90) {
+      lastHaptic.current = now
+      haptic.select()
+    }
+    current.current = c
     onChange(c)
+    return c !== (dir > 0 ? max : min)
   }
+  const hold = useHoldRepeat(stepBy)
   const shown = draft ?? String(value)
   const atMin = value <= min
   const minus =
@@ -111,9 +178,27 @@ export function Stepper({
           −
         </button>
       </Tooltip>
+    ) : atMin ? (
+      <HintWrap hint={`Минимум ${min}${suffix ? ` ${suffix}` : ''}`}>
+        <button disabled aria-label="Меньше">
+          −
+        </button>
+      </HintWrap>
     ) : (
-      <button onClick={() => (setDraft(null), set(value - 1))} disabled={atMin} aria-label="Меньше">
+      <button {...hold(-1)} aria-label="Меньше">
         −
+      </button>
+    )
+  const plus =
+    value >= max ? (
+      <HintWrap hint={`Максимум ${max}${suffix ? ` ${suffix}` : ''}`}>
+        <button disabled aria-label="Больше">
+          +
+        </button>
+      </HintWrap>
+    ) : (
+      <button {...hold(1)} aria-label="Больше">
+        +
       </button>
     )
   return (
@@ -137,9 +222,7 @@ export function Stepper({
         />
         {suffix && <small>{suffix}</small>}
       </label>
-      <button onClick={() => (setDraft(null), set(value + 1))} disabled={value >= max} aria-label="Больше">
-        +
-      </button>
+      {plus}
     </div>
   )
 }

@@ -1,5 +1,9 @@
 import {
   ApiError,
+  isValidSlug,
+  mockArticles,
+  type Article,
+  type ArticleInput,
   type AdminInvoiceRow,
   type AdminUserDetails,
   type AdminUserRow,
@@ -189,6 +193,17 @@ const countBefore = (sorted: number[], t: number) => {
   return lo
 }
 const regTimes = usersByReg.map((u) => u.registered_at)
+
+// разделы «Информация» и «Помощь»: стартуют с тех же, что видит кабинет без бэкенда
+// общие с тестовым кабинетом через localStorage (если открыты на одном домене)
+let articles: Article[] = mockArticles.load()
+
+/** Проверки, которые должен делать и бэкенд: заголовок, адрес и его уникальность внутри вида */
+function checkArticle(a: ArticleInput, id: number | null) {
+  if (!a.title?.trim()) throw new ApiError(422, 'Введите заголовок')
+  if (!isValidSlug(a.slug)) throw new ApiError(422, 'Адрес раздела: латиница, цифры и дефис')
+  if (articles.some((x) => x.kind === a.kind && x.slug === a.slug && x.id !== id)) throw new ApiError(422, 'Раздел с таким адресом уже есть')
+}
 
 function mockRole(): UserRole {
   try {
@@ -426,6 +441,59 @@ export const mockApi: AdminApi = {
     if (mockRole() === 'SUPPORT_AGENT') throw new ApiError(403, 'Недостаточно прав')
     Object.assign(settings, patch, { updated_at: iso(Date.now()) })
     return delay(settings)
+  },
+
+  async getArticles() {
+    articles = mockArticles.load()
+    return delay([...articles].sort((a, b) => a.sequence_number - b.sequence_number))
+  },
+
+  async createArticle(input) {
+    if (mockRole() === 'SUPPORT_AGENT') throw new ApiError(403, 'Недостаточно прав')
+    articles = mockArticles.load()
+    checkArticle(input, null)
+    const sameKind = articles.filter((a) => a.kind === input.kind)
+    const a: Article = {
+      ...input,
+      id: Math.max(0, ...articles.map((x) => x.id)) + 1,
+      sequence_number: Math.max(0, ...sameKind.map((x) => x.sequence_number)) + 1,
+      updated_at: iso(Date.now()),
+    }
+    articles.push(a)
+    mockArticles.save(articles)
+    return delay(a)
+  },
+
+  async updateArticle(id, patch) {
+    if (mockRole() === 'SUPPORT_AGENT') throw new ApiError(403, 'Недостаточно прав')
+    articles = mockArticles.load()
+    const a = articles.find((x) => x.id === id)
+    if (!a) throw new ApiError(404, 'Раздел не найден')
+    checkArticle({ ...a, ...patch }, id)
+    Object.assign(a, patch, { updated_at: iso(Date.now()) })
+    mockArticles.save(articles)
+    return delay(a)
+  },
+
+  async deleteArticle(id) {
+    if (mockRole() === 'SUPPORT_AGENT') throw new ApiError(403, 'Недостаточно прав')
+    articles = mockArticles.load()
+    const i = articles.findIndex((x) => x.id === id)
+    if (i < 0) throw new ApiError(404, 'Раздел не найден')
+    articles.splice(i, 1)
+    mockArticles.save(articles)
+    await delay(null)
+  },
+
+  async reorderArticles(kind, ids) {
+    if (mockRole() === 'SUPPORT_AGENT') throw new ApiError(403, 'Недостаточно прав')
+    articles = mockArticles.load()
+    ids.forEach((id, i) => {
+      const a = articles.find((x) => x.id === id && x.kind === kind)
+      if (a) a.sequence_number = i + 1
+    })
+    mockArticles.save(articles)
+    return mockApi.getArticles()
   },
 
   async getStatsRange() {

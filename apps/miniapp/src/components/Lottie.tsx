@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type RefObject } from 'react'
 import type { AnimationItem } from 'lottie-web/build/player/lottie_light'
 import { strFromU8, unzipSync } from 'fflate'
 import { FIXED_EMOJI } from '../data/emoji'
@@ -125,15 +125,17 @@ interface Props {
   name: string
   size?: number
   className?: string
+  /** Внутри строки текста (эмодзи в абзаце): span вместо div, иначе <div> внутри <p> */
+  inline?: boolean
 }
 
-export function Lottie({ name, size = 28, className }: Props) {
+export function Lottie({ name, size = 28, className, inline }: Props) {
   const { palette, accent } = useApp()
   const src = emojiSource(palette, accent)
   const own = FIXED_EMOJI.has(name)
   const folder = own ? 'emoji-fixed' : src.folder
   const tint = useSettled(own ? '' : src.tint)
-  const box = useRef<HTMLDivElement>(null)
+  const box = useRef<HTMLElement>(null)
   const anim = useRef<AnimationItem | null>(null)
   const inView = useRef(true)
   const [ready, setReady] = useState(false)
@@ -185,5 +187,10 @@ export function Lottie({ name, size = 28, className }: Props) {
     }
   }, [name, folder, tint])
 
-  return <div ref={box} className={`lottie ${ready ? 'is-ready' : ''} ${className ?? ''}`} style={{ width: size, height: size }} aria-hidden />
+  const cls = `lottie ${ready ? 'is-ready' : ''} ${inline ? 'is-inline' : ''} ${className ?? ''}`
+  return inline ? (
+    <span ref={box as RefObject<HTMLSpanElement>} className={cls} style={{ width: size, height: size }} aria-hidden />
+  ) : (
+    <div ref={box as RefObject<HTMLDivElement>} className={cls} style={{ width: size, height: size }} aria-hidden />
+  )
 }

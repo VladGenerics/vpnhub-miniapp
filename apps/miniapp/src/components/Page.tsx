@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { LuChevronLeft } from 'react-icons/lu'
 import { isTelegram, useTelegramBackButton } from '../lib/telegram'
 import { useIsWide } from '../hooks/useMediaQuery'
-import { Lottie } from './Lottie'
+import { AppEmoji } from './AppEmoji'
 import { SIDEBAR_PAGES } from './Sidebar'
 import { NAV_ROUTES } from './nav'
 
@@ -44,9 +44,10 @@ export function Page({ back: nested, wide: twoCol, children, className }: { back
  * Две колонки на ПК. На телефоне и в узком окне обёртки «прозрачные» (display: contents),
  * и блоки идут одним столбцом, как без них
  */
-export function Cols({ left, right }: { left: ReactNode; right: ReactNode }) {
+export function Cols({ left, right, equal }: { left: ReactNode; right: ReactNode; equal?: boolean }) {
+  // equal - карточки обеих колонок одной высоты, строки делят её поровну (профиль: «Аккаунт» и «Приложение»)
   return (
-    <div className="cols">
+    <div className={`cols ${equal ? 'is-equal' : ''}`}>
       <div className="col">{left}</div>
       <div className="col">{right}</div>
     </div>
@@ -61,7 +62,8 @@ export function Hero({ emoji, title, subtitle, size = 120 }: { emoji: string | '
         {emoji === 'logo' ? (
           <img className="brand-logo hero-logo" src={`${import.meta.env.BASE_URL}favicon.svg`} width={size * 0.78} height={size * 0.78} alt="" />
         ) : (
-          <Lottie name={emoji} size={size} />
+          // имя эмодзи приложения, custom_emoji_id или обычный символ (эмодзи разделов задают в админке)
+          <AppEmoji value={emoji} size={size} />
         )}
       </div>
       <h1 className="hero-title">{title}</h1>

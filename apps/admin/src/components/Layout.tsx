@@ -12,6 +12,7 @@ export const NAV: { to: string; label: string; icon: IconName; support?: boolean
   { to: '/users', label: 'Пользователи', icon: 'users', support: true },
   { to: '/invoices', label: 'Счета', icon: 'receipt' },
   { to: '/payment-methods', label: 'Платёжные системы', icon: 'card' },
+  { to: '/articles', label: 'Разделы', icon: 'book' },
   { to: '/statistics', label: 'Статистика', icon: 'chart' },
   { to: '/settings', label: 'Настройки', icon: 'settings' },
 ]
