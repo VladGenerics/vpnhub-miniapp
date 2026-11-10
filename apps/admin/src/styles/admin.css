@@ -1919,6 +1919,51 @@ p {
   border-top: 1px solid rgba(140, 180, 225, 0.15);
   margin: 14px 0;
 }
+.rp-gallery {
+  margin: 10px 0 0;
+  gap: 6px;
+}
+.rp-gallery.is-collage {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+}
+.rp-gallery.is-slideshow {
+  display: flex;
+  overflow-x: auto;
+}
+.rp-gallery.is-slideshow > img {
+  flex: 0 0 85%;
+}
+.rp-gallery img {
+  width: 100%;
+  object-fit: cover;
+}
+.rp-check {
+  display: inline-grid;
+  place-items: center;
+  width: 15px;
+  height: 15px;
+  margin-right: 6px;
+  vertical-align: -2px;
+  border: 1.5px solid #7f93ab;
+  border-radius: 4px;
+  font-size: 10px;
+}
+.rp-check.is-on {
+  border-color: #3aa9ff;
+  background: #3aa9ff;
+  color: #fff;
+}
+.rp-note {
+  color: #7f93ab;
+}
+.rp-body cite {
+  display: block;
+  margin: 10px 0 0;
+  padding-left: 12px;
+  border-left: 3px solid #3aa9ff;
+  font-style: italic;
+}
 .rp-table {
   overflow-x: auto;
 }

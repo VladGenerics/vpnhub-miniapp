@@ -1841,6 +1841,71 @@ p {
 .rich-spoiler.is-open {
   transition: filter 0.2s;
 }
+/* Rich Messages: коллаж и слайдшоу фото, чекбоксы списка задач, сноски, выносная цитата */
+.rich-gallery {
+  margin: 12px 0 0;
+}
+.rich-gallery img {
+  margin: 0;
+  width: 100%;
+  object-fit: cover;
+  border-radius: 10px;
+}
+.rich-gallery.is-collage {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 6px;
+}
+.rich-gallery.is-collage img {
+  aspect-ratio: 1;
+  height: 100%;
+}
+.rich-gallery.is-slideshow {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+}
+.rich-gallery.is-slideshow > img {
+  flex: 0 0 85%;
+  scroll-snap-align: center;
+}
+.rich-anchor {
+  scroll-margin-top: 16px;
+}
+.rich-check {
+  display: inline-grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  margin-right: 6px;
+  vertical-align: -2px;
+  border: 1.5px solid var(--hint);
+  border-radius: 4px;
+  font-size: 11px;
+  line-height: 1;
+}
+.rich-check.is-on {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #fff;
+}
+.rich li:has(> .rich-check:first-child) {
+  list-style: none;
+  margin-left: -20px;
+}
+.rich-note {
+  color: var(--hint);
+  font-size: 0.85em;
+}
+.rich cite {
+  display: block;
+  margin: 12px 0 0;
+  padding: 4px 0 4px 14px;
+  border-left: 3px solid var(--accent);
+  font-size: 1.1em;
+  font-style: italic;
+}
 /* эмодзи внутри строки: по высоте текста */
 .lottie.is-inline {
   display: inline-block;

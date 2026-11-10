@@ -129,6 +129,11 @@ export type RichNode =
   | { type: 'spoiler'; children: RichNode[] }
   | { type: 'emoji'; id: string | null; fallback: string }
   | { type: 'img'; src: string; alt: string }
+  // Rich Messages (Bot API 10.1+): коллаж и слайдшоу фото, якорь, чекбокс списка задач, сноска
+  | { type: 'gallery'; mode: 'collage' | 'slideshow'; children: RichNode[] }
+  | { type: 'anchor'; name: string; children: RichNode[] }
+  | { type: 'check'; checked: boolean }
+  | { type: 'note'; children: RichNode[] }
 
 export type RichTag =
   | 'strong'
@@ -159,6 +164,7 @@ export type RichTag =
   | 'td'
   | 'details'
   | 'summary'
+  | 'cite'
 
 const TAG_MAP: Record<string, RichTag> = {
   b: 'strong',
@@ -198,6 +204,7 @@ const TAG_MAP: Record<string, RichTag> = {
   td: 'td',
   details: 'details',
   summary: 'summary',
+  cite: 'cite',
 }
 
 // выкидываются вместе с содержимым
@@ -214,7 +221,6 @@ const DROP = new Set([
   'svg',
   'math',
   'form',
-  'input',
   'button',
   'textarea',
   'select',
@@ -232,6 +238,8 @@ const MAX_DEPTH = 32
 export function safeHref(raw: string | null): string | null {
   const v = (raw ?? '').trim()
   if (!v) return null
+  // ссылка на якорь в этом же тексте (<a name="x">)
+  if (v.startsWith('#')) return /^#[\w-]{1,64}$/.test(v) ? v : null
   // свой адрес: только путь из безопасных символов. Без «//» и «\» - браузер считает «/\evil.com» адресом чужого сайта
   if (v.startsWith('/')) return /^\/(?![/\\])[\w\-./?=&#%~+]*$/.test(v) ? v : null
   try {
@@ -248,7 +256,9 @@ const customEmojiId = (src: string | null) => /^tg:\/\/emoji\?id=(\d{5,25})$/.ex
  * Разбирает HTML раздела в безопасное дерево. Понимает:
  * - разметку Telegram (parse_mode HTML): b/strong, i/em, u/ins, s/strike/del, tg-spoiler и span.tg-spoiler, a href,
  *   tg-emoji emoji-id, code, pre с code.language-*, blockquote и blockquote expandable, переносы строк;
- * - разметку статей (как в Telegraph / Instant View): p, h1-h6, ul/ol/li, hr, img, figure/figcaption, aside, таблицы, details.
+ * - разметку статей (как в Telegraph / Instant View): p, h1-h6, ul/ol/li, hr, img, figure/figcaption, aside, таблицы, details;
+ * - Rich Messages (Bot API 10.1+): tg-collage, tg-slideshow, tg-reference (сноска), a name (якорь) и ссылки #якорь,
+ *   cite, чекбоксы списка задач.
  * Остальные теги убираются, их текст остаётся. Нужен браузер (DOMParser)
  */
 export function parseRichText(html: string): RichNode[] {
@@ -288,9 +298,17 @@ export function parseRichText(html: string): RichNode[] {
       else if (name === 'hr') out.push({ type: 'hr' })
       else if (name === 'tg-emoji') out.push({ type: 'emoji', id: el.getAttribute('emoji-id'), fallback: el.textContent ?? '' })
       else if (name === 'tg-spoiler' || (name === 'span' && el.classList.contains('tg-spoiler'))) out.push({ type: 'spoiler', children: kids() })
-      else if (name === 'a') {
+      else if (name === 'tg-collage' || name === 'tg-slideshow')
+        out.push({ type: 'gallery', mode: name === 'tg-collage' ? 'collage' : 'slideshow', children: kids() })
+      else if (name === 'tg-reference') out.push({ type: 'note', children: kids() })
+      else if (name === 'input') {
+        // в тексте бывает только чекбокс списка задач, остальные поля ввода выкидываем
+        if ((el.getAttribute('type') ?? '').toLowerCase() === 'checkbox') out.push({ type: 'check', checked: el.hasAttribute('checked') })
+      } else if (name === 'a') {
         const href = safeHref(el.getAttribute('href'))
+        const anchor = el.getAttribute('name') ?? el.getAttribute('id')
         if (href) out.push({ type: 'link', href, children: kids() })
+        else if (anchor && /^[\w-]{1,64}$/.test(anchor)) out.push({ type: 'anchor', name: anchor, children: kids() })
         else out.push(...kids())
       } else if (name === 'img') {
         const id = customEmojiId(el.getAttribute('src'))

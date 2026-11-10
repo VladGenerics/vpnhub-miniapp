@@ -34,6 +34,26 @@ function render(nodes: RichNode[], key = ''): ReactNode[] {
         return <AppEmoji key={k} value={n.id} fallback={n.fallback} size={20} animate inline />
       case 'img':
         return <img key={k} src={n.src} alt={n.alt} loading="lazy" referrerPolicy="no-referrer" />
+      case 'gallery':
+        return (
+          <div key={k} className={`rp-gallery is-${n.mode}`}>
+            {render(n.children, `${k}.`)}
+          </div>
+        )
+      case 'anchor':
+        return <span key={k}>{render(n.children, `${k}.`)}</span>
+      case 'check':
+        return (
+          <span key={k} className={`rp-check ${n.checked ? 'is-on' : ''}`}>
+            {n.checked ? '✓' : ''}
+          </span>
+        )
+      case 'note':
+        return (
+          <small key={k} className="rp-note">
+            {render(n.children, `${k}.`)}
+          </small>
+        )
       case 'spoiler':
         return <Spoiler key={k}>{render(n.children, `${k}.`)}</Spoiler>
       case 'link':

@@ -45,6 +45,19 @@ function ExpandableQuote({ children }: { children: ReactNode }) {
 }
 
 function RichLink({ href, children }: { href: string; children: ReactNode }) {
+  // якорь в этом же тексте - плавная прокрутка к нему, адрес страницы не меняется
+  if (href.startsWith('#'))
+    return (
+      <a
+        href={href}
+        onClick={(e) => {
+          e.preventDefault()
+          document.getElementById(`rich-${href.slice(1)}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        }}
+      >
+        {children}
+      </a>
+    )
   // адрес внутри приложения - переход без перезагрузки
   if (href.startsWith('/'))
     return (
@@ -83,6 +96,31 @@ function render(nodes: RichNode[], key = ''): ReactNode[] {
         return <img key={k} src={n.src} alt={n.alt} loading="lazy" referrerPolicy="no-referrer" />
       case 'spoiler':
         return <Spoiler key={k}>{render(n.children, `${k}.`)}</Spoiler>
+      // коллаж - сетка фото, слайдшоу - лента с прокруткой вбок
+      case 'gallery':
+        return (
+          <div key={k} className={`rich-gallery is-${n.mode}`}>
+            {render(n.children, `${k}.`)}
+          </div>
+        )
+      case 'anchor':
+        return (
+          <span key={k} id={`rich-${n.name}`} className="rich-anchor">
+            {render(n.children, `${k}.`)}
+          </span>
+        )
+      case 'check':
+        return (
+          <span key={k} className={`rich-check ${n.checked ? 'is-on' : ''}`} role="img" aria-label={n.checked ? 'Выполнено' : 'Не выполнено'}>
+            {n.checked ? '✓' : ''}
+          </span>
+        )
+      case 'note':
+        return (
+          <small key={k} className="rich-note">
+            {render(n.children, `${k}.`)}
+          </small>
+        )
       case 'link':
         return (
           <RichLink key={k} href={n.href}>
