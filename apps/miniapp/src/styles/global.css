@@ -676,7 +676,7 @@ p {
   transition: opacity 0.15s;
 }
 
-/* зажатие «+»/«−»: без выделения текста, лупы и меню долгого нажатия на iOS */
+/* без выделения и меню при долгом нажатии */
 .stepper button {
   touch-action: manipulation;
   -webkit-user-select: none;
@@ -752,7 +752,7 @@ p {
 .tip-text b {
   font-weight: 600;
 }
-/* отключённый элемент с подсказкой: события ловит обёртка (у disabled-кнопок их нет, особенно в Safari) */
+/* disabled не получает события мыши, их ловит обёртка */
 .tip-wrap.is-disabled-hint {
   cursor: help;
 }
@@ -1685,7 +1685,7 @@ p {
   margin-top: 12px;
 }
 
-/* текст раздела из админки: HTML Telegram и разметка статей (RichText) */
+/* текст раздела (RichText) */
 .rich {
   font-size: 16px;
   line-height: 1.55;
@@ -1841,7 +1841,7 @@ p {
 .rich-spoiler.is-open {
   transition: filter 0.2s;
 }
-/* Rich Messages: коллаж и слайдшоу фото, чекбоксы списка задач, сноски, выносная цитата */
+/* rich messages */
 .rich-gallery {
   margin: 12px 0 0;
 }
@@ -2565,7 +2565,7 @@ p {
   transform: scale(0.86) rotate(-8deg);
 }
 
-/* цифры одной ширины: пока число докручивается, текст рядом не дёргается */
+/* моноширинные цифры, чтобы текст не прыгал */
 .stepper-value .anum,
 .anum {
   display: inline-block;
@@ -2768,8 +2768,7 @@ p {
   .has-sidebar .page.is-wide .col > .tab-content:first-child > :first-child {
     margin-top: 0;
   }
-  /* колонки одной высоты: карточки тянутся до низа ряда, строки внутри делят высоту поровну,
-     заголовки строк в одну строку - иначе «Электронная почта» с кнопкой переносилась и левая карточка вырастала */
+  /* колонки одной высоты */
   .has-sidebar .page.is-wide .cols.is-equal {
     align-items: stretch;
   }
@@ -2860,7 +2859,7 @@ p {
   .receipt-col > .receipt {
     margin-top: 0;
   }
-  /* ячейка чека тянется на всю высоту ряда, чтобы чеку было где «ехать» за прокруткой */
+  /* на всю высоту ряда, чтобы чеку было где прилипать */
   .checkout > .receipt-col {
     align-self: stretch;
     min-width: 0;
@@ -3075,7 +3074,7 @@ p {
   .checkout {
     grid-template-columns: minmax(0, 1fr) 340px;
   }
-  /* sticky на ребёнке обёртки, а не на элементе сетки: так одинаково в Chrome и Safari */
+  /* sticky не на элементе grid - фикс для Safari */
   .receipt-col > .receipt {
     position: -webkit-sticky;
     position: sticky;

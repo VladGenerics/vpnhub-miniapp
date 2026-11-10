@@ -3,9 +3,7 @@ import { join, normalize, resolve } from 'node:path'
 import { defineConfig, loadEnv, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
 
-// Анимированные эмодзи паков Telegram лежат в кабинете (apps/miniapp/public). Админка показывает те же файлы
-// (список разделов, выбор эмодзи, превью), чтобы не держать вторую копию: в dev отдаём их из папки кабинета,
-// при сборке копируем в dist рядом с админкой
+// эмодзи берём из кабинета: в dev отдаём из apps/miniapp/public, при сборке копируем в dist
 const EMOJI_DIRS = ['emoji', 'emoji-fixed']
 function miniappEmoji(): Plugin {
   const src = resolve(__dirname, '../miniapp/public')
@@ -36,9 +34,7 @@ function miniappEmoji(): Plugin {
 export default defineConfig(({ mode, command }) => {
   const env = loadEnv(mode, process.cwd(), '')
   return {
-    // VITE_BASE_PATH=/admin/ - если панель живёт на домене кабинета (вход через Telegram привязан к одному домену).
-    // В dev всегда /admin/: кабинет (localhost:5173) проксирует /admin сюда, и на тестовых данных
-    // у них общий localStorage - разделы, добавленные в админке, видны в кабинете
+    // VITE_BASE_PATH=/admin/ - панель на домене кабинета. В dev всегда /admin/ (кабинет проксирует сюда)
     base: command === 'serve' && !env.VITE_BASE_PATH ? '/admin/' : basePath(env.VITE_BASE_PATH),
     plugins: [react(), miniappEmoji()],
     server: {

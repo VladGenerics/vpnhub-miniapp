@@ -72,7 +72,7 @@ export const useArticles = (kind: ArticleKind) =>
     queryFn: async () => {
       const list = required(await api.getArticles())
       if (!Array.isArray(list)) throw new ApiError(0, 'Не удалось загрузить разделы, попробуйте позже')
-      // битая запись не должна ронять страницу: без адреса и заголовка - пропускаем, пустые поля - пустой строкой
+      // пропускаем битые записи
       return list
         .filter((a) => a && typeof a.slug === 'string' && typeof a.title === 'string')
         .map((a) => ({ ...a, emoji: a.emoji ?? '', body: typeof a.body === 'string' ? a.body : '', sequence_number: Number(a.sequence_number) || 0 }))

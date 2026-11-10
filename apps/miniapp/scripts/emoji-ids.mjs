@@ -1,9 +1,5 @@
-// Заполняет packages/shared/src/customEmojiIds.ts: custom_emoji_id каждого эмодзи паков -> имя файла в public/emoji.
-// Файлы паков (VHubProject_00, toxicemojismini_00, ...) пронумерованы в порядке стикеров в паке,
-// поэтому i-й стикер набора = файл с номером i.
-//
-// Запуск из корня репозитория:  BOT_TOKEN=123:abc node apps/miniapp/scripts/emoji-ids.mjs
-// (в PowerShell: $env:BOT_TOKEN='123:abc'; node apps/miniapp/scripts/emoji-ids.mjs)
+// custom_emoji_id паков -> файлы public/emoji (i-й стикер = файл _i)
+// BOT_TOKEN=123:abc node apps/miniapp/scripts/emoji-ids.mjs
 import { readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'

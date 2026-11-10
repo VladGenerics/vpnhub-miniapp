@@ -1,5 +1,4 @@
-// Разделы «Информация» и «Помощь»: типы, разделы по умолчанию, разбор HTML и эмодзи.
-// Общее для кабинета (показ) и админки (редактор с превью).
+// Разделы «Информация» и «Помощь»: типы, разбор HTML, эмодзи
 import type { ISODate } from './types'
 import { EMOJI_CATALOG } from './emojiCatalog'
 import { CUSTOM_EMOJI_IDS } from './customEmojiIds'
@@ -39,13 +38,7 @@ export const ARTICLE_LIMITS = { slug: 64, title: 120, lead: 255, body: 20_000 } 
 
 export type ResolvedEmoji = { lottie: string; text?: undefined } | { lottie?: undefined; text: string }
 
-/**
- * Что показать вместо значения эмодзи:
- * - имя анимированного эмодзи приложения (VHubProject_17) - его анимацию;
- * - custom_emoji_id Telegram (только цифры) - анимацию, если ID есть в CUSTOM_EMOJI_IDS, иначе fallback.
- *   Запасной символ можно дописать через пробел: «5368324170671202286 👍»;
- * - всё остальное - как обычный символ (🚀).
- */
+/** Имя из паков или известный custom_emoji_id - анимация, иначе символ. Формат «ID символ» задаёт запасной */
 export function resolveEmoji(value: string | null | undefined, fallback = ''): ResolvedEmoji {
   const v = (value ?? '').trim()
   if (v in EMOJI_CATALOG) return { lottie: v }
@@ -57,7 +50,7 @@ export function resolveEmoji(value: string | null | undefined, fallback = ''): R
   return { text: v || fallback }
 }
 
-/** Обычный символ для значения эмодзи: превью в админке и подписи */
+/** Символ эмодзи для подписей */
 export function emojiChar(value: string | null | undefined, fallback = ''): string {
   const r = resolveEmoji(value, fallback)
   return r.lottie ? (EMOJI_CATALOG[r.lottie] ?? fallback) : (r.text ?? fallback)
@@ -119,7 +112,7 @@ export const isValidSlug = (s: string) => /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(s) &
 
 // --- разбор HTML ---
 
-/** Узел безопасного дерева текста. Всё, чего нет в списке, отбрасывается: скрипты, стили, обработчики, iframe */
+/** Узел разобранного текста */
 export type RichNode =
   | { type: 'text'; text: string }
   | { type: 'br' }
@@ -129,7 +122,7 @@ export type RichNode =
   | { type: 'spoiler'; children: RichNode[] }
   | { type: 'emoji'; id: string | null; fallback: string }
   | { type: 'img'; src: string; alt: string }
-  // Rich Messages (Bot API 10.1+): коллаж и слайдшоу фото, якорь, чекбокс списка задач, сноска
+  // rich messages
   | { type: 'gallery'; mode: 'collage' | 'slideshow'; children: RichNode[] }
   | { type: 'anchor'; name: string; children: RichNode[] }
   | { type: 'check'; checked: boolean }
@@ -228,19 +221,17 @@ const DROP = new Set([
   'meta',
 ])
 
-// есть разметка статьи (абзацы, заголовки, списки) - переносы строк в тексте не значимы, как в обычном HTML.
-// Нет - это текст из Telegram, там перенос строки и есть перенос
+// без блочной разметки считаем текстом из Telegram: \n = перенос строки
 const ARTICLE_MARKUP = /<(p|h[1-6]|ul|ol|li|div|figure|table|section|article)\b/i
 
 const MAX_DEPTH = 32
 
-/** Ссылка, которой можно доверять: https/http, tg://, mailto: или адрес внутри приложения (/help/...) */
+/** https/http, tg:, mailto:, свой путь или #якорь */
 export function safeHref(raw: string | null): string | null {
   const v = (raw ?? '').trim()
   if (!v) return null
-  // ссылка на якорь в этом же тексте (<a name="x">)
   if (v.startsWith('#')) return /^#[\w-]{1,64}$/.test(v) ? v : null
-  // свой адрес: только путь из безопасных символов. Без «//» и «\» - браузер считает «/\evil.com» адресом чужого сайта
+  // без // и \ в начале (/\evil.com уводит на чужой домен)
   if (v.startsWith('/')) return /^\/(?![/\\])[\w\-./?=&#%~+]*$/.test(v) ? v : null
   try {
     const u = new URL(v)
@@ -252,15 +243,7 @@ export function safeHref(raw: string | null): string | null {
 
 const customEmojiId = (src: string | null) => /^tg:\/\/emoji\?id=(\d{5,25})$/.exec((src ?? '').trim())?.[1] ?? null
 
-/**
- * Разбирает HTML раздела в безопасное дерево. Понимает:
- * - разметку Telegram (parse_mode HTML): b/strong, i/em, u/ins, s/strike/del, tg-spoiler и span.tg-spoiler, a href,
- *   tg-emoji emoji-id, code, pre с code.language-*, blockquote и blockquote expandable, переносы строк;
- * - разметку статей (как в Telegraph / Instant View): p, h1-h6, ul/ol/li, hr, img, figure/figcaption, aside, таблицы, details;
- * - Rich Messages (Bot API 10.1+): tg-collage, tg-slideshow, tg-reference (сноска), a name (якорь) и ссылки #якорь,
- *   cite, чекбоксы списка задач.
- * Остальные теги убираются, их текст остаётся. Нужен браузер (DOMParser)
- */
+/** HTML Telegram + теги статей и rich messages -> дерево. Неизвестные теги отбрасываются, текст остаётся */
 export function parseRichText(html: string): RichNode[] {
   const src = (html ?? '').trim()
   if (!src) return []
@@ -272,7 +255,7 @@ export function parseRichText(html: string): RichNode[] {
     for (const n of Array.from(nodes)) {
       if (n.nodeType === 3) {
         let text = n.textContent ?? ''
-        // после цитаты и блока кода Telegram не рисует пустую строку: перенос сразу за блоком съедается
+        // \n сразу после блока Telegram не показывает
         const prev = out[out.length - 1]
         if (tgMode && prev?.type === 'el' && (prev.tag === 'blockquote' || prev.tag === 'pre') && text.startsWith('\n')) text = text.slice(1)
         if (!text) continue
@@ -302,7 +285,7 @@ export function parseRichText(html: string): RichNode[] {
         out.push({ type: 'gallery', mode: name === 'tg-collage' ? 'collage' : 'slideshow', children: kids() })
       else if (name === 'tg-reference') out.push({ type: 'note', children: kids() })
       else if (name === 'input') {
-        // в тексте бывает только чекбокс списка задач, остальные поля ввода выкидываем
+        // только чекбокс из списка задач
         if ((el.getAttribute('type') ?? '').toLowerCase() === 'checkbox') out.push({ type: 'check', checked: el.hasAttribute('checked') })
       } else if (name === 'a') {
         const href = safeHref(el.getAttribute('href'))
@@ -340,7 +323,7 @@ export function parseRichText(html: string): RichNode[] {
   return walk(doc.body.childNodes, 0, false)
 }
 
-/** Текст без разметки: для поиска, подписей и проверки «пусто ли» */
+/** Текст без разметки */
 export function richToText(nodes: RichNode[]): string {
   return nodes
     .map((n) => (n.type === 'text' ? n.text : n.type === 'br' ? '\n' : n.type === 'emoji' ? n.fallback : 'children' in n ? richToText(n.children) : ''))
@@ -351,17 +334,14 @@ export function richToText(nodes: RichNode[]): string {
 
 const MOCK_KEY = 'vpnhub.mock-articles'
 
-/**
- * Разделы тестовых бэкендов кабинета и админки: общие через localStorage, правки в админке видны в кабинете,
- * если оба открыты на одном домене (dev: админка на localhost:5173/admin/, прод: ADMIN_BASE_PATH=/admin/)
- */
+/** Разделы для моков кабинета и админки, общие через localStorage (на одном домене) */
 export const mockArticles = {
   load(): Article[] {
     try {
       const raw = localStorage.getItem(MOCK_KEY)
       if (raw) return JSON.parse(raw) as Article[]
     } catch {
-      /* нет хранилища или битые данные - начинаем с разделов по умолчанию */
+      /* битые данные */
     }
     return structuredClone(DEFAULT_ARTICLES)
   },
@@ -369,7 +349,7 @@ export const mockArticles = {
     try {
       localStorage.setItem(MOCK_KEY, JSON.stringify(list))
     } catch {
-      /* без хранилища правки живут до перезагрузки */
+      /* нет localStorage */
     }
   },
 }
@@ -391,7 +371,7 @@ const a = (kind: ArticleKind, slug: string, emoji: string, title: string, lead: 
   updated_at: at,
 })
 
-/** Разделы, пока бэкенд не отдаёт GET /articles. Тексты - прежние из кабинета, абзацы через пустую строку */
+/** Разделы по умолчанию, пока нет GET /articles */
 export const DEFAULT_ARTICLES: Article[] = [
   a(
     'INFO',

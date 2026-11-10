@@ -194,11 +194,9 @@ const countBefore = (sorted: number[], t: number) => {
 }
 const regTimes = usersByReg.map((u) => u.registered_at)
 
-// разделы «Информация» и «Помощь»: стартуют с тех же, что видит кабинет без бэкенда
-// общие с тестовым кабинетом через localStorage (если открыты на одном домене)
 let articles: Article[] = mockArticles.load()
 
-/** Проверки, которые должен делать и бэкенд: заголовок, адрес и его уникальность внутри вида */
+/** Те же проверки нужны на бэкенде */
 function checkArticle(a: ArticleInput, id: number | null) {
   if (!a.title?.trim()) throw new ApiError(422, 'Введите заголовок')
   if (!isValidSlug(a.slug)) throw new ApiError(422, 'Адрес раздела: латиница, цифры и дефис')

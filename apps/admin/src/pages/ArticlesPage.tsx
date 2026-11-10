@@ -19,7 +19,7 @@ function moveId(ids: number[], id: number, target: number) {
   return next
 }
 
-// Разделы одной страницы кабинета. Порядок - перетаскиванием (или Alt+↑/↓), клик - редактор
+// порядок: drag'n'drop или Alt+↑/↓
 function KindColumn({ kind, list, onDelete }: { kind: ArticleKind; list: Article[]; onDelete(a: Article): void }) {
   const { canEdit } = useAuth()
   const navigate = useNavigate()

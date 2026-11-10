@@ -235,8 +235,7 @@ export function NoSubscription({ expired }: { expired?: Subscription }) {
               </Section>
             )}
           </div>
-          {/* обёртка - ячейка сетки на всю высоту ряда: чек прилипает внутри неё. Safari для sticky в grid
-              берёт границы всей сетки, а не ячейки, и без обёртки чек наезжал на устройства и «Что входит» */}
+          {/* обёртка нужна Safari: sticky внутри grid иначе ограничен всей сеткой */}
           <div className="receipt-col">
             <aside className="section receipt">
               <h3 className="section-title">Ваш заказ</h3>

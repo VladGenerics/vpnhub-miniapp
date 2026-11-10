@@ -1,10 +1,7 @@
 import { resolveEmoji } from '@vpnhub/shared'
 import { Lottie } from './Lottie'
 
-/**
- * Эмодзи как в кабинете: анимированный эмодзи пака (по имени или по custom_emoji_id из CUSTOM_EMOJI_IDS),
- * иначе обычный символ (для неизвестного ID - fallback)
- */
+/** Эмодзи по имени из паков, custom_emoji_id или обычный символ */
 export function AppEmoji({
   value,
   fallback,

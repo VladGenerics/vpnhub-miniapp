@@ -29,7 +29,7 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   size?: 'l' | 'm' | 's'
   stretched?: boolean
   icon?: ReactNode
-  /** Почему кнопка недоступна: показывается подсказкой, только пока она disabled. Эмодзи можно задать свой (см. DisabledHint) */
+  /** Подсказка, пока кнопка disabled */
   hint?: DisabledHint | false
 }
 
@@ -73,8 +73,7 @@ export function Switch({ checked, onChange, label }: { checked: boolean; onChang
   )
 }
 
-// Зажатие «+»/«−»: первый шаг сразу, через 400 мс повтор, дальше быстрее и крупнее (1 → 5 → 10).
-// Отпустили палец/кнопку мыши, увели курсор, упёрлись в границу или ушли со страницы - повтор останавливается
+// Зажатие «+»/«−»: повтор с ускорением, шаг 1 → 5 → 10
 const HOLD_DELAY = 400
 function useHoldRepeat(apply: (dir: 1 | -1, step: number) => boolean) {
   const applyRef = useRef(apply)
@@ -106,9 +105,8 @@ function useHoldRepeat(apply: (dir: 1 | -1, step: number) => boolean) {
       window.addEventListener('blur', stop.current)
     },
     onPointerLeave: () => stop.current(),
-    // долгое нажатие на телефоне не должно открывать меню/выделение
     onContextMenu: (e: MouseEvent) => e.preventDefault(),
-    // мышь и палец обработаны в onPointerDown, клик без указателя (Enter/пробел с клавиатуры) - один шаг
+    // клавиатура
     onClick: (e: MouseEvent) => e.detail === 0 && applyRef.current(dir, 1),
   })
 }
@@ -138,19 +136,18 @@ export function Stepper({
     const t = setTimeout(() => setHintOpen(false), 3000)
     return () => clearTimeout(t)
   }, [hintOpen])
-  // свежее значение для повтора при зажатии: родитель обновит value только после перерисовки
+  // value обновится только после перерисовки
   const current = useRef(value)
   current.current = value
   const lastHaptic = useRef(0)
-  // шаг на dir; крупный шаг выравнивается по кратным (37 → 40 → 45), так проще попасть в круглое число.
-  // false - дальше идти некуда (граница), повтор останавливается
+  // крупный шаг по кратным (37 → 40 → 45); false - упёрлись в границу
   const stepBy = (dir: 1 | -1, step: number) => {
     const v = current.current
     const raw = step === 1 ? v + dir : dir > 0 ? Math.floor(v / step) * step + step : Math.ceil(v / step) * step - step
     const c = Math.min(max, Math.max(min, raw))
     if (c === v) return false
     setDraft(null)
-    // при быстром повторе вибрация не чаще раза в 90 мс, иначе Telegram захлёбывается
+    // вибрация не чаще раза в 90 мс
     const now = performance.now()
     if (now - lastHaptic.current > 90) {
       lastHaptic.current = now

@@ -45,7 +45,7 @@ function ExpandableQuote({ children }: { children: ReactNode }) {
 }
 
 function RichLink({ href, children }: { href: string; children: ReactNode }) {
-  // якорь в этом же тексте - плавная прокрутка к нему, адрес страницы не меняется
+  // якорь в тексте
   if (href.startsWith('#'))
     return (
       <a
@@ -71,7 +71,7 @@ function RichLink({ href, children }: { href: string; children: ReactNode }) {
       target="_blank"
       rel="noopener noreferrer"
       onClick={(e) => {
-        // t.me и https - через Telegram (внутри него), остальное (mailto:) - как обычная ссылка
+        // в Telegram открываем через WebApp
         if (/^(https?:|tg:)/.test(href) && openSupport(href)) e.preventDefault()
       }}
     >
@@ -96,7 +96,6 @@ function render(nodes: RichNode[], key = ''): ReactNode[] {
         return <img key={k} src={n.src} alt={n.alt} loading="lazy" referrerPolicy="no-referrer" />
       case 'spoiler':
         return <Spoiler key={k}>{render(n.children, `${k}.`)}</Spoiler>
-      // коллаж - сетка фото, слайдшоу - лента с прокруткой вбок
       case 'gallery':
         return (
           <div key={k} className={`rich-gallery is-${n.mode}`}>
@@ -165,10 +164,7 @@ function render(nodes: RichNode[], key = ''): ReactNode[] {
   })
 }
 
-/**
- * Текст раздела из админки: HTML Telegram (жирный, спойлер, кастомные эмодзи, цитаты, код) и разметка статей.
- * Разбирается в безопасное дерево (parseRichText): скрипты, обработчики и неизвестные теги не попадают в страницу
- */
+/** Текст раздела: HTML через parseRichText, без dangerouslySetInnerHTML */
 export function RichText({ html, className }: { html: string; className?: string }) {
   const nodes = useMemo(() => parseRichText(html), [html])
   return <div className={`rich ${className ?? ''}`}>{render(nodes)}</div>

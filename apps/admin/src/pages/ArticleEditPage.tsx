@@ -25,7 +25,6 @@ function uniqueSlug(title: string, kind: ArticleKind, all: Article[], selfId: nu
   return slug
 }
 
-// Раздел: страница, эмодзи, заголовок, описание и текст. Текст - обычные абзацы через пустую строку, как у прежних разделов
 function ArticleForm({ article, all, defaultKind }: { article: Article | null; all: Article[]; defaultKind: ArticleKind }) {
   const { canEdit } = useAuth()
   const toast = useToast()
@@ -66,7 +65,7 @@ function ArticleForm({ article, all, defaultKind }: { article: Article | null; a
     if (article) {
       input = { ...changed }
       if ('lead' in input) input.lead = input.lead || null
-      // перенесли на другую страницу, а там такой адрес занят - подбираем свободный
+      // при переносе на другую страницу адрес может быть занят
       if (input.kind && all.some((a) => a.kind === input.kind && a.slug === article.slug && a.id !== article.id))
         input.slug = uniqueSlug(v.title, input.kind, all, article.id)
     } else {

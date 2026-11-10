@@ -74,23 +74,14 @@ export function Tooltip({
   )
 }
 
-/**
- * Почему элемент недоступен. Строка/разметка - текст с эмодзи подсказок по умолчанию (TIP_EMOJI),
- * объект - свой эмодзи: имя анимированного (как у <Lottie name>, например E.wallet), обычный символ ('⏳')
- * или null - без значка
- */
+/** Текст подсказки или { text, emoji }: emoji - имя из паков, символ или null */
 export type DisabledHint = ReactNode | { text: ReactNode; emoji?: string | null }
 
 function isHintObject(h: DisabledHint): h is { text: ReactNode; emoji?: string | null } {
   return typeof h === 'object' && h !== null && 'text' in h && !('$$typeof' in h)
 }
 
-/**
- * Обёртка для отключённого элемента (кнопки, «+»/«−» и т.п.): по наведению на ПК и по нажатию на телефоне
- * показывает подсказку, почему он недоступен. Сам отключённый элемент событий не ловит (pointer-events: none
- * в CSS), их получает обёртка - поэтому подсказка работает и у настоящего disabled.
- * block - обёртка во всю ширину (для растянутых кнопок)
- */
+/** Подсказка для disabled-элемента: наведение на ПК, нажатие на телефоне. block - на всю ширину */
 export function HintWrap({ hint, block, children }: { hint: DisabledHint; block?: boolean; children: ReactNode }) {
   const tipEmoji = useTipEmoji()
   const [open, setOpen] = useState(false)
@@ -103,7 +94,6 @@ export function HintWrap({ hint, block, children }: { hint: DisabledHint; block?
 
   const { text, emoji } = isHintObject(hint) ? hint : { text: hint, emoji: undefined }
   const name = emoji === undefined ? tipEmoji : emoji
-  // имя эмодзи из паков (E.wallet) - анимация, всё остальное - обычный символ
   const icon = !name ? undefined : name in EMOJI_CATALOG ? <Lottie name={name} size={28} /> : name
 
   return (

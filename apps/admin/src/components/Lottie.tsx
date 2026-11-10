@@ -3,8 +3,7 @@ import type { AnimationItem } from 'lottie-web/build/player/lottie_light'
 import { strFromU8, unzipSync } from 'fflate'
 import { FIXED_EMOJI_FILES } from '@vpnhub/shared'
 
-// Анимированные эмодзи паков Telegram - те же файлы, что в кабинете (vite.config.ts копирует их из apps/miniapp/public).
-// .lottie - zip с manifest.json и animations/<id>.json: распаковываем сами и отдаём json в lottie-web
+// Те же .lottie, что в кабинете (копируются из apps/miniapp/public, см. vite.config.ts)
 
 function readDotLottie(buf: ArrayBuffer) {
   const files = unzipSync(new Uint8Array(buf))
@@ -47,7 +46,7 @@ const loadPlayer = () =>
     },
   ))
 
-// эмодзи грузятся, только когда попали на экран: в окне выбора их больше сотни
+// ленивая загрузка, в пикере их больше сотни
 const visible = new WeakMap<Element, () => void>()
 const observer =
   typeof IntersectionObserver !== 'undefined'
@@ -62,10 +61,7 @@ const observer =
       )
     : null
 
-/**
- * Анимированный эмодзи пака. animate: true - крутится всегда, 'hover' - стоит на кадре из середины и оживает,
- * когда навели на ближайший .lottie-hover (строку списка, кнопку), false - только этот кадр
- */
+/** animate: true - всегда, 'hover' - при наведении на .lottie-hover, false - статичный кадр */
 export function Lottie({ name, size = 28, animate = 'hover', className }: { name: string; size?: number; animate?: boolean | 'hover'; className?: string }) {
   const box = useRef<HTMLSpanElement>(null)
   const anim = useRef<AnimationItem | null>(null)
@@ -98,7 +94,7 @@ export function Lottie({ name, size = 28, animate = 'hover', className }: { name
           animationData: structuredClone(data),
           rendererSettings: { preserveAspectRatio: 'xMidYMid meet' },
         })
-        // у эмодзи паков первый кадр часто пустой (эмодзи «вырастает»), поэтому в покое показываем середину анимации
+        // первый кадр у многих пустой, берём середину
         const a = anim.current
         const showPoster = () => {
           if (animate !== true) a.goToAndStop(Math.floor(a.totalFrames / 2), true)

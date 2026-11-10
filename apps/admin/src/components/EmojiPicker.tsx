@@ -5,10 +5,7 @@ import { Lottie } from './Lottie'
 
 const NAMES = Object.keys(EMOJI_CATALOG)
 
-/**
- * Поле эмодзи раздела: анимированные эмодзи паков Telegram из кабинета - окном выбора,
- * custom_emoji_id или обычный символ - вручную в поле
- */
+/** Выбор эмодзи из паков или ручной ввод ID/символа */
 export function EmojiField({ id, value, onChange, disabled }: { id: string; value: string; onChange(v: string): void; disabled?: boolean }) {
   const [open, setOpen] = useState(false)
   const box = useRef<HTMLDivElement>(null)

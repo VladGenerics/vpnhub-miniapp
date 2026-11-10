@@ -35,8 +35,7 @@ export default defineConfig(({ mode }) => {
   // версия для строки в профиле - из package.json, чтобы не править её руками при релизе
   const version = JSON.parse(readFileSync('package.json', 'utf8')).version as string
   return {
-    // эмодзи разделов выбирают в админке из всех паков (и по custom_emoji_id), поэтому в сборке остаются все файлы.
-    // Грузятся они по требованию, место занимают только на сервере. PRUNE_EMOJI=true - вернуть обрезку
+    // эмодзи разделов могут быть любыми из паков, поэтому оставляем все (PRUNE_EMOJI=true - обрезать)
     plugins: [react(), pruneEmoji(env.PRUNE_EMOJI !== 'true')],
     define: { __APP_VERSION__: JSON.stringify(version) },
     build: {
@@ -56,8 +55,7 @@ export default defineConfig(({ mode }) => {
       // API_PROXY=http://localhost:8000 - локально проксировать /api на свой бэкенд, без CORS
       proxy: {
         ...(env.API_PROXY ? { '/api': { target: env.API_PROXY, changeOrigin: true } } : {}),
-        // админка (npm run dev:admin) на том же адресе: localhost:5173/admin/. На тестовых данных общий localStorage,
-        // поэтому разделы, добавленные в админке, сразу видны в кабинете
+        // админка в dev: localhost:5173/admin/
         '/admin': { target: 'http://localhost:5174', ws: true },
       },
       // туннель cloudflared для проверки внутри Telegram

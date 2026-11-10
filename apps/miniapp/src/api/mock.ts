@@ -218,7 +218,6 @@ export const mockApi: UserApi = {
   getTariffs: () => delay(tariffs),
   getPaymentMethods: () => delay(methods.filter((m) => m.is_active).sort((a, b) => a.sequence_number - b.sequence_number)),
   getSettings: () => delay(settings),
-  // общие с тестовой админкой (localStorage): что добавили там - видно здесь
   getArticles: () =>
     delay(
       mockArticles
