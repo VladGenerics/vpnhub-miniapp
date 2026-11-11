@@ -287,16 +287,16 @@ export function NoSubscription({ expired }: { expired?: Subscription }) {
       </>
     )
 
-  // телефон: одной колонкой, как было
+  // телефон: одной колонкой. Покупка сразу под шапкой, чтобы было видно, где и как оплатить; «Что входит» ниже
   return (
     <>
       {hero}
-      <Section>{features}</Section>
       <Section title="Тариф">{planRows}</Section>
       {ladder}
       {summary}
       {expired && <ExpiredDevices sub={expired} />}
       {errors}
+      <Section title="Что входит">{features}</Section>
       {cta}
     </>
   )
