@@ -282,16 +282,6 @@ p {
   padding: 8px 4px 0;
 }
 
-/* «Вернуться» внизу вложенных страниц: только на телефонной ширине, на ПК её нет */
-.page-return {
-  margin-top: 28px;
-}
-@media (min-width: 960px) {
-  .page-return {
-    display: none;
-  }
-}
-
 /* ============ Hero ============ */
 .hero {
   display: flex;

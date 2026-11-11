@@ -11,6 +11,19 @@ interface TgButton {
   offClick(cb: () => void): void
 }
 
+// нижняя кнопка окна мини-аппа (MainButton с 6.0, SecondaryButton с 7.10)
+interface TgBottomButton extends TgButton {
+  setParams(p: {
+    text?: string
+    color?: string
+    text_color?: string
+    is_active?: boolean
+    is_visible?: boolean
+    has_shine_effect?: boolean
+    position?: 'left' | 'right' | 'top' | 'bottom'
+  }): void
+}
+
 export interface TgUser {
   id: number
   first_name: string
@@ -39,6 +52,8 @@ interface TgWebApp {
   onEvent(e: string, cb: () => void): void
   offEvent(e: string, cb: () => void): void
   BackButton: TgButton
+  MainButton: TgBottomButton
+  SecondaryButton?: TgBottomButton
   HapticFeedback: {
     impactOccurred(s: HapticStyle): void
     notificationOccurred(t: NotifyType): void
@@ -152,6 +167,48 @@ export function useTelegramBackButton(onBack: (() => void) | null) {
       syncBackButton()
     }
   }, [!!onBack])
+}
+
+// цвет темы в #rrggbb для кнопок Telegram (другие форматы он не принимает)
+function themeHex(name: string) {
+  const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim()
+  return /^#[0-9a-f]{6}$/i.test(v) ? v : undefined
+}
+
+/**
+ * Родная нижняя кнопка окна мини-аппа «Вернуться», пока onReturn задан. В браузере её нет.
+ * Нажатие работает как родная «Назад»: открытое поверх окно закрывается первым, иначе onReturn.
+ * SecondaryButton (Bot API 7.10+), в старых клиентах - MainButton
+ */
+export function useTelegramReturnButton(onReturn: (() => void) | null, text = 'Вернуться') {
+  const ref = useRef(onReturn)
+  ref.current = onReturn
+  useEffect(() => {
+    if (!isTelegram || !tg || !onReturn || !tg.isVersionAtLeast('6.0')) return
+    const secondary = tg.isVersionAtLeast('7.10') && tg.SecondaryButton
+    const btn = secondary || tg.MainButton
+    const click = () => {
+      haptic.tap()
+      const top = backStack[backStack.length - 1]
+      if (top) top.run()
+      else ref.current?.()
+    }
+    btn.setParams({
+      text,
+      color: themeHex('--card'),
+      text_color: themeHex('--accent'),
+      is_active: true,
+      is_visible: true,
+      has_shine_effect: false,
+      ...(secondary ? { position: 'bottom' as const } : {}),
+    })
+    btn.onClick(click)
+    btn.show()
+    return () => {
+      btn.offClick(click)
+      btn.hide()
+    }
+  }, [!!onReturn, text])
 }
 
 /**

@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { EMOJI_CATALOG } from '@vpnhub/shared'
 import { Lottie } from './Lottie'
@@ -7,11 +7,14 @@ import { haptic } from '../lib/telegram'
 
 const GAP = 10
 const EDGE = 8
+// показанная подсказка сообщает об этом, остальные открытые по нажатию закрываются: на экране всегда одна
+const TIP_SHOWN = 'vpnhub:tip-shown'
 
 /**
  * Подсказка над элементом: на ПК по наведению, на телефоне по нажатию (open снаружи).
  * emoji - необязательный значок в начале: строка с эмодзи или анимированный <Lottie />.
- * Рисуется поверх страницы (портал): карточки с overflow: hidden её не обрезают, у краёв экрана она сдвигается
+ * Рисуется поверх страницы (портал): карточки с overflow: hidden её не обрезают, у краёв экрана она сдвигается.
+ * onClose - закрыть открытую по нажатию: вызывается, когда показалась другая подсказка или нажали мимо
  */
 export function Tooltip({
   text,
@@ -19,6 +22,7 @@ export function Tooltip({
   open,
   className,
   onClick,
+  onClose,
   children,
 }: {
   text: ReactNode
@@ -26,6 +30,7 @@ export function Tooltip({
   open?: boolean
   className?: string
   onClick?(): void
+  onClose?(): void
   children: ReactNode
 }) {
   const anchor = useRef<HTMLSpanElement>(null)
@@ -33,6 +38,25 @@ export function Tooltip({
   const [hover, setHover] = useState(false)
   const [pos, setPos] = useState<{ left: number; top: number; arrow: number } | null>(null)
   const shown = hover || !!open
+  const id = useId()
+  const close = useRef(onClose)
+  close.current = onClose
+
+  useEffect(() => {
+    if (shown) window.dispatchEvent(new CustomEvent(TIP_SHOWN, { detail: id }))
+  }, [shown, id])
+
+  useEffect(() => {
+    if (!open) return
+    const other = (e: Event) => (e as CustomEvent<string>).detail !== id && close.current?.()
+    const outside = (e: PointerEvent) => !anchor.current?.contains(e.target as Node) && close.current?.()
+    window.addEventListener(TIP_SHOWN, other)
+    document.addEventListener('pointerdown', outside, true)
+    return () => {
+      window.removeEventListener(TIP_SHOWN, other)
+      document.removeEventListener('pointerdown', outside, true)
+    }
+  }, [open, id])
 
   useLayoutEffect(() => {
     if (!shown) return setPos(null)
@@ -101,6 +125,7 @@ export function HintWrap({ hint, block, children }: { hint: DisabledHint; block?
       text={text}
       emoji={icon}
       open={open}
+      onClose={() => setOpen(false)}
       className={`is-disabled-hint ${block ? 'is-block' : ''}`}
       onClick={() => {
         haptic.notify('warning')

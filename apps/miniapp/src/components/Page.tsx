@@ -1,8 +1,7 @@
 import { useCallback, type ReactNode } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { LuChevronLeft } from 'react-icons/lu'
-import { Button } from './Controls'
-import { isTelegram, useTelegramBackButton } from '../lib/telegram'
+import { isTelegram, useTelegramBackButton, useTelegramReturnButton } from '../lib/telegram'
 import { useIsWide } from '../hooks/useMediaQuery'
 import { AppEmoji } from './AppEmoji'
 import { SIDEBAR_PAGES } from './Sidebar'
@@ -22,7 +21,8 @@ export function useGoBack(fallback: string = '/', fallbackState?: unknown) {
 // При боковой панели «Информация», «Помощь» и «Оформление» - разделы меню, «Назад» там лишний.
 // Отступ снизу под нижнюю панель - по адресу: «Пополнить» бывает и с «Назад», а панель там всё равно есть.
 // wide - страница раскладывается на ПК в две колонки (см. Cols), шапка становится строкой.
-// returnButton - «Назад» сверху и в Telegram, плюс большая «Вернуться» внизу (только телефонная ширина, на ПК прячется стилями).
+// returnButton - «Назад» сверху и в Telegram, плюс родная нижняя кнопка окна мини-аппа «Вернуться»
+// (только в Telegram и на телефонной ширине, на ПК-ширине её нет).
 // backTo / backState - куда вернуться, если страницу открыли напрямую и истории нет
 export function Page({
   back: nested,
@@ -48,6 +48,7 @@ export function Page({
   const fromPage = !!(state as { back?: boolean } | null)?.back
   const back = nested && !(wide && SIDEBAR_PAGES.includes(pathname) && !fromPage)
   useTelegramBackButton(back ? goBack : null)
+  useTelegramReturnButton(back && returnButton && !wide ? goBack : null)
 
   return (
     <main className={`page ${NAV_ROUTES.includes(pathname) ? 'has-nav' : 'is-nested'} ${twoCol ? 'is-wide' : ''} ${className ?? ''}`}>
@@ -58,13 +59,6 @@ export function Page({
         </button>
       )}
       {children}
-      {back && returnButton && (
-        <div className="page-return">
-          <Button stretched variant="secondary" icon={<LuChevronLeft size={20} />} onClick={goBack}>
-            Вернуться
-          </Button>
-        </div>
-      )}
     </main>
   )
 }

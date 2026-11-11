@@ -162,7 +162,7 @@ export function Stepper({
   const atMin = value <= min
   const minus =
     atMin && minHint ? (
-      <Tooltip text={minHint.text} emoji={minHint.emoji} open={hintOpen}>
+      <Tooltip text={minHint.text} emoji={minHint.emoji} open={hintOpen} onClose={() => setHintOpen(false)}>
         <button
           className="is-locked"
           aria-disabled
