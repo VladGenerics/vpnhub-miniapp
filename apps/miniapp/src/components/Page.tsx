@@ -1,25 +1,47 @@
 import { useCallback, type ReactNode } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { LuChevronLeft } from 'react-icons/lu'
+import { Button } from './Controls'
 import { isTelegram, useTelegramBackButton } from '../lib/telegram'
 import { useIsWide } from '../hooks/useMediaQuery'
 import { AppEmoji } from './AppEmoji'
 import { SIDEBAR_PAGES } from './Sidebar'
 import { NAV_ROUTES } from './nav'
 
-// Назад по истории приложения. Если страницу открыли напрямую (ссылкой, после входа), идём на главную,
-// а не уходим с сайта. history.length не подходит, он считает и чужие страницы вкладки.
-export function useGoBack() {
+// Назад по истории приложения. Если страницу открыли напрямую (ссылкой, после входа), идём на fallback
+// (по умолчанию главная), а не уходим с сайта. history.length не подходит, он считает и чужие страницы вкладки.
+export function useGoBack(fallback: string = '/', fallbackState?: unknown) {
   const navigate = useNavigate()
-  return useCallback(() => ((window.history.state?.idx ?? 0) > 0 ? navigate(-1) : navigate('/', { replace: true })), [navigate])
+  return useCallback(
+    () => ((window.history.state?.idx ?? 0) > 0 ? navigate(-1) : navigate(fallback, { replace: true, state: fallbackState })),
+    [navigate, fallback, fallbackState],
+  )
 }
 
 // Обёртка страницы. Для вложенных (back) в Telegram показываем родную кнопку «Назад», в браузере - свою.
 // При боковой панели «Информация», «Помощь» и «Оформление» - разделы меню, «Назад» там лишний.
 // Отступ снизу под нижнюю панель - по адресу: «Пополнить» бывает и с «Назад», а панель там всё равно есть.
-// wide - страница раскладывается на ПК в две колонки (см. Cols), шапка становится строкой
-export function Page({ back: nested, wide: twoCol, children, className }: { back?: boolean; wide?: boolean; children: ReactNode; className?: string }) {
-  const goBack = useGoBack()
+// wide - страница раскладывается на ПК в две колонки (см. Cols), шапка становится строкой.
+// returnButton - «Назад» сверху и в Telegram, плюс большая «Вернуться» внизу (только телефонная ширина, на ПК прячется стилями).
+// backTo / backState - куда вернуться, если страницу открыли напрямую и истории нет
+export function Page({
+  back: nested,
+  wide: twoCol,
+  returnButton,
+  backTo,
+  backState,
+  children,
+  className,
+}: {
+  back?: boolean
+  wide?: boolean
+  returnButton?: boolean
+  backTo?: string
+  backState?: unknown
+  children: ReactNode
+  className?: string
+}) {
+  const goBack = useGoBack(backTo, backState)
   const wide = useIsWide()
   const { pathname, state } = useLocation()
   // пришли не из меню, а по ссылке со страницы (state.back) - «Назад» нужен и при боковой панели
@@ -29,13 +51,20 @@ export function Page({ back: nested, wide: twoCol, children, className }: { back
 
   return (
     <main className={`page ${NAV_ROUTES.includes(pathname) ? 'has-nav' : 'is-nested'} ${twoCol ? 'is-wide' : ''} ${className ?? ''}`}>
-      {back && !isTelegram && (
+      {back && (!isTelegram || returnButton) && (
         <button className="web-back" onClick={goBack}>
           <LuChevronLeft size={20} />
           Назад
         </button>
       )}
       {children}
+      {back && returnButton && (
+        <div className="page-return">
+          <Button stretched variant="secondary" icon={<LuChevronLeft size={20} />} onClick={goBack}>
+            Вернуться
+          </Button>
+        </div>
+      )}
     </main>
   )
 }

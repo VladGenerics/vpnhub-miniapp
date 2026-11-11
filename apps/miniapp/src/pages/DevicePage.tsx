@@ -15,12 +15,15 @@ import { PLATFORM_LABEL, platformOf, slotTitle } from '../lib/device'
 import { copyText, dateTime } from '../lib/format'
 import { haptic } from '../lib/telegram'
 
+const DEVICES_TAB = { tab: 'devices' }
+
 export function DevicePage() {
   const { id } = useParams()
   const { active, isPending, isError, refetch } = useActiveSubscription()
   const release = useReleaseSlot()
   const remove = useDeleteSlot()
-  const goBack = useGoBack()
+  // открыли по прямой ссылке - «Назад» ведёт на вкладку устройств, а не на главную
+  const goBack = useGoBack('/', DEVICES_TAB)
   const toast = useToast()
   const twoCol = useIsTwoCol()
   const [confirm, setConfirm] = useState(false)
@@ -31,7 +34,7 @@ export function DevicePage() {
 
   if (isPending)
     return (
-      <Page back>
+      <Page back returnButton backTo="/" backState={DEVICES_TAB}>
         <PageSkeleton />
       </Page>
     )
@@ -39,7 +42,7 @@ export function DevicePage() {
   // подписка не загрузилась (500, обрыв) - это не «устройства нет»: ошибка с повтором, адрес не теряем
   if (isError && !active)
     return (
-      <Page back>
+      <Page back returnButton backTo="/" backState={DEVICES_TAB}>
         <PageError onRetry={refetch} />
       </Page>
     )
@@ -88,7 +91,7 @@ export function DevicePage() {
     )
 
   return (
-    <Page back wide>
+    <Page back wide returnButton backTo="/" backState={DEVICES_TAB}>
       <header className="hero">
         <div className="hero-device">
           <DeviceIcon platform={platformOf(slot.platform)} size={84} />

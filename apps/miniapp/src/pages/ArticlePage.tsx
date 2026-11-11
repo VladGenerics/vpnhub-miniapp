@@ -11,13 +11,13 @@ export function ArticlePage({ kind }: { kind: ArticlesKind }) {
 
   if (isPending)
     return (
-      <Page back>
+      <Page back returnButton backTo={`/${kind}`}>
         <PageSkeleton />
       </Page>
     )
   if (isError && !articles)
     return (
-      <Page back>
+      <Page back returnButton backTo={`/${kind}`}>
         <PageError onRetry={refetch} />
       </Page>
     )
@@ -26,7 +26,7 @@ export function ArticlePage({ kind }: { kind: ArticlesKind }) {
   if (!article) return <Navigate to={`/${kind}`} replace />
 
   return (
-    <Page back>
+    <Page back returnButton backTo={`/${kind}`}>
       <Hero emoji={article.emoji} title={article.title} subtitle={article.lead || undefined} size={96} />
       <RichText className="article" html={article.body} />
       {kind === 'help' && <SupportBlock />}

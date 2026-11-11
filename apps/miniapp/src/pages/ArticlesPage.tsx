@@ -33,7 +33,7 @@ export function ArticlesPage({ kind }: { kind: ArticlesKind }) {
   const c = CONFIG[kind]
   const { data: articles, error, refetch, isFetching } = useArticles(c.kind)
   return (
-    <Page back wide>
+    <Page back wide returnButton>
       <Hero emoji={c.emoji} title={c.title} subtitle={c.subtitle} size={128} />
       {/* на ПК статьи плиткой в две колонки, на телефоне - обычным списком */}
       {articles ? (

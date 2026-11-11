@@ -9,7 +9,8 @@ export interface TabDef {
 }
 
 /** Вкладки как папки в Telegram, контент листается свайпом */
-export function SwipeTabs({ tabs, initial }: { tabs: TabDef[]; initial?: string }) {
+// onChange - открытая вкладка (страница запоминает её, чтобы вернуться на неё же)
+export function SwipeTabs({ tabs, initial, onChange }: { tabs: TabDef[]; initial?: string; onChange?(key: string): void }) {
   const [index, setIndex] = useState(() =>
     Math.max(
       0,
@@ -36,6 +37,7 @@ export function SwipeTabs({ tabs, initial }: { tabs: TabDef[]; initial?: string 
     if (i === index) return
     haptic.select()
     setIndex(i)
+    onChange?.(tabs[i].key)
   }
 
   const onStart = (e: TouchEvent) => {
