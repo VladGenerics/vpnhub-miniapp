@@ -49,7 +49,7 @@ export function TrialOffer() {
   return (
     <button className="trial-offer" onClick={activate} disabled={trial.isPending} aria-busy={trial.isPending}>
       <span className="trial-shine" aria-hidden />
-      <Lottie name={E.gift} size={44} />
+      <Lottie name={E.vTile} size={44} />
       <span className="trial-text">
         <span className="trial-title">
           <span className="aurora-text">Пробная подписка</span>
