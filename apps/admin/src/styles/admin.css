@@ -1588,9 +1588,22 @@ p {
   gap: 16px;
   align-items: stretch;
 }
+/* три страницы разделов: Информация, Помощь, Инструкции. Средний экран - две колонки, третья
+   на всю ширину под ними (иначе справа от неё пустое место); широкий - все три в ряд */
 @media (min-width: 1100px) {
   .ac-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .ac-grid > .ac:nth-child(3) {
+    grid-column: 1 / -1;
+  }
+}
+@media (min-width: 1600px) {
+  .ac-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .ac-grid > .ac:nth-child(3) {
+    grid-column: auto;
   }
 }
 .ac {
@@ -2641,4 +2654,44 @@ p {
   .search-kbd {
     display: none;
   }
+}
+
+/* панель форматирования над текстом статьи: кнопки ставят теги вокруг выделения */
+.rich-editor {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-s);
+  background: var(--surface);
+  overflow: hidden;
+}
+.rich-editor:focus-within {
+  border-color: var(--accent);
+}
+.rich-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  padding: 6px;
+  border-bottom: 1px solid var(--border);
+}
+.rich-tool {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  color: var(--text-2, inherit);
+  transition: background 0.15s;
+}
+.rich-tool:hover:not(:disabled) {
+  background: var(--hover, rgba(127, 127, 127, 0.14));
+}
+.rich-tool:disabled {
+  opacity: 0.4;
+}
+.rich-editor .textarea {
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
 }

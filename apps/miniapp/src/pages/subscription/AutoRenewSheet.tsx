@@ -8,7 +8,8 @@ import { useToast } from '../../components/Toast'
 import { E } from '../../data/emoji'
 import { MAX_DAYS } from '../../data/content'
 import { useMe, useSetAutoRenewal, useTariffs } from '../../api/queries'
-import { days, devicesWord, rub } from '../../lib/format'
+import { CalcFormula } from '../../components/Tariff'
+import { days, rub } from '../../lib/format'
 import { haptic } from '../../lib/telegram'
 
 const PRESETS = [7, 14, 30, 90]
@@ -86,15 +87,8 @@ export function AutoRenewSheet({ sub, open, onClose }: { sub: Subscription; open
           <>
             <h3 className="section-title">Сумма списания</h3>
             <div className="calc-card">
-              <div className="calc-formula">
-                <span>{rub(q.pricePerDay)}</span>
-                <i>×</i>
-                <span>
-                  {slots} {devicesWord(slots)}
-                </span>
-                <i>×</i>
-                <span>{days(dayCount)}</span>
-              </div>
+              {/* тариф со скидками, как в окне продления: иначе формула не сходилась с суммой */}
+              <CalcFormula q={q} devices={slots} days={dayCount} />
               <div className="calc-total">
                 <AnimatedNumber value={q.total} format={rub} duration={450} />
               </div>

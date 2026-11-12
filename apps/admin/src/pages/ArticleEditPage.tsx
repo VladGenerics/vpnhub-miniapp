@@ -5,6 +5,7 @@ import { useArticles, useSaveArticle } from '../api/queries'
 import { useAuth } from '../auth/AuthProvider'
 import { EmojiField } from '../components/EmojiPicker'
 import { ArticlePreview } from '../components/RichPreview'
+import { RichEditor } from '../components/RichEditor'
 import { Segmented } from '../components/Segmented'
 import { useToast } from '../components/Toast'
 import { Button, Card, ErrorView, Field, PageHead, Skeleton } from '../components/ui'
@@ -140,7 +141,7 @@ function ArticleForm({ article, all, defaultKind }: { article: Article | null; a
       <div className="ar-split">
         <Card title="Текст">
           <div className="field">
-            <textarea className="textarea ar-body" value={v.body} disabled={!canEdit} spellCheck onChange={(e) => set('body', e.target.value)} />
+            <RichEditor className="ar-body" value={v.body} disabled={!canEdit} onChange={(x) => set('body', x)} />
             {show('body') && <div className="field-error">{show('body')}</div>}
           </div>
         </Card>

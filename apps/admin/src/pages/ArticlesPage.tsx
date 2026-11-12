@@ -173,7 +173,7 @@ export function ArticlesPage() {
         <ErrorView error={error} onRetry={refetch} />
       ) : !data ? (
         <div className="ac-grid">
-          {[0, 1].map((k) => (
+          {[0, 1, 2].map((k) => (
             <div className="card ac" key={k}>
               <div className="ac-head">
                 <Skeleton width={140} height={20} />

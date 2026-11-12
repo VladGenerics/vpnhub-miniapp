@@ -18,7 +18,7 @@ import { useSingleFlight } from '../hooks/useSingleFlight'
 import { draft } from '../lib/draft'
 import { rub } from '../lib/format'
 import { haptic, isTelegram, openPayment, safeExternalUrl } from '../lib/telegram'
-import { celebrate } from '../lib/confetti'
+import { celebrateBurst } from '../lib/confetti'
 import { useIsTwoCol } from '../hooks/useMediaQuery'
 
 const MAX = 1_000_000
@@ -82,7 +82,8 @@ function InvoiceSheet({ invoiceId, onClose, onWatch, onResume }: { invoiceId: nu
     prevStatus.current = inv?.status
     if (inv?.status === 'PAID') {
       haptic.notify('success')
-      if (was === 'UNPAID') celebrate()
+      // взрыв из эмодзи «Баланс пополнен» (эффект идёт после отрисовки оплаченного состояния)
+      if (was === 'UNPAID') celebrateBurst(document.querySelector('.sheet .sheet-head .lottie'))
     }
     if (inv?.status === 'FAILED' || inv?.status === 'EXPIRED') haptic.notify('error')
   }, [inv?.status])
@@ -221,7 +222,7 @@ function useWatchInvoice() {
     if (!watched || watched.status === 'UNPAID') return
     if (watched.status === 'PAID') {
       haptic.notify('success')
-      celebrate()
+      celebrateBurst()
       toast(`Баланс пополнен на ${rub(watched.amount)}`, E.party)
     }
     setWatchId(null)

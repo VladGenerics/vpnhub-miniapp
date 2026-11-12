@@ -13,7 +13,7 @@ import { useToast } from '../../components/Toast'
 import { E, HERO_POOL } from '../../data/emoji'
 import { MAX_DAYS, MAX_DEVICES, NO_SUB_TITLES } from '../../data/content'
 import { useMe, usePurchase, useTariffs } from '../../api/queries'
-import { date, days, devicesWord, plural, rub } from '../../lib/format'
+import { date, devicesWord, plural, rub } from '../../lib/format'
 import { haptic } from '../../lib/telegram'
 import { draft, draftOf } from '../../lib/draft'
 import { useSingleFlight } from '../../hooks/useSingleFlight'
@@ -247,7 +247,6 @@ export function NoSubscription({ expired }: { expired?: Subscription }) {
 
   // ПК: как оформление заказа. Слева настройка (устройства, срок, цены по сроку), справа чек:
   // итог, из чего он сложился, кнопка. «Что входит» под ними
-  const cheaper = q ? q.finalPricePerDay < q.basePricePerDay - 0.004 : false
   if (twoCol)
     return (
       <>
@@ -256,12 +255,15 @@ export function NoSubscription({ expired }: { expired?: Subscription }) {
           {/* пробная и скидка - в колонке настройки над тарифом, а не на всю ширину над чеком */}
           <div className="checkout-config">
             {offersDesktop}
-            <Section title="Тариф">{planRows}</Section>
-            {tariffs && (
-              <Section title="Цена дня по сроку" footer="Чем дольше срок, тем дешевле день. Нажмите строку, чтобы выбрать срок">
-                <PriceLadder tariffs={tariffs} days={period} onPick={setPeriod} list />
-              </Section>
-            )}
+            {/* между телефоном и ПК тариф и цены по сроку стоят рядом, чек под ними */}
+            <div className="checkout-plan">
+              <Section title="Тариф">{planRows}</Section>
+              {tariffs && (
+                <Section title="Цена дня по сроку" footer="Чем дольше срок, тем дешевле день. Нажмите строку, чтобы выбрать срок">
+                  <PriceLadder tariffs={tariffs} days={period} onPick={setPeriod} list />
+                </Section>
+              )}
+            </div>
           </div>
           {/* обёртка нужна Safari: sticky внутри grid иначе ограничен всей сеткой */}
           <div className="receipt-col">
@@ -270,39 +272,12 @@ export function NoSubscription({ expired }: { expired?: Subscription }) {
               <div className="receipt-card">
                 {/* баланс сверху, итог «К оплате» внизу рядом с кнопкой */}
                 <div className="receipt-balance">{balanceRow}</div>
+                {/* как на телефоне: скидка плашкой и формула, без повтора устройств и срока строками */}
                 {q && (
-                  <dl className="receipt-lines">
-                    <div>
-                      <dt>Тариф за устройство в сутки</dt>
-                      <dd>
-                        {cheaper && <s>{rub(q.basePricePerDay)}</s>}
-                        <b>{rub(q.finalPricePerDay)}</b>
-                      </dd>
-                    </div>
-                    <div>
-                      <dt>Устройства</dt>
-                      <dd>{added > 0 ? `${owned} (+${added})` : devices}</dd>
-                    </div>
-                    <div>
-                      <dt>Срок</dt>
-                      <dd>{days(period)}</dd>
-                    </div>
-                    {/* скидки отдельными строками: они перемножаются, а не складываются */}
-                    {q.deviceDiscount > 0.0049 && (
-                      <div className="is-save">
-                        <dt>
-                          Скидка за {devices} {devicesWord(devices)}
-                        </dt>
-                        <dd>−{Math.round(q.deviceDiscount * 100)} %</dd>
-                      </div>
-                    )}
-                    {q.discount > 0.0049 && (
-                      <div className="is-save">
-                        <dt>{q.personal ? 'Индивидуальная скидка' : 'Скидка по акции'}</dt>
-                        <dd>−{Math.round(q.discount * 100)} %</dd>
-                      </div>
-                    )}
-                  </dl>
+                  <div className="receipt-calc">
+                    <DiscountBadges q={q} devices={devices} />
+                    <CalcFormula q={q} devices={devices} days={period} />
+                  </div>
                 )}
                 {errors}
                 <div className="receipt-pay">

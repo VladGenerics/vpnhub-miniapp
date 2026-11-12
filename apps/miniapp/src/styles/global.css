@@ -592,6 +592,16 @@ p {
   border-radius: 15px;
   font-size: 16px;
 }
+.btn-two-line {
+  flex-direction: column;
+  gap: 1px;
+  line-height: 1.15;
+}
+.btn-two-line .btn-sub {
+  font-size: 12px;
+  font-weight: 500;
+  opacity: 0.7;
+}
 .btn-m {
   height: 40px;
   padding: 0 18px;
@@ -1238,6 +1248,21 @@ p {
 
 .calc-formula i {
   font-style: normal;
+}
+/* узко (телефон, чек на ПК): цена дня отдельной строкой, ниже «× устройства × дни», без висящего знака */
+.calc-card,
+.receipt-calc {
+  container-type: inline-size;
+}
+@container (max-width: 350px) {
+  .calc-formula:has(.calc-tariff)::after {
+    content: '';
+    order: 1;
+    flex-basis: 100%;
+  }
+  .calc-formula:has(.calc-tariff) > :not(.calc-tariff) {
+    order: 2;
+  }
 }
 
 .calc-total {
@@ -2859,7 +2884,7 @@ p {
     align-items: start;
   }
   .checkout-config > .section:first-child,
-  .receipt-col > .receipt {
+  .checkout-config > .checkout-plan:first-child > .section:first-child {
     margin-top: 0;
   }
   /* на всю высоту ряда, чтобы чеку было где прилипать */
@@ -2957,13 +2982,11 @@ p {
     padding: 0 0 16px;
     font-size: 15px;
   }
-  .receipt-lines {
-    display: grid;
-    gap: 10px;
-    margin: 0;
+  /* скидка и формула по центру, как в окне продления */
+  .receipt-calc {
     padding-top: 16px;
     border-top: 1px solid var(--sep);
-    font-size: 14px;
+    text-align: center;
   }
   /* итог внизу, прямо над кнопкой */
   .receipt-pay {
@@ -2978,33 +3001,6 @@ p {
   }
   .receipt-pay .receipt-total {
     margin: 2px 0 14px;
-  }
-  .receipt-lines > div {
-    display: flex;
-    justify-content: space-between;
-    gap: 12px;
-  }
-  .receipt-lines dt {
-    color: var(--hint);
-  }
-  .receipt-lines dd {
-    margin: 0;
-    font-weight: 600;
-    text-align: right;
-    white-space: nowrap;
-    font-variant-numeric: tabular-nums;
-  }
-  .receipt-lines dd s {
-    margin-right: 6px;
-    font-weight: 400;
-    color: var(--hint);
-  }
-  .receipt-lines dd b {
-    color: var(--accent);
-  }
-  .receipt-lines .is-save dt,
-  .receipt-lines .is-save dd {
-    color: var(--success);
   }
   .receipt .sticky-cta {
     position: static;
@@ -3075,15 +3071,57 @@ p {
   }
 }
 
-@media (min-width: 1100px) {
-  .checkout {
-    grid-template-columns: minmax(0, 1fr) 340px;
+/* ПК (просьба заказчика): тариф и цены по сроку в один ряд одной высоты, чек сразу под ними на всю ширину -
+   слева скидка и формула, справа итог и кнопка. Глазам не надо далеко ходить, и нет пустоты под чеком сбоку */
+@media (min-width: 960px) {
+  .checkout-plan {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 0 20px;
   }
-  /* sticky не на элементе grid - фикс для Safari */
-  .receipt-col > .receipt {
-    position: -webkit-sticky;
-    position: sticky;
-    top: 24px;
+  .checkout-plan > .section {
+    display: flex;
+    flex-direction: column;
+  }
+  .checkout-config > .checkout-plan:first-child > .section {
+    margin-top: 0;
+  }
+  /* карточка тарифа тянется до высоты цен, строки делят её поровну */
+  .checkout-plan > .section > .section-card {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+  .checkout-plan .plan-row {
+    flex: 1;
+  }
+  /* подпись под ценами сбивала низ карточек, а строку с отметкой и так видно, что можно нажать */
+  .checkout-plan .section-footer {
+    display: none;
+  }
+  .receipt-card {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 0 24px;
+  }
+  .receipt-card > :not(.receipt-calc, .receipt-pay) {
+    grid-column: 1 / -1;
+  }
+  /* одна сплошная линия под балансом вместо двух половинок над колонками */
+  .receipt-balance {
+    margin-bottom: 16px;
+    border-bottom: 1px solid var(--sep);
+  }
+  .receipt-calc {
+    align-self: center;
+    padding-top: 0;
+    border-top: 0;
+  }
+  .receipt-pay {
+    margin-top: 0;
+    padding: 0 0 0 24px;
+    border-top: 0;
+    border-left: 1px solid var(--sep);
   }
 }
 
@@ -4188,6 +4226,14 @@ body:has(.app.is-sidebar-collapsed) .is-modal .sheet {
   margin: 0 -24px;
   border-radius: 0;
   background: transparent;
+}
+/* содержимое строк и разделители - по краю текста панели, как у «Итого» */
+.topup-side .panel > .section-card > .cell {
+  padding-inline: 24px;
+}
+.topup-side .panel > .section-card > .cell + .cell::before {
+  left: 24px;
+  right: 24px;
 }
 @container (max-width: 420px) {
   .topup-side .invoice-pay {

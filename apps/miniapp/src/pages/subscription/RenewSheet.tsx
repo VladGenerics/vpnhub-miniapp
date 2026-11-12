@@ -131,11 +131,14 @@ export function RenewSheet({ sub, open, onClose }: { sub: Subscription; open: bo
         ) : (
           <Button
             stretched
+            className="btn-two-line"
             onClick={submit}
             disabled={!q || balance === undefined || renew.isPending}
             hint={!tariffs ? 'Загрузка цен' : !q ? 'Тариф недоступен' : balance === undefined && 'Загрузка баланса'}
           >
-            {renew.isPending ? 'Продлеваем...' : q ? `Продлить за ${rub(q.total)}` : 'Продлить'}
+            <span>{renew.isPending ? 'Продлеваем...' : q ? `Продлить за ${rub(q.total)}` : 'Продлить'}</span>
+            {/* сразу видно, с чего спишется оплата */}
+            {balance !== undefined && !renew.isPending && <span className="btn-sub">на балансе {rub(balance)}</span>}
           </Button>
         )}
         <Button stretched variant="ghost" onClick={onClose}>

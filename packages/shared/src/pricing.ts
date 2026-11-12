@@ -1,11 +1,15 @@
 import type { PersonalDiscount, Tariffs } from './types'
 
-// Цена подписки по тарифам из БД:
-//   тариф × устройства × дни, где тариф = цена дня на этот срок (между парами prices - плавно по прямой)
-//   × (1 − скидка за устройства) × (1 − max(индивидуальная, общая))
-// Скидки перемножаются и ложатся только на тариф (цену дня). Итог считает бэкенд, здесь только предпросмотр.
+// Цена подписки по тарифам из БД, как в боте:
+//   тариф = цена дня на этот срок (между парами prices - плавно по прямой)
+//   × (1 − max(индивидуальная, общая)), до сотых вверх
+//   × (1 − скидка за устройства), снова до сотых вверх
+//   итог = тариф × устройства × дни
+// Скидки ложатся только на тариф (цену дня). Итог считает бэкенд, здесь только предпросмотр.
 
 const round2 = (n: number) => Math.round(n * 100) / 100
+/** До сотых вверх, как в боте: 2,805 → 2,81. Погрешность float (1,55 = 1,5500000001) вверх не тянет */
+const ceil2 = (n: number) => Math.ceil(Math.round(n * 1e6) / 1e4) / 100
 
 /** Последнее правило с порогом ≤ value (правила отсортированы по порогу) */
 function stepFor<T>(rules: T[], key: (r: T) => number, value: number): T | undefined {
@@ -89,15 +93,17 @@ export function quote(t: Tariffs, devices: number, days: number): Quote | null {
   const dd = deviceDiscount(t, devices)
   const disc = activeDiscount(t)
   const personal = share(activePersonal(t)?.discount)
+  // порядок как в боте: сначала скидка на тариф, потом за устройства, после каждой - вверх до сотых
+  const finalPricePerDay = ceil2(ceil2(pricePerDay * (1 - disc)) * (1 - dd))
   return {
     pricePerDay: round2(pricePerDay),
     basePricePerDay: tiers[0].price_per_day,
-    finalPricePerDay: round2(pricePerDay * (1 - dd) * (1 - disc)),
+    finalPricePerDay,
     base: round2(base),
     deviceDiscount: dd,
     discount: disc,
     personal: personal > 0 && personal >= share(t.current_discount),
-    total: round2(base * (1 - dd) * (1 - disc)),
+    total: round2(finalPricePerDay * devices * days),
   }
 }
 
@@ -149,7 +155,7 @@ export function slotsQuote(t: Tariffs, currentSlots: number, add: number, expire
   const devicesAfter = Math.max(0, currentSlots) + add
   const dd = deviceDiscount(t, devicesAfter)
   const basePricePerDay = round2(basePrice)
-  const pricePerDay = round2(basePrice * (1 - dd))
+  const pricePerDay = ceil2(basePrice * (1 - dd))
   return {
     basePricePerDay,
     pricePerDay,
