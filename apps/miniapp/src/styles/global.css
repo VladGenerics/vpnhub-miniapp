@@ -3099,29 +3099,84 @@ p {
   .checkout-plan .section-footer {
     display: none;
   }
+  /* чек одной полосой: слева из чего сложилась цена (скидки и формула по левому краю), справа узкая колонка
+     с итогом, кнопкой и балансом под ней. Без пустой половины и растянутой на полэкрана кнопки */
   .receipt-card {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    gap: 0 24px;
+    grid-template-columns: minmax(0, 1fr) 320px;
+    grid-template-areas:
+      'calc pay'
+      'calc balance';
+    gap: 0 28px;
+    align-items: center;
+    padding: 22px 24px;
   }
-  .receipt-card > :not(.receipt-calc, .receipt-pay) {
+  .receipt-card > :not(.receipt-calc, .receipt-pay, .receipt-balance) {
     grid-column: 1 / -1;
   }
-  /* одна сплошная линия под балансом вместо двух половинок над колонками */
-  .receipt-balance {
-    margin-bottom: 16px;
-    border-bottom: 1px solid var(--sep);
-  }
   .receipt-calc {
-    align-self: center;
+    grid-area: calc;
+    align-self: stretch;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 12px;
+    padding: 0 28px 0 0;
+    border-top: 0;
+    border-right: 1px solid var(--sep);
+    text-align: left;
+  }
+  .receipt-calc .discount-badges {
+    justify-content: flex-start;
+    gap: 8px;
+    margin: 0;
+  }
+  .receipt-calc .discount-badge {
+    margin: 0;
+  }
+  .receipt-calc .calc-formula {
+    justify-content: flex-start;
+  }
+  .receipt-pay {
+    grid-area: pay;
+    margin-top: 0;
     padding-top: 0;
     border-top: 0;
   }
+  .receipt-pay .receipt-total {
+    margin-bottom: 12px;
+  }
+  .receipt-balance {
+    grid-area: balance;
+  }
+  .receipt-balance .sticky-cta-meta {
+    padding: 10px 2px 0;
+    font-size: 13px;
+  }
+}
+/* широкий ПК: сумма и кнопка в одну строку, чек становится низкой полосой под настройкой */
+@media (min-width: 1200px) {
+  .receipt-card {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
   .receipt-pay {
-    margin-top: 0;
-    padding: 0 0 0 24px;
-    border-top: 0;
-    border-left: 1px solid var(--sep);
+    display: grid;
+    grid-template-columns: auto 260px;
+    grid-template-areas:
+      'label button'
+      'total button';
+    gap: 0 24px;
+    align-items: center;
+  }
+  .receipt-pay-label {
+    grid-area: label;
+  }
+  .receipt-pay .receipt-total {
+    grid-area: total;
+    margin: 0;
+  }
+  .receipt-pay > :not(.receipt-pay-label, .receipt-total) {
+    grid-area: button;
   }
 }
 
