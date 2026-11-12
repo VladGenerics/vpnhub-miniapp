@@ -2599,6 +2599,17 @@ p {
   display: inline-block;
   font-variant-numeric: tabular-nums;
 }
+/* резерв и число в одной ячейке: ширина по более широкому, резерв не виден */
+.anum-reserved {
+  display: inline-grid;
+  justify-items: start;
+}
+.anum-reserved > span {
+  grid-area: 1 / 1;
+}
+.anum-reserved > span:first-child {
+  visibility: hidden;
+}
 .stepper-value {
   transition: transform 0.2s;
 }
@@ -2995,9 +3006,17 @@ p {
     border-top: 1px solid var(--sep);
   }
   .receipt-pay-label {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
     font-size: 13px;
     font-weight: 600;
     color: var(--hint);
+  }
+  .receipt-pay-label s {
+    font-size: 14px;
+    font-weight: 400;
+    font-variant-numeric: tabular-nums;
   }
   .receipt-pay .receipt-total {
     margin: 2px 0 14px;
@@ -3154,14 +3173,19 @@ p {
     font-size: 13px;
   }
 }
-/* широкий ПК: сумма и кнопка в одну строку, чек становится низкой полосой под настройкой */
-@media (min-width: 1200px) {
+/* широкий ПК: сумма и кнопка в одну строку, чек становится низкой полосой под настройкой.
+   Ширина колонки суммы постоянная: число анимируется, и под auto карточка дёргалась каждый кадр */
+@media (min-width: 1400px) {
   .receipt-card {
     grid-template-columns: minmax(0, 1fr) auto;
   }
+  .receipt-pay .receipt-total {
+    flex-wrap: nowrap;
+    white-space: nowrap;
+  }
   .receipt-pay {
     display: grid;
-    grid-template-columns: auto 260px;
+    grid-template-columns: 300px 260px;
     grid-template-areas:
       'label button'
       'total button';
@@ -3533,9 +3557,19 @@ p {
     grid-template-columns: minmax(0, 1.4fr) minmax(360px, 1fr);
     gap: 22px;
   }
-  .topup-side {
-    position: sticky;
-    top: 24px;
+  /* колонки одной высоты: низ правой (счета) вровень с левой панелью, ничего не торчит ниже */
+  .topup-grid {
+    align-items: stretch;
+  }
+  .topup-grid > .panel {
+    height: 100%;
+  }
+  .topup-side .unpaid-panel {
+    flex: 1;
+  }
+  /* счетов нет - «Итого» своей высоты, без пустой растянутой карточки */
+  .topup-grid:not(:has(.unpaid-panel)) {
+    align-items: start;
   }
 }
 

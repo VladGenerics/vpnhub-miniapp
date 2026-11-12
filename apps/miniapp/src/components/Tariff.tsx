@@ -53,13 +53,17 @@ export function PriceLadder({ tariffs, days, onPick, list }: { tariffs: Tariffs;
  * Расчёт одной строкой: тариф × устройства × дни. Тариф выделен акцентом и показан со всеми скидками,
  * рядом зачёркнута базовая цена дня, если срок или скидки её снизили
  */
+/** Место под цену с копейками: 2,5 и 2,64 занимают одну ширину «0,00 ₽», плашка цены не меняет размер */
+export const reserveFor = (n: number) =>
+  `${n.toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).replace(/\d/g, '0')} ₽`
+
 export function CalcFormula({ q, devices, days }: { q: Quote; devices: number; days: number }) {
   const cheaper = q.finalPricePerDay < q.basePricePerDay - 0.004
   return (
     <div className="calc-formula">
       <span className="calc-tariff" title="Тариф за одно устройство в сутки">
         {cheaper && <s>{rub(q.basePricePerDay)}</s>}
-        <AnimatedNumber value={q.finalPricePerDay} format={rub} duration={400} />
+        <AnimatedNumber value={q.finalPricePerDay} format={rub} duration={400} reserve={reserveFor(q.finalPricePerDay)} />
         <small>/день</small>
       </span>
       <i>×</i>

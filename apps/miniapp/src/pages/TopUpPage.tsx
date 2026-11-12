@@ -201,6 +201,8 @@ function shortTime(iso: string) {
 
 // сколько счетов видно сразу, остальные - по кнопке «Показать ещё»
 const UNPAID_VISIBLE = 3
+// на ПК в правой колонке под «Итого» - два, чтобы колонка не уходила ниже левой
+const UNPAID_VISIBLE_PANEL = 2
 
 /** Неоплаченные счета: нажатие ведёт на pay_url */
 /**
@@ -243,14 +245,15 @@ function UnpaidInvoices({ methods, onWatch, panel = false }: { methods?: Payment
   // первая загрузка не удалась - это не «счетов нет»: показываем ошибку с повтором
   if (error && !list) return <LoadError text="Не удалось загрузить неоплаченные счета" onRetry={() => refetch()} busy={isFetching} />
   if (!list?.length) return null
-  const hidden = list.length - UNPAID_VISIBLE
-  const shown = expanded || hidden <= 0 ? list : list.slice(0, UNPAID_VISIBLE)
+  const visible = panel ? UNPAID_VISIBLE_PANEL : UNPAID_VISIBLE
+  const hidden = list.length - visible
+  const shown = expanded || hidden <= 0 ? list : list.slice(0, visible)
   const name = (inv: Invoice) => methods?.find((m) => m.provider === inv.provider)?.name ?? inv.provider
   const rows = (
     <>
       {shown.map((inv, i) => {
         // строки из «Показать ещё» появляются плавно, без общей пружины: иначе текст подпрыгивает
-        const more = i >= UNPAID_VISIBLE ? ' is-more' : ''
+        const more = i >= visible ? ' is-more' : ''
         const inner = (
           <>
             <div className="cell-icon">
@@ -293,10 +296,9 @@ function UnpaidInvoices({ methods, onWatch, panel = false }: { methods?: Payment
   )
   const hint = 'Нажмите на счёт, чтобы перейти к оплате'
   return panel ? (
-    <div className="panel">
+    <div className="panel unpaid-panel">
       <h2 className="panel-title">Неоплаченные счета</h2>
       <div className="section-card">{rows}</div>
-      <p className="panel-hint">{hint}</p>
     </div>
   ) : (
     <Section title="Неоплаченные счета" footer={hint}>

@@ -281,10 +281,14 @@ export function NoSubscription({ expired }: { expired?: Subscription }) {
                 )}
                 {errors}
                 <div className="receipt-pay">
-                  <div className="receipt-pay-label">К оплате</div>
+                  {/* старая цена в строке подписи, а не за суммой: пока сумма бежит, её ширина меняется
+                      каждый кадр, и зачёркнутая цена рядом прыгала и переносилась */}
+                  <div className="receipt-pay-label">
+                    К оплате
+                    {q && q.total < q.base && <s>{rub(q.base)}</s>}
+                  </div>
                   <div className="receipt-total">
                     <AnimatedNumber value={q?.total ?? 0} format={rub} duration={450} />
-                    {q && q.total < q.base && <s>{rub(q.base)}</s>}
                   </div>
                   {payButton}
                 </div>

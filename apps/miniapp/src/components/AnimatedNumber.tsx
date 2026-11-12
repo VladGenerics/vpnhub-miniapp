@@ -9,17 +9,22 @@ const decimalsOf = (n: number) => {
   return i < 0 ? 0 : s.length - i - 1
 }
 
-/** Число с плавной сменой значения. Точность в пути как у цели, from - стартовое значение при первом показе */
+/**
+ * Число с плавной сменой значения. Точность в пути как у цели, from - стартовое значение при первом показе.
+ * reserve - текст, под ширину которого держится место (например «0,00 ₽»), чтобы соседи не сдвигались
+ */
 export function AnimatedNumber({
   value,
   format = String,
   duration = 450,
   from,
+  reserve,
 }: {
   value: number
   format?(n: number): string
   duration?: number
   from?: number
+  reserve?: string
 }) {
   const [shown, setShown] = useState(from ?? value)
   const current = useRef(from ?? value)
@@ -48,5 +53,12 @@ export function AnimatedNumber({
 
   useEffect(() => () => cancelAnimationFrame(raf.current), [])
 
-  return <span className="anum">{format(shown)}</span>
+  if (reserve === undefined) return <span className="anum">{format(shown)}</span>
+  // под числом невидимо стоит самый широкий вариант: ширина не меняется в пути, соседи не дёргаются
+  return (
+    <span className="anum anum-reserved">
+      <span aria-hidden="true">{reserve}</span>
+      <span>{format(shown)}</span>
+    </span>
+  )
 }
