@@ -191,6 +191,7 @@ export function ArticlesPage() {
         <div className="ac-grid">
           <KindColumn kind="INFO" list={byKind('INFO')} onDelete={setToDelete} />
           <KindColumn kind="HELP" list={byKind('HELP')} onDelete={setToDelete} />
+          <KindColumn kind="GUIDE" list={byKind('GUIDE')} onDelete={setToDelete} />
         </div>
       )}
 

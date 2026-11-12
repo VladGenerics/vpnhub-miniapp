@@ -24,6 +24,13 @@ const CONFIG = {
     title: 'Помощь',
     subtitle: 'Решения частых проблем и связь с поддержкой',
   },
+  // инструкции открываются кнопками платформ со страницы подписки, отдельного списка в меню нет
+  guide: {
+    kind: 'GUIDE' as ArticleKind,
+    emoji: E.phone,
+    title: 'Инструкции',
+    subtitle: 'Как подключить VPN на вашем устройстве',
+  },
 }
 
 export type ArticlesKind = keyof typeof CONFIG

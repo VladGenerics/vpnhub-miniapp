@@ -19,7 +19,8 @@ let me: Me = {
   tg_user_id: getTgUser()?.id ?? 5_812_334_097,
   registered_at: iso(Date.now() - 40 * DAY),
   language_code: 'ru',
-  has_used_trial_subscription: true,
+  // пробная ещё не использована: без подписки видна кнопка «Пробная подписка» (?trial=0 - уже использована)
+  has_used_trial_subscription: params.get('trial') === '0',
   is_premium: false,
   role: 'USER',
   balance: 450,
@@ -102,7 +103,9 @@ const tariffs: Tariffs = {
     { device_count: 10, discount: 0.5 },
   ],
   current_discount: 0,
-  personal_discount: null,
+  // ?discount=15 - индивидуальная скидка 15 % с подписью
+  personal_discount:
+    Number(params.get('discount')) > 0 ? { discount: Number(params.get('discount')) / 100, text: 'С наступающим Новым годом!', expire_at: null } : null,
 }
 
 const methods: PaymentMethod[] = [
@@ -112,7 +115,13 @@ const methods: PaymentMethod[] = [
   { id: 4, name: 'СБП', provider: 'WATA', tg_emoji_id: null, sequence_number: 4, min_amount: 50, is_active: true },
 ]
 
-const settings: PublicSettings = { support_link: 'https://t.me/vpnhub_support', invited_bonus: 30, referral_bonus: 30 }
+const settings: PublicSettings = {
+  support_link: 'https://t.me/vpnhub_support',
+  invited_bonus: 30,
+  referral_bonus: 30,
+  trial_days: 3,
+  trial_devices: 1,
+}
 
 // Счета. Оплата - страница-заглушка /test-pay в новой вкладке: она пишет итог в localStorage,
 // кабинет видит его при следующем опросе счёта.
@@ -266,6 +275,25 @@ export const mockApi: UserApi = {
     return delay(subscription, 500)
   },
 
+  async activateTrial() {
+    // как на бэкенде: один раз, и только если активной подписки нет
+    if (me.has_used_trial_subscription) throw new Error('Пробная подписка уже использована')
+    if (subscription?.status === 'ACTIVE') throw new Error('Подписка уже активна')
+    const days = settings.trial_days ?? 3
+    const devices = settings.trial_devices ?? 1
+    me = { ...me, has_used_trial_subscription: true }
+    subscription = {
+      id: 1,
+      status: 'ACTIVE',
+      purchased_at: now(),
+      expires_at: iso(Date.now() + days * DAY),
+      url: 'https://sub.vpnhub.app/s/8Kf2xQ9mZt4pLw7R',
+      auto_renewal: { is_enabled: false, days: 30 },
+      slots: Array.from({ length: devices }, (_, i) => emptySlot(i + 1)),
+    }
+    return delay(subscription, 600)
+  },
+
   async renew(days) {
     const sub = requireSub()
     const total = mustQuote(tariffs, sub.slots.length, days)
@@ -320,7 +348,17 @@ export const demoState = {
       unpaid: unpaid > 0,
       occupied: subscription?.slots.filter((s) => s.is_occupied).length ?? 0,
       total: subscription?.slots.length ?? 0,
+      trialUsed: me.has_used_trial_subscription,
+      discount: tariffs.personal_discount ? Math.round(tariffs.personal_discount.discount * 100) : 0,
+      discountText: tariffs.personal_discount?.text ?? '',
     }
+  },
+  setTrialUsed(used: boolean) {
+    me = { ...me, has_used_trial_subscription: used }
+  },
+  /** индивидуальная скидка в процентах; 0 - нет скидки */
+  setDiscount(percent: number, text: string) {
+    tariffs.personal_discount = percent > 0 ? { discount: percent / 100, text: text.trim() || null, expire_at: null } : null
   },
   setSub(on: boolean) {
     subscription = on ? demoSubscription() : null

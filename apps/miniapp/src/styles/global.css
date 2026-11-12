@@ -520,7 +520,8 @@ p {
   flex: none;
   display: grid;
   place-items: center;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18);
+  background: color-mix(in srgb, var(--text) 7%, var(--card));
+  color: var(--text);
 }
 
 .slot-empty {
@@ -2318,6 +2319,8 @@ p {
   display: flex;
   align-items: center;
   gap: 10px;
+  /* от left: 50% браузер даёт только половину экрана, и текст ломался в узкий столбик */
+  width: max-content;
   max-width: calc(calc(100vw / var(--z)) - 32px);
   padding: 9px 16px 9px 10px;
   border-radius: 16px;
@@ -2904,7 +2907,9 @@ p {
   }
   .price-step.is-active .price-step-dot {
     border-color: var(--accent);
-    box-shadow: inset 0 0 0 3px var(--card), inset 0 0 0 9px var(--accent);
+    box-shadow:
+      inset 0 0 0 3px var(--card),
+      inset 0 0 0 9px var(--accent);
   }
   .price-ladder.is-list .price-step-days {
     flex: 1;
@@ -3431,7 +3436,8 @@ p {
 }
 @media (min-width: 1180px) {
   .topup-grid {
-    grid-template-columns: minmax(0, 1.55fr) minmax(320px, 1fr);
+    /* правая колонка не уже 360 px: иначе строки неоплаченных счетов обрезаются */
+    grid-template-columns: minmax(0, 1.4fr) minmax(360px, 1fr);
     gap: 22px;
   }
   .topup-side {
@@ -3922,4 +3928,269 @@ body:has(.app.is-sidebar-collapsed) .is-modal .sheet {
 
 .plan-row > .cell-title {
   white-space: nowrap;
+}
+
+/* ============ Пробная подписка, индивидуальная скидка, инструкции ============ */
+
+/* Пробная подписка: переливающаяся рамка (как Shine Border из Magic UI) и переливающийся заголовок (Aurora Text).
+   Только в цвете палитры, фон и кнопка как у остальных карточек: выделяет движение, а не краска */
+.trial-offer {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  margin-top: 18px;
+  padding: 14px 14px 14px 12px;
+  border-radius: 18px;
+  background: var(--card);
+  box-shadow: inset 0 0 0 1px var(--sep);
+  color: var(--text);
+  text-align: left;
+  transition:
+    background 0.15s,
+    transform 0.3s var(--spring);
+}
+.trial-offer:hover:not(:disabled) {
+  background: var(--card-hover);
+}
+.trial-offer:active:not(:disabled) {
+  transform: scale(0.98);
+  transition-duration: 0.08s;
+}
+.trial-offer:disabled {
+  cursor: default;
+}
+.trial-shine {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  padding: 1.5px;
+  border-radius: inherit;
+  background-image: radial-gradient(
+    transparent,
+    transparent,
+    var(--accent),
+    color-mix(in srgb, var(--accent) 45%, #fff),
+    var(--accent),
+    transparent,
+    transparent
+  );
+  background-size: 300% 300%;
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  animation: trial-shine 10s linear infinite;
+}
+@keyframes trial-shine {
+  0% {
+    background-position: 0% 0%;
+  }
+  50% {
+    background-position: 100% 100%;
+  }
+  100% {
+    background-position: 0% 0%;
+  }
+}
+.trial-offer > .lottie {
+  flex: none;
+}
+.trial-text {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+.trial-title {
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.25;
+}
+.trial-sub {
+  font-size: 14px;
+  color: var(--hint);
+}
+.trial-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  min-width: 84px;
+  height: 34px;
+  padding: 0 14px;
+  border-radius: 10px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 14px;
+  font-weight: 600;
+}
+/* перелив от цвета текста к акценту и обратно */
+.aurora-text {
+  background-image: linear-gradient(
+    90deg,
+    var(--text) 0%,
+    var(--accent) 35%,
+    color-mix(in srgb, var(--accent) 45%, #fff) 50%,
+    var(--accent) 65%,
+    var(--text) 100%
+  );
+  background-size: 250% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: aurora-text 6s ease-in-out infinite alternate;
+}
+@keyframes aurora-text {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 100% 50%;
+  }
+}
+/* на ПК карточки в секциях с заголовком: отступ даёт сама секция */
+.section > .trial-offer,
+.section > .personal-promo {
+  margin-top: 0;
+}
+
+/* подпись индивидуальной скидки над тарифом: «С наступающим Новым годом!» */
+.personal-promo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 16px;
+  padding: 12px 14px;
+  border-radius: 18px;
+  background: var(--card);
+}
+.personal-promo > .lottie {
+  flex: none;
+}
+.personal-promo .cell-subtitle {
+  color: var(--success);
+}
+.sheet .personal-promo {
+  margin: 0 0 12px;
+}
+
+/* плашки скидок над расчётом: за устройства и на тариф отдельно */
+.discount-badges {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+.discount-badges .discount-badge {
+  margin: 0;
+}
+.discount-badge.is-personal {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+/* кнопки инструкций: ровная сетка одинаковых плиток, значок над подписью.
+   Платформа пользователя - рамкой и цветом акцента, без заливки и свечения */
+.guides {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(62px, 1fr));
+  gap: 8px;
+}
+.guide-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 0;
+  height: 64px;
+  padding: 0 4px;
+  border-radius: 14px;
+  background: var(--card);
+  box-shadow: inset 0 0 0 1px transparent;
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 500;
+  transition:
+    background 0.15s,
+    box-shadow 0.15s,
+    transform 0.3s var(--spring);
+}
+.guide-btn span {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.guide-btn svg {
+  color: var(--hint);
+}
+.guide-btn:hover {
+  background: var(--card-hover);
+}
+.guide-btn:active {
+  transform: scale(0.96);
+  transition-duration: 0.08s;
+}
+.guide-btn.is-current {
+  box-shadow: inset 0 0 0 1.5px var(--accent);
+  color: var(--accent);
+}
+.guide-btn.is-current svg {
+  color: var(--accent);
+}
+.guides-block {
+  margin-top: 18px;
+}
+.guides-block .section-title {
+  padding-left: 0;
+}
+.panel .guide-btn {
+  background: color-mix(in srgb, var(--text) 4%, var(--card));
+}
+.panel .guide-btn:hover {
+  background: color-mix(in srgb, var(--text) 7%, var(--card));
+}
+
+/* панель состояний: свой процент скидки и подпись */
+.states-discount {
+  grid-template-columns: 64px minmax(0, 1fr) auto;
+}
+.states-custom .states-text {
+  min-width: 0;
+  height: 32px;
+  padding: 0 8px;
+  border: 1px solid var(--sep);
+  border-radius: 10px;
+  outline: 0;
+  background: var(--chip);
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+}
+.states-custom .states-text:focus {
+  border-color: var(--accent);
+}
+
+/* неоплаченные счета в правой колонке: строки прямо по панели, без второй подложки внутри,
+   как строки «Итого» над ними. В узкой колонке надпись «Оплатить» прячется, остаётся стрелка,
+   чтобы время и способ оплаты влезли в одну строку */
+.topup-side {
+  container-type: inline-size;
+}
+.topup-side .panel > .section-card {
+  margin: 0 -24px;
+  border-radius: 0;
+  background: transparent;
+}
+@container (max-width: 420px) {
+  .topup-side .invoice-pay {
+    display: none;
+  }
 }

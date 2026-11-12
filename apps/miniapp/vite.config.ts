@@ -45,6 +45,8 @@ export default defineConfig(({ mode }) => {
           codeSplitting: {
             groups: [
               { name: 'lottie', test: /node_modules[\\/]lottie-web[\\/]/ },
+              // конфетти нужно редко: свой файл, грузится при первом залпе (lib/confetti.ts)
+              { name: 'confetti', test: /node_modules[\\/]canvas-confetti[\\/]/ },
               { name: 'vendor', test: /node_modules[\\/]/ },
             ],
           },

@@ -86,11 +86,14 @@ export interface DeviceCountDiscount {
   discount: number
 }
 
-/** user_current_discounts: персональная скидка (доля 0..1) */
+/** user_current_discounts: индивидуальная скидка пользователя на тариф */
 export interface PersonalDiscount {
+  /** Доля 0..1: 15 % - 0.15 */
   discount: number
+  /** Подпись к скидке, показывается над расчётом: «С наступающим Новым годом!» */
   text: string | null
-  expire_at: ISODate
+  /** До какого момента действует; null - бессрочно */
+  expire_at: ISODate | null
 }
 
 export interface Tariffs {
@@ -135,6 +138,9 @@ export interface PublicSettings {
   support_link: string
   invited_bonus: number
   referral_bonus: number
+  /** Пробная подписка: на сколько дней и устройств (POST /subscription/trial). Нет полей - кнопка без цифр */
+  trial_days?: number
+  trial_devices?: number
 }
 
 // --- вход с сайта ---

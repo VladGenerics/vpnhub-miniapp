@@ -5,7 +5,8 @@ import { AnimatedNumber } from '../../components/AnimatedNumber'
 import { Sheet } from '../../components/Sheet'
 import { Lottie } from '../../components/Lottie'
 import { LoadError } from '../../components/LoadError'
-import { Button, DiscountBadge, Stepper, discountReason } from '../../components/Controls'
+import { Button, Stepper } from '../../components/Controls'
+import { DiscountBadges, PersonalPromo } from '../../components/Promo'
 import { useToast } from '../../components/Toast'
 import { E } from '../../data/emoji'
 import { MAX_DAYS } from '../../data/content'
@@ -38,8 +39,6 @@ export function RenewSheet({ sub, open, onClose }: { sub: Subscription; open: bo
   // неизвестный баланс - не ноль: пока он не загрузился, доплату не считаем и продлить не даём
   const balance = me?.balance
   const lacking = q && balance !== undefined ? Math.max(0, q.total - balance) : 0
-  // общая доля скидки: за устройства и персональная/общая перемножаются
-  const discount = q ? 1 - (1 - q.deviceDiscount) * (1 - q.discount) : 0
   const base = Math.max(Date.now(), +new Date(sub.expires_at))
   const newUntil = new Date(base + dayCount * DAY).toISOString()
 
@@ -89,8 +88,9 @@ export function RenewSheet({ sub, open, onClose }: { sub: Subscription; open: bo
       {q && (
         <>
           <h3 className="section-title">К оплате</h3>
+          <PersonalPromo tariffs={tariffs} />
           <div className="calc-card">
-            <DiscountBadge percent={discount} reason={discountReason(slots, q.deviceDiscount, q.discount)} />
+            <DiscountBadges q={q} devices={slots} />
             <CalcFormula q={q} devices={slots} days={dayCount} />
             <div className="calc-total">
               {q.total < q.base && <s className="calc-old">{rub(q.base)}</s>}

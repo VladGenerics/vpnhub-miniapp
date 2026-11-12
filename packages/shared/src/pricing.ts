@@ -1,9 +1,9 @@
-import type { Tariffs } from './types'
+import type { PersonalDiscount, Tariffs } from './types'
 
 // Цена подписки по тарифам из БД:
 //   тариф × устройства × дни, где тариф = цена дня на этот срок (между парами prices - плавно по прямой)
-//   × (1 − скидка за устройства) × (1 − max(персональная, общая))
-// Итог считает бэкенд, здесь только предпросмотр.
+//   × (1 − скидка за устройства) × (1 − max(индивидуальная, общая))
+// Скидки перемножаются и ложатся только на тариф (цену дня). Итог считает бэкенд, здесь только предпросмотр.
 
 const round2 = (n: number) => Math.round(n * 100) / 100
 
@@ -42,9 +42,23 @@ export function isValidTariffs(t: unknown): t is Tariffs {
   )
 }
 
+const share = (d: unknown) => (typeof d === 'number' && Number.isFinite(d) ? Math.min(1, Math.max(0, d)) : 0)
+
+/**
+ * Индивидуальная скидка, если она действует сейчас (без срока - бессрочная).
+ * В user_current_discounts она numeric(10,2) процентами (15.00), фронт считает долями (0.15):
+ * больше 1 - значит пришли проценты, переводим, чтобы не зависеть от того, как отдаст бэкенд
+ */
+export function activePersonal(t: Tariffs, now = Date.now()): PersonalDiscount | null {
+  const p = t.personal_discount
+  if (!p || typeof p.discount !== 'number') return null
+  const discount = share(p.discount > 1 ? p.discount / 100 : p.discount)
+  if (!(discount > 0)) return null
+  return !p.expire_at || +new Date(p.expire_at) > now ? { ...p, discount } : null
+}
+
 export function activeDiscount(t: Tariffs, now = Date.now()): number {
-  const personal = t.personal_discount && +new Date(t.personal_discount.expire_at) > now ? t.personal_discount.discount : 0
-  return Math.max(personal, t.current_discount)
+  return Math.max(share(activePersonal(t, now)?.discount), share(t.current_discount))
 }
 
 export interface Quote {
@@ -56,7 +70,10 @@ export interface Quote {
   finalPricePerDay: number
   base: number
   deviceDiscount: number
+  /** Скидка на тариф: индивидуальная или общая, что больше */
   discount: number
+  /** Скидка на тариф - индивидуальная, а не общая акция */
+  personal: boolean
   total: number
 }
 
@@ -71,6 +88,7 @@ export function quote(t: Tariffs, devices: number, days: number): Quote | null {
   const base = pricePerDay * devices * days
   const dd = deviceDiscount(t, devices)
   const disc = activeDiscount(t)
+  const personal = share(activePersonal(t)?.discount)
   return {
     pricePerDay: round2(pricePerDay),
     basePricePerDay: tiers[0].price_per_day,
@@ -78,6 +96,7 @@ export function quote(t: Tariffs, devices: number, days: number): Quote | null {
     base: round2(base),
     deviceDiscount: dd,
     discount: disc,
+    personal: personal > 0 && personal >= share(t.current_discount),
     total: round2(base * (1 - dd) * (1 - disc)),
   }
 }

@@ -6,6 +6,7 @@ import { LuCheck, LuCopy, LuQrCode, LuRefreshCw, LuSettings, LuWallet } from 're
 import { Lottie } from '../../components/Lottie'
 import { Button } from '../../components/Controls'
 import { Section, Cell } from '../../components/List'
+import { PlatformGuides } from '../../components/PlatformGuides'
 import { QrCode } from '../../components/QrCode'
 import { Sheet } from '../../components/Sheet'
 import { useToast } from '../../components/Toast'
@@ -240,6 +241,7 @@ export function MainTab({ sub, aside }: { sub: Subscription; aside?: ReactNode }
                   </Button>
                 </div>
                 <p className="panel-hint">Добавьте ссылку в приложение-клиент на любом устройстве</p>
+                <PlatformGuides className="guides-block" />
               </>
             )}
             {aside}
@@ -249,6 +251,7 @@ export function MainTab({ sub, aside }: { sub: Subscription; aside?: ReactNode }
         <>
           <StatusCard sub={sub} onRenew={() => setExtendOpen(true)} />
           {link}
+          {sub.url && <PlatformGuides />}
           {settings}
         </>
       )}

@@ -136,6 +136,8 @@ export default function App() {
                   <Route path="/info/:slug" element={<ArticlePage kind="info" />} />
                   <Route path="/help" element={<ArticlesPage kind="help" />} />
                   <Route path="/help/:slug" element={<ArticlePage kind="help" />} />
+                  <Route path="/guide" element={<ArticlesPage kind="guide" />} />
+                  <Route path="/guide/:slug" element={<ArticlePage kind="guide" />} />
                   <Route path="/ui" element={<UiKitPage />} />
                   {import.meta.env.DEV && <Route path="/emoji" element={<EmojiGalleryPage />} />}
                   <Route path="*" element={<SubscriptionPage />} />

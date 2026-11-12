@@ -11,6 +11,7 @@ import { Lottie } from './Lottie'
 // Отдельный чанк, только при тестовых данных: в боевую сборку не попадает.
 
 const KEY = 'vpnhub.states-panel'
+const DISCOUNT_TEXT = 'С наступающим Новым годом!'
 const DAY = 864e5
 type Unit = 'd' | 'h' | 'm' | 's'
 // поле, подпись, максимум (дни - до 365, как период подписки)
@@ -51,6 +52,8 @@ export default function StatesPanel() {
   // срок не читаем из данных, а помним последний выбранный
   const [left, setLeft] = useState<number | null>(null)
   const [dur, setDur] = useState<Record<Unit, string>>({ d: '', h: '', m: '', s: '' })
+  const [discountText, setDiscountText] = useState(() => demoState.get().discountText || DISCOUNT_TEXT)
+  const [discountPct, setDiscountPct] = useState('')
   const qc = useQueryClient()
   const tipEmoji = useTipEmoji()
   if (!on) return null
@@ -194,6 +197,57 @@ export default function StatesPanel() {
           value={st.unpaid}
           onChange={(v) => apply(() => demoState.setUnpaid(v))}
         />
+      </div>
+      <div className="states-row">
+        <span>Пробная подписка</span>
+        <Opts
+          items={[
+            [false, 'Доступна'],
+            [true, 'Использована'],
+          ]}
+          value={st.trialUsed}
+          onChange={(v) => apply(() => demoState.setTrialUsed(v))}
+        />
+      </div>
+      <div className="states-row">
+        <span>Индивидуальная скидка</span>
+        <Opts
+          items={[
+            [0, 'Нет'],
+            [10, '10 %'],
+            [15, '15 %'],
+            [25, '25 %'],
+          ]}
+          value={st.discount}
+          onChange={(v) => apply(() => (setDiscountPct(''), demoState.setDiscount(v, discountText)))}
+        />
+        {/* свой процент и подпись скидки: подпись видна над тарифом */}
+        <div className="states-custom states-discount">
+          <label>
+            <input
+              inputMode="numeric"
+              value={discountPct}
+              placeholder={String(st.discount || 0)}
+              aria-label="Скидка, %"
+              onChange={(e) => setDiscountPct(e.target.value.replace(/\D/g, '').slice(0, 2))}
+            />
+            %
+          </label>
+          <input
+            className="states-text"
+            value={discountText}
+            maxLength={255}
+            placeholder="Подпись к скидке"
+            aria-label="Подпись к скидке"
+            onChange={(e) => setDiscountText(e.target.value)}
+          />
+          <button
+            className="chip"
+            onClick={() => apply(() => demoState.setDiscount(discountPct === '' ? st.discount || 15 : Number(discountPct), discountText))}
+          >
+            Задать
+          </button>
+        </div>
       </div>
       <div className="states-row">
         <span>Эмодзи в подсказке</span>

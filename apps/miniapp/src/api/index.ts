@@ -33,6 +33,8 @@ export interface UserApi {
   /** Неоплаченные счета пользователя (status = UNPAID), новые сверху */
   getUnpaidInvoices(): Promise<Invoice[]>
   purchase(req: PurchaseRequest): Promise<Subscription>
+  /** Пробная подписка: один раз на пользователя (Me.has_used_trial_subscription), бесплатно */
+  activateTrial(): Promise<Subscription>
   /** Продление активной подписки заранее. Устройства остаются, дни прибавляются к сроку */
   renew(days: number): Promise<Subscription>
   /** Докупить слоты к активной подписке: деньги списываются сразу, срок не меняется */
@@ -72,6 +74,7 @@ const httpApi: UserApi = {
   getInvoice: (id) => http('GET', `/invoices/${id}`),
   getUnpaidInvoices: () => http('GET', '/invoices?status=UNPAID'),
   purchase: (req) => http('POST', '/subscription/purchase', req),
+  activateTrial: () => http('POST', '/subscription/trial'),
   // отдельной ручки нет: покупка на активную подписку и есть продление. Будет своя - поменять здесь
   renew: async (days) => {
     const sub = await httpApi.getSubscription()

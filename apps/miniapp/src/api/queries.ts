@@ -161,6 +161,21 @@ export function usePurchase() {
   })
 }
 
+export function useActivateTrial() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: () => api.activateTrial().then(required),
+    onMutate: epochCtx,
+    onSuccess: async (sub, _v, ctx) => {
+      if (!sameEpoch(ctx)) return
+      clearDraft('new')
+      await setFresh(qc, keys.subscription, sub)
+      // has_used_trial_subscription поменялся: кнопка больше не нужна
+      qc.invalidateQueries({ queryKey: keys.me })
+    },
+  })
+}
+
 export function useRenew() {
   const qc = useQueryClient()
   return useMutation({

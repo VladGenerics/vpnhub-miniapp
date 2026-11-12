@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import type { Invoice, PaymentMethod } from '@vpnhub/shared'
 import { AnimatedNumber } from '../components/AnimatedNumber'
@@ -18,6 +18,7 @@ import { useSingleFlight } from '../hooks/useSingleFlight'
 import { draft } from '../lib/draft'
 import { rub } from '../lib/format'
 import { haptic, isTelegram, openPayment, safeExternalUrl } from '../lib/telegram'
+import { celebrate } from '../lib/confetti'
 import { useIsTwoCol } from '../hooks/useMediaQuery'
 
 const MAX = 1_000_000
@@ -74,8 +75,15 @@ function InvoiceSheet({ invoiceId, onClose, onWatch, onResume }: { invoiceId: nu
     onClose()
   }
 
+  // конфетти только на переходе «ждём оплату → оплачено», а не при открытии уже оплаченного счёта
+  const prevStatus = useRef(inv?.status)
   useEffect(() => {
-    if (inv?.status === 'PAID') haptic.notify('success')
+    const was = prevStatus.current
+    prevStatus.current = inv?.status
+    if (inv?.status === 'PAID') {
+      haptic.notify('success')
+      if (was === 'UNPAID') celebrate()
+    }
     if (inv?.status === 'FAILED' || inv?.status === 'EXPIRED') haptic.notify('error')
   }, [inv?.status])
 
@@ -213,6 +221,7 @@ function useWatchInvoice() {
     if (!watched || watched.status === 'UNPAID') return
     if (watched.status === 'PAID') {
       haptic.notify('success')
+      celebrate()
       toast(`Баланс пополнен на ${rub(watched.amount)}`, E.party)
     }
     setWatchId(null)
@@ -220,7 +229,8 @@ function useWatchInvoice() {
   return setWatchId
 }
 
-function UnpaidInvoices({ methods, onWatch }: { methods?: PaymentMethod[]; onWatch(id: number): void }) {
+// panel - на ПК карточкой с заголовком внутри, как «Итого» над ней
+function UnpaidInvoices({ methods, onWatch, panel = false }: { methods?: PaymentMethod[]; onWatch(id: number): void; panel?: boolean }) {
   const { data: list, error, refetch, isFetching } = useUnpaidInvoices()
   const [expanded, setExpanded] = useState(false)
   // вернулись из вкладки или приложения оплаты - проверяем сразу, не дожидаясь таймера
@@ -235,8 +245,8 @@ function UnpaidInvoices({ methods, onWatch }: { methods?: PaymentMethod[]; onWat
   const hidden = list.length - UNPAID_VISIBLE
   const shown = expanded || hidden <= 0 ? list : list.slice(0, UNPAID_VISIBLE)
   const name = (inv: Invoice) => methods?.find((m) => m.provider === inv.provider)?.name ?? inv.provider
-  return (
-    <Section title="Неоплаченные счета" footer="Нажмите на счёт, чтобы перейти к оплате">
+  const rows = (
+    <>
       {shown.map((inv, i) => {
         // строки из «Показать ещё» появляются плавно, без общей пружины: иначе текст подпрыгивает
         const more = i >= UNPAID_VISIBLE ? ' is-more' : ''
@@ -278,6 +288,18 @@ function UnpaidInvoices({ methods, onWatch }: { methods?: PaymentMethod[]; onWat
           chevron={false}
         />
       )}
+    </>
+  )
+  const hint = 'Нажмите на счёт, чтобы перейти к оплате'
+  return panel ? (
+    <div className="panel">
+      <h2 className="panel-title">Неоплаченные счета</h2>
+      <div className="section-card">{rows}</div>
+      <p className="panel-hint">{hint}</p>
+    </div>
+  ) : (
+    <Section title="Неоплаченные счета" footer={hint}>
+      {rows}
     </Section>
   )
 }
@@ -522,7 +544,7 @@ export function TopUpPage() {
               <LuLock size={14} /> Оплата откроется на защищённой странице
             </p>
           </div>
-          {unpaidBlock}
+          <UnpaidInvoices methods={methods} onWatch={watch} panel />
         </div>
       </div>
     </>

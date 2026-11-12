@@ -12,6 +12,7 @@ import { Button, Card, ErrorView, Field, PageHead, Skeleton } from '../component
 const KIND_OPTIONS: { value: ArticleKind; label: string }[] = [
   { value: 'INFO', label: ARTICLE_KIND_LABEL.INFO },
   { value: 'HELP', label: ARTICLE_KIND_LABEL.HELP },
+  { value: 'GUIDE', label: ARTICLE_KIND_LABEL.GUIDE },
 ]
 
 type Form = Pick<ArticleInput, 'kind' | 'emoji' | 'title' | 'body'> & { lead: string }
@@ -101,7 +102,15 @@ function ArticleForm({ article, all, defaultKind }: { article: Article | null; a
           <Field label="Эмодзи" error={show('emoji')}>
             {(id) => <EmojiField id={id} value={v.emoji} onChange={(x) => set('emoji', x)} disabled={!canEdit} />}
           </Field>
-          <Field label="Заголовок" error={show('title')}>
+          <Field
+            label="Заголовок"
+            error={show('title')}
+            hint={
+              v.kind === 'GUIDE'
+                ? 'Название платформы: iOS, Android, Windows, macOS или Linux. По нему кнопка в кабинете получает значок и подсветку'
+                : undefined
+            }
+          >
             {(id) => (
               <input
                 id={id}
@@ -160,7 +169,8 @@ export function ArticleEditPage() {
   const isNew = id === 'new'
   const { data, error, refetch } = useArticles()
   const article = isNew ? null : (data?.find((a) => a.id === Number(id)) ?? null)
-  const defaultKind: ArticleKind = params.get('kind') === 'HELP' ? 'HELP' : 'INFO'
+  const kindParam = params.get('kind')
+  const defaultKind: ArticleKind = kindParam === 'HELP' || kindParam === 'GUIDE' ? kindParam : 'INFO'
 
   return (
     <>

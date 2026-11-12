@@ -3,11 +3,13 @@ import type { ISODate } from './types'
 import { EMOJI_CATALOG } from './emojiCatalog'
 import { CUSTOM_EMOJI_IDS } from './customEmojiIds'
 
-export type ArticleKind = 'INFO' | 'HELP'
+// GUIDE - инструкции по подключению: одна статья на платформу, кнопки на странице подписки.
+// Платформа берётся из заголовка или адреса: iOS, Android, Windows, macOS, Linux
+export type ArticleKind = 'INFO' | 'HELP' | 'GUIDE'
 
-export const ARTICLE_KIND_LABEL: Record<ArticleKind, string> = { INFO: 'Информация', HELP: 'Помощь' }
+export const ARTICLE_KIND_LABEL: Record<ArticleKind, string> = { INFO: 'Информация', HELP: 'Помощь', GUIDE: 'Инструкции' }
 
-/** articles: раздел страницы «Информация» или «Помощь» */
+/** articles: раздел страницы «Информация», «Помощь» или инструкция по подключению */
 export interface Article {
   id: number
   kind: ArticleKind
@@ -339,7 +341,13 @@ export const mockArticles = {
   load(): Article[] {
     try {
       const raw = localStorage.getItem(MOCK_KEY)
-      if (raw) return JSON.parse(raw) as Article[]
+      if (raw) {
+        const list = JSON.parse(raw) as Article[]
+        // сохранено до появления инструкций - досыпаем их, остальное не трогаем
+        if (list.some((x) => x.kind === 'GUIDE')) return list
+        const top = Math.max(0, ...list.map((x) => x.id))
+        return [...list, ...DEFAULT_ARTICLES.filter((x) => x.kind === 'GUIDE').map((x, i) => ({ ...x, id: top + i + 1 }))]
+      }
     } catch {
       /* битые данные */
     }
@@ -370,6 +378,12 @@ const a = (kind: ArticleKind, slug: string, emoji: string, title: string, lead: 
   is_active: true,
   updated_at: at,
 })
+
+// инструкции по умолчанию: описание и текст у всех платформ одинаковые, свои заголовок и значок
+const GUIDE_LEAD = 'Как подключить VPN на этом устройстве'
+const GUIDE_BODY =
+  '<b>1. Установите приложение</b>\nСкачайте приложение-клиент с поддержкой ссылок подписки, например Happ или Hiddify.\n\n<b>2. Скопируйте ссылку подписки</b>\nНа странице «Подписка» нажмите на ссылку или «Скопировать ссылку».\n\n<b>3. Добавьте подписку</b>\nВ приложении нажмите «+» и выберите «Вставить из буфера обмена».\n\n<b>4. Подключитесь</b>\nВыберите сервер и нажмите кнопку подключения. Устройство займёт свободный слот.'
+const guide = (slug: string, emoji: string, title: string) => a('GUIDE', slug, emoji, title, GUIDE_LEAD, GUIDE_BODY)
 
 /** Разделы по умолчанию, пока нет GET /articles */
 export const DEFAULT_ARTICLES: Article[] = [
@@ -445,4 +459,9 @@ export const DEFAULT_ARTICLES: Article[] = [
     'Перенос подписки на новый телефон или ноутбук',
     'Откройте раздел «Устройства», выберите старое устройство и нажмите «Освободить слот».\n\nДобавьте ссылку подписки в приложение на новом устройстве — оно займёт освободившийся слот.',
   ),
+  guide('ios', 'VHubProject_12', 'iOS'),
+  guide('android', 'VHubProject_12', 'Android'),
+  guide('windows', 'VHubProject_08', 'Windows'),
+  guide('macos', 'VHubProject_08', 'macOS'),
+  guide('linux', 'VHubProject_08', 'Linux'),
 ]

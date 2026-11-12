@@ -395,7 +395,9 @@ export function UserPage() {
                     <div className="notice is-accent">
                       <Icon name="check" />
                       <div>
-                        Персональная скидка {Math.round(u.discount.discount * 100)}% до {date(u.discount.expire_at)}
+                        Индивидуальная скидка {/* в БД процентами (15.00), в API может прийти долей (0.15) */}
+                        {Math.round(u.discount.discount > 1 ? u.discount.discount : u.discount.discount * 100)}%
+                        {u.discount.expire_at ? ` до ${date(u.discount.expire_at)}` : ', бессрочно'}
                         {u.discount.text && <div className="muted">{u.discount.text}</div>}
                       </div>
                     </div>

@@ -1,13 +1,14 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { quote, type Subscription } from '@vpnhub/shared'
+import { activePersonal, quote, type Subscription } from '@vpnhub/shared'
 import { AnimatedNumber } from '../../components/AnimatedNumber'
 import { Lottie } from '../../components/Lottie'
 import { PriceLadder, CalcFormula } from '../../components/Tariff'
 import { useIsTwoCol } from '../../hooks/useMediaQuery'
 import { LoadError } from '../../components/LoadError'
 import { Section, Cell } from '../../components/List'
-import { Button, DiscountBadge, Stepper, discountReason } from '../../components/Controls'
+import { Button, Stepper } from '../../components/Controls'
+import { DiscountBadges, PersonalPromo, TrialOffer } from '../../components/Promo'
 import { useToast } from '../../components/Toast'
 import { E, HERO_POOL } from '../../data/emoji'
 import { MAX_DAYS, MAX_DEVICES, NO_SUB_TITLES } from '../../data/content'
@@ -88,28 +89,25 @@ export function NoSubscription({ expired }: { expired?: Subscription }) {
   const enough = q && balance !== undefined ? q.total <= balance : false
   const lacking = q && balance !== undefined && !enough ? Math.ceil(q.total - balance) : 0
   const noPrice = !!tariffs && !q
-  // общая доля скидки: за устройства и по акции перемножаются
-  const discount = q ? 1 - (1 - q.deviceDiscount) * (1 - q.discount) : 0
   const twoCol = useIsTwoCol()
 
   // черновик снимает сам хук usePurchase, здесь только отклик
   const once = useSingleFlight()
   const subscribe = () =>
     once((done) =>
-      purchase.mutate(
-        { days: period, devices },
-        {
-          onSettled: done,
-          onSuccess: () => {
-            haptic.notify('success')
-            toast('Подписка оформлена', E.party)
-          },
-          onError: (e) => {
-            haptic.notify('error')
-            toast(e.message || 'Не удалось оформить подписку', E.warning)
-          },
-        },
-      ),
+      // mutateAsync: после покупки страница сразу становится меню подписки, эта размонтируется,
+      // и колбэки mutate тогда не вызываются - уведомление «Подписка оформлена» терялось
+      purchase
+        .mutateAsync({ days: period, devices })
+        .then(() => {
+          haptic.notify('success')
+          toast('Подписка оформлена', E.party)
+        })
+        .catch((e: Error) => {
+          haptic.notify('error')
+          toast(e.message || 'Не удалось оформить подписку', E.warning)
+        })
+        .finally(done),
     )
   // уходим пополнять: на странице оплаты будет «Вернуться к оформлению»
   const markResume = () => {
@@ -181,7 +179,8 @@ export function NoSubscription({ expired }: { expired?: Subscription }) {
   const payButton =
     lacking > 0 ? (
       <Link to={`/topup?amount=${lacking}`} state={{ back: true, resume: true }} className="btn btn-primary btn-l is-stretched" onClick={markResume}>
-        Пополнить на {rub(lacking)}
+        {/* сумма и здесь меняется плавно, как в «Оформить за» */}
+        Пополнить на <AnimatedNumber value={lacking} format={rub} duration={400} />
       </Link>
     ) : (
       <Button
@@ -202,13 +201,40 @@ export function NoSubscription({ expired }: { expired?: Subscription }) {
   // расчёт: тариф крупно, скидка, формула и итог
   const summary = q && (
     <div className="calc-card buy-calc">
-      <DiscountBadge percent={discount} reason={discountReason(devices, q.deviceDiscount, q.discount)} />
+      <DiscountBadges q={q} devices={devices} />
       <CalcFormula q={q} devices={devices} days={period} />
       <div className="calc-total">
         {q.total < q.base && <s className="calc-old">{rub(q.base)}</s>}
         <AnimatedNumber value={q.total} format={rub} duration={450} />
       </div>
     </div>
+  )
+
+  // между шапкой и тарифом: пробная подписка (только для новой покупки) и подпись индивидуальной скидки
+  const offers = (
+    <>
+      {!expired && <TrialOffer />}
+      <PersonalPromo tariffs={tariffs} />
+    </>
+  )
+  // на ПК - секциями с заголовком: верх карточки на одном уровне с чеком под «Ваш заказ»
+  const showTrial = !expired && !!me && !me.has_used_trial_subscription
+  const showPromo = !!tariffs && !!activePersonal(tariffs)
+  const offersDesktop = (
+    <>
+      {showTrial && (
+        <section className="section">
+          <h3 className="section-title">Для новых пользователей</h3>
+          <TrialOffer />
+        </section>
+      )}
+      {showPromo && (
+        <section className="section">
+          <h3 className="section-title">Ваша скидка</h3>
+          <PersonalPromo tariffs={tariffs} />
+        </section>
+      )}
+    </>
   )
 
   const ladder = tariffs && (
@@ -227,7 +253,9 @@ export function NoSubscription({ expired }: { expired?: Subscription }) {
       <>
         {hero}
         <div className="checkout">
+          {/* пробная и скидка - в колонке настройки над тарифом, а не на всю ширину над чеком */}
           <div className="checkout-config">
+            {offersDesktop}
             <Section title="Тариф">{planRows}</Section>
             {tariffs && (
               <Section title="Цена дня по сроку" footer="Чем дольше срок, тем дешевле день. Нажмите строку, чтобы выбрать срок">
@@ -259,10 +287,19 @@ export function NoSubscription({ expired }: { expired?: Subscription }) {
                       <dt>Срок</dt>
                       <dd>{days(period)}</dd>
                     </div>
-                    {discount > 0.0049 && (
+                    {/* скидки отдельными строками: они перемножаются, а не складываются */}
+                    {q.deviceDiscount > 0.0049 && (
                       <div className="is-save">
-                        <dt>Скидка {discountReason(devices, q.deviceDiscount, q.discount)}</dt>
-                        <dd>−{Math.round(discount * 100)} %</dd>
+                        <dt>
+                          Скидка за {devices} {devicesWord(devices)}
+                        </dt>
+                        <dd>−{Math.round(q.deviceDiscount * 100)} %</dd>
+                      </div>
+                    )}
+                    {q.discount > 0.0049 && (
+                      <div className="is-save">
+                        <dt>{q.personal ? 'Индивидуальная скидка' : 'Скидка по акции'}</dt>
+                        <dd>−{Math.round(q.discount * 100)} %</dd>
                       </div>
                     )}
                   </dl>
@@ -291,6 +328,7 @@ export function NoSubscription({ expired }: { expired?: Subscription }) {
   return (
     <>
       {hero}
+      {offers}
       <Section title="Тариф">{planRows}</Section>
       {ladder}
       {summary}
