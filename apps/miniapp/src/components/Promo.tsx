@@ -61,7 +61,7 @@ export function TrialOffer() {
   )
 }
 
-/** Подпись индивидуальной скидки над расчётом: «С наступающим Новым годом!» и на что скидка */
+/** Подпись индивидуальной скидки над расчётом: «Персональное предложение для вас» и на что скидка */
 export function PersonalPromo({ tariffs }: { tariffs: Tariffs | undefined }) {
   const p = tariffs ? activePersonal(tariffs) : null
   if (!p) return null

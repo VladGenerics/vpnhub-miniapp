@@ -105,7 +105,7 @@ const tariffs: Tariffs = {
   current_discount: 0,
   // ?discount=15 - индивидуальная скидка 15 % с подписью
   personal_discount:
-    Number(params.get('discount')) > 0 ? { discount: Number(params.get('discount')) / 100, text: 'С наступающим Новым годом!', expire_at: null } : null,
+    Number(params.get('discount')) > 0 ? { discount: Number(params.get('discount')) / 100, text: 'Персональное предложение для вас', expire_at: null } : null,
 }
 
 const methods: PaymentMethod[] = [

@@ -11,7 +11,7 @@ import { Lottie } from './Lottie'
 // Отдельный чанк, только при тестовых данных: в боевую сборку не попадает.
 
 const KEY = 'vpnhub.states-panel'
-const DISCOUNT_TEXT = 'С наступающим Новым годом!'
+const DISCOUNT_TEXT = 'Персональное предложение для вас'
 const DAY = 864e5
 type Unit = 'd' | 'h' | 'm' | 's'
 // поле, подпись, максимум (дни - до 365, как период подписки)

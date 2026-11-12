@@ -4152,7 +4152,7 @@ body:has(.app.is-sidebar-collapsed) .is-modal .sheet {
   margin-top: 0;
 }
 
-/* подпись индивидуальной скидки над тарифом: «С наступающим Новым годом!» */
+/* подпись индивидуальной скидки над тарифом: «Персональное предложение для вас» */
 .personal-promo {
   display: flex;
   align-items: center;
