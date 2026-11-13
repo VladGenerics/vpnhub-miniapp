@@ -109,7 +109,7 @@ export function quote(t: Tariffs, devices: number, days: number): Quote | null {
 
 /**
  * Цена дня за устройство для дробного срока: между порогами тарифа - плавно по прямой.
- * Как в боте: при ценах 1 дн. - 5 ₽ и 10 дн. - 4,5 ₽ срок 2 дн. 23 ч стоит 4,89 ₽.
+ * Как в боте, до сотых вверх: при ценах 1 дн. - 5 ₽ и 10 дн. - 4,5 ₽ срок 2 дн. 23 ч стоит 4,8912 → 4,90 ₽.
  * Короче первого порога - цена первого, дольше последнего - цена последнего
  */
 export function interpolatedPricePerDay(t: Tariffs, days: number): number | null {
@@ -119,7 +119,8 @@ export function interpolatedPricePerDay(t: Tariffs, days: number): number | null
   for (let i = 1; i < ps.length; i++) {
     const a = ps[i - 1]
     const b = ps[i]
-    if (days <= b.min_days) return a.price_per_day + ((b.price_per_day - a.price_per_day) * (days - a.min_days)) / (b.min_days - a.min_days)
+    // между порогами тоже до сотых вверх, как в боте: 1,3412 → 1,35
+    if (days <= b.min_days) return ceil2(a.price_per_day + ((b.price_per_day - a.price_per_day) * (days - a.min_days)) / (b.min_days - a.min_days))
   }
   return ps[ps.length - 1].price_per_day
 }
