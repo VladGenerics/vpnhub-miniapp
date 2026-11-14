@@ -31,7 +31,8 @@ export function ArticlePage({ kind }: { kind: ArticlesKind }) {
     <Page back returnButton backTo={backTo}>
       <Hero emoji={article.emoji} title={article.title} subtitle={article.lead || undefined} size={96} />
       <RichText className="article" html={article.body} />
-      {kind !== 'info' && <SupportBlock />}
+      {/* в инструкции человек не ищет ответ, а подключается */}
+      {kind !== 'info' && <SupportBlock title={kind === 'guide' ? 'Не получается подключиться?' : undefined} />}
     </Page>
   )
 }

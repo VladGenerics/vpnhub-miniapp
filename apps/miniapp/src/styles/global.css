@@ -4223,7 +4223,7 @@ body:has(.app.is-sidebar-collapsed) .is-modal .sheet {
 }
 
 /* кнопки инструкций: ровная сетка одинаковых плиток, значок над подписью.
-   Платформа пользователя - рамкой и цветом акцента, без заливки и свечения */
+   Платформа пользователя - плашкой «Ваше устройство» под названием */
 .guides {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(62px, 1fr));
@@ -4265,12 +4265,40 @@ body:has(.app.is-sidebar-collapsed) .is-modal .sheet {
   transform: scale(0.96);
   transition-duration: 0.08s;
 }
-.guide-btn.is-current {
-  box-shadow: inset 0 0 0 1.5px var(--accent);
-  color: var(--accent);
+/* своя платформа: плитка как все, под названием плашка «Ваше устройство» (рамка выглядела как выбор) */
+.guides {
+  container-type: inline-size;
 }
-.guide-btn.is-current svg {
+/* плитки ряда одной высоты, содержимое каждой по центру: в обычных значок и название,
+   в своей вместе с плашкой. Запаса под плашку в остальных плитках нет */
+.guides:has(.guide-badge) .guide-btn {
+  height: 80px;
+  gap: 5px;
+}
+.guide-btn .guide-badge {
+  max-width: calc(100% - 4px);
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--accent-soft);
   color: var(--accent);
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+/* узкие плитки телефона: подпись в две строки «Ваше / устройство» */
+@container (max-width: 520px) {
+  .guides:has(.guide-badge) .guide-btn {
+    height: 92px;
+  }
+  .guide-btn .guide-badge {
+    padding: 1px 5px;
+    border-radius: 7px;
+    font-size: 9.5px;
+    line-height: 1.25;
+    white-space: normal;
+    text-align: center;
+  }
 }
 .guides-block {
   margin-top: 18px;

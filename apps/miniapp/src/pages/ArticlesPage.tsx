@@ -66,14 +66,14 @@ export function ArticlesPage({ kind }: { kind: ArticlesKind }) {
 }
 
 /** «Не нашли ответ?» - блок постоянный, ссылку задаёт админка (Настройки → Ссылка на поддержку) */
-export function SupportBlock() {
+export function SupportBlock({ title = 'Не нашли ответ?' }: { title?: string }) {
   // своя ссылка - только запасная, пока настройки не пришли
   const { data: settings } = useSettings()
   return (
     <div className="support-block">
       <Lottie name={E.handshake} size={44} />
       <div className="support-text">
-        <div className="cell-title">Не нашли ответ?</div>
+        <div className="cell-title">{title}</div>
         <div className="cell-subtitle">Поддержка отвечает в течение 15 минут</div>
       </div>
       <Button size="m" onClick={() => openSupport(settings?.support_link || SUPPORT_URL) || openSupport(SUPPORT_URL)}>

@@ -91,7 +91,8 @@ export function DevicePage() {
     )
 
   return (
-    <Page back wide returnButton backTo="/" backState={DEVICES_TAB}>
+    // одной колонкой и на ПК: справа было две кнопки и пустота под ними, рядом с длинным списком сведений
+    <Page back returnButton backTo="/" backState={DEVICES_TAB}>
       <header className="hero">
         <div className="hero-device">
           <DeviceIcon platform={platformOf(slot.platform)} size={84} />
@@ -100,7 +101,7 @@ export function DevicePage() {
         {slot.agent && <p className="hero-subtitle">{slot.agent}</p>}
       </header>
 
-      {/* на ПК: слева сведения об устройстве, справа действия со слотом */}
+      {/* узкая страница: колонки встают друг под другом - сведения, ниже действия со слотом */}
       <Cols
         left={
           <Section title="Информация">

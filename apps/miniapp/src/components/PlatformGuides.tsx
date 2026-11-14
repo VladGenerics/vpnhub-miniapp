@@ -19,7 +19,7 @@ const ICON: Record<Platform, IconType> = {
 
 /**
  * Кнопки инструкций по подключению: по статье «Инструкции» на платформу, как кнопка «Инструкции» в боте.
- * Платформа статьи - по адресу и заголовку (ios, Android, macOS...), кнопка устройства пользователя обведена.
+ * Платформа статьи - по адресу и заголовку (ios, Android, macOS...), у кнопки устройства пользователя плашка «Ваше устройство».
  * Статей нет или они не загрузились - блока нет, ссылку подписки это не загораживает
  */
 export function PlatformGuides({ className = 'section' }: { className?: string }) {
@@ -46,6 +46,8 @@ export function PlatformGuides({ className = 'section' }: { className?: string }
             >
               <Icon size={20} aria-hidden />
               <span>{a.title}</span>
+              {/* не рамка (выглядело как выбранная кнопка), а подпись: мы определили устройство */}
+              {current && <b className="guide-badge">Ваше устройство</b>}
             </Link>
           )
         })}
